@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: kcalog-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kcalog}
+    username: ${DB_USERNAME:kcalog}
+    password: ${DB_PASSWORD:kcalog}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    locations: classpath:db/migration
+
+app:
+  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+  jwt:
+    # HS256 서명 키 — 32바이트 이상. 운영에서는 반드시 환경변수로 주입한다.
+    secret: ${JWT_SECRET:kcalog-local-dev-only-secret-key-32bytes!}
+    access-token-ttl: 30m
+  refresh-token:
+    ttl: 14d

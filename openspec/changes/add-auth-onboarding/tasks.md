@@ -2,11 +2,11 @@
 
 ## 1. 프로젝트 Scaffold
 
-- [ ] 1.1 backend: Spring Boot 3(Java 21, Gradle Kotlin DSL) 프로젝트 생성 — web, security, oauth2-client, data-jpa, validation, postgresql, flyway 의존성
-- [ ] 1.2 docker-compose.yml로 로컬 Postgres 16 구성, application.yml 프로파일(local) 및 환경변수 골격(.env.example, .gitignore 갱신)
-- [ ] 1.3 Flyway `V1__init.sql` 작성 — member, refresh_token, weight_log 테이블 (설계 문서 §5 스키마, ddl-auto=validate)
-- [ ] 1.4 frontend: Vite + React + TypeScript 프로젝트 생성 — react-router, TanStack Query, vite-plugin-pwa 설정
-- [ ] 1.5 Vite dev proxy 설정 (`/api`, `/oauth2`, `/login/oauth2` → localhost:8080) 및 백엔드·프론트 동시 기동 확인
+- [x] 1.1 backend: Spring Boot 4.0.7(Java 21, Gradle Kotlin DSL) 프로젝트 생성 — webmvc, security, oauth2-client, data-jpa, validation, postgresql, flyway 의존성
+- [x] 1.2 docker-compose.yml로 로컬 Postgres 16 구성, application.yml 프로파일(local) 및 환경변수 골격(.env.example, .gitignore 갱신)
+- [x] 1.3 Flyway `V1__init.sql` 작성 — member, refresh_token, weight_log 테이블 (설계 문서 §5 스키마, ddl-auto=validate)
+- [x] 1.4 frontend: Vite + React + TypeScript 프로젝트 생성 — react-router, TanStack Query, vite-plugin-pwa 설정
+- [x] 1.5 Vite dev proxy 설정 (`/api`, `/oauth2`, `/login/oauth2` → localhost:8080) 및 백엔드·프론트 동시 기동 확인
 
 ## 2. 백엔드: 인증 (auth)
 
