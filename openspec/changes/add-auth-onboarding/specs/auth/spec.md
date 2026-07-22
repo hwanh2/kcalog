@@ -3,10 +3,10 @@
 ## ADDED Requirements
 
 ### Requirement: 소셜 로그인
-시스템은 카카오와 구글 OAuth2를 통한 로그인을 지원해야 한다(SHALL). 로그인 성공 시 `provider + provider_id`로 회원을 조회하고, 없으면 신규 회원을 생성해야 한다(SHALL). 이메일은 제공되지 않을 수 있으므로 필수로 요구하지 않아야 한다(MUST NOT).
+시스템은 카카오 OAuth2를 통한 로그인을 지원해야 한다(SHALL). 회원 식별은 provider 확장(구글 등)을 전제로 `provider + provider_id` 조합을 유지해야 한다(MUST). 로그인 성공 시 `provider + provider_id`로 회원을 조회하고, 없으면 신규 회원을 생성해야 한다(SHALL). 이메일은 제공되지 않을 수 있으므로 필수로 요구하지 않아야 한다(MUST NOT).
 
 #### Scenario: 신규 회원 첫 로그인
-- **WHEN** 카카오/구글 인증을 처음 완료한 사용자가 콜백에 도달하면
+- **WHEN** 카카오 인증을 처음 완료한 사용자가 콜백에 도달하면
 - **THEN** 시스템은 provider 프로필(provider_id, 이메일·닉네임이 있으면 함께)로 member 레코드를 생성하고, refresh 토큰을 HttpOnly 쿠키로 설정한 뒤 프론트엔드 `/auth/callback`으로 리다이렉트한다
 
 #### Scenario: 기존 회원 재로그인

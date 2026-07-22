@@ -38,7 +38,7 @@
 
 - **프론트**: Vite + React SPA, PWA(vite-plugin-pwa), TanStack Query
 - **백엔드**: Spring Boot 3 단일 모듈, JPA, Postgres
-- **인증**: Spring Security + OAuth2 Client(카카오/구글) + JWT — access 토큰은 SPA 메모리, refresh는 HttpOnly 쿠키
+- **인증**: Spring Security + OAuth2 Client(카카오만, 구글 등은 추후) + JWT — access 토큰은 SPA 메모리, refresh는 HttpOnly 쿠키 (2026-07-22 수정: 카카오 단독으로 축소)
 - **스토리지**: S3 또는 Cloudflare R2 (사진), DB에는 객체 키만 저장
 - **AI**: Claude Vision API (Spring WebClient 호출) — 식사 분석, 주간 리포트
 - **배포**: 프론트 Vercel/Cloudflare Pages, 백엔드 Docker(단일 VPS 또는 fly.io), DB Neon/Supabase 관리형 Postgres

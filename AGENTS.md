@@ -47,7 +47,7 @@ cd frontend && npm run build         # tsc + vite build
 
 ## 환경 변수
 
-로컬은 기본값으로 DB까지 동작한다. OAuth 로그인 테스트에만 카카오/구글 키가 필요 — 목록은 `.env.example` 참고. `.env`는 gitignore 대상이며 시크릿을 코드/문서에 하드코딩하지 않는다.
+로컬은 기본값으로 DB까지 동작한다. OAuth 로그인 테스트에만 카카오 키가 필요 — 목록은 `.env.example` 참고. 소셜 로그인은 카카오만 지원한다(구글 등은 추후 변경). `.env`는 gitignore 대상이며 시크릿을 코드/문서에 하드코딩하지 않는다.
 
 ## 기술 제약 (설계 원칙)
 

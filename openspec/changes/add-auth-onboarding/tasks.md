@@ -11,7 +11,7 @@
 ## 2. 백엔드: 인증 (auth)
 
 - [ ] 2.1 member 엔티티·리포지토리 (provider+provider_id UNIQUE, email nullable)
-- [ ] 2.2 Spring Security + OAuth2 Client 설정 — 카카오/구글 provider 등록, 성공 시 회원 조회/생성(OAuth2UserService)
+- [ ] 2.2 Spring Security + OAuth2 Client 설정 — 카카오 provider 등록, 성공 시 회원 조회/생성(OAuth2UserService)
 - [ ] 2.3 JWT access 토큰 발급·검증 (HS256, 30분, sub=member id) 및 Bearer 인증 필터 — `/api/auth/**`·OAuth 경로 외 전부 보호
 - [ ] 2.4 refresh 토큰 서비스 — 불투명 토큰 생성, SHA-256 해시 저장(14일), HttpOnly 쿠키(Path=/api/auth) 설정, OAuth 성공 핸들러에서 발급 후 프론트 `/auth/callback` 리다이렉트
 - [ ] 2.5 `POST /api/auth/refresh` — 회전(기존 삭제+신규 발급), 만료·무효 시 401+쿠키 만료, 회전된 토큰 재사용 시 회원 전체 토큰 무효화
@@ -31,7 +31,7 @@
 ## 4. 프론트: 인증 흐름
 
 - [ ] 4.1 API 클라이언트 — access 토큰 메모리 보관, 401 시 refresh 1회 후 재시도, 실패 시 로그인 화면 이동
-- [ ] 4.2 로그인 화면 — 카카오/구글 버튼(`{API}/oauth2/authorization/...` 이동), OAuth 실패 오류 표시
+- [ ] 4.2 로그인 화면 — 카카오 버튼(`{API}/oauth2/authorization/kakao` 이동), OAuth 실패 오류 표시
 - [ ] 4.3 `/auth/callback` 페이지 — refresh 호출로 access 획득 → me 조회 → 온보딩 여부에 따라 분기
 - [ ] 4.4 라우터 가드 — 미로그인은 로그인 화면, 온보딩 미완료는 온보딩 화면 강제, 앱 부트스트랩 시 refresh로 세션 복구
 
@@ -44,5 +44,5 @@
 
 ## 6. 마무리 검증
 
-- [ ] 6.1 카카오/구글 개발용 OAuth 앱 등록 절차 README에 문서화 (리다이렉트 URI, 환경변수 목록)
+- [ ] 6.1 카카오 개발용 OAuth 앱 등록 절차 README에 문서화 (리다이렉트 URI, 환경변수 목록)
 - [ ] 6.2 E2E 수동 검증 — 신규 가입→온보딩→프로필 수정→로그아웃→재로그인 전체 흐름, 새로고침 세션 복구 확인
