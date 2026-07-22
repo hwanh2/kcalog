@@ -21,6 +21,8 @@ CREATE TABLE refresh_token (
     member_id  BIGINT      NOT NULL REFERENCES member (id) ON DELETE CASCADE,
     token_hash VARCHAR(64) NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
+    -- 회전된 토큰은 삭제하지 않고 revoked 마킹해 보존한다 (재사용 = 탈취 의심 감지, design.md D2)
+    revoked_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uq_refresh_token_hash UNIQUE (token_hash)
 );

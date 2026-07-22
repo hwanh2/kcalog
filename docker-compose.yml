@@ -7,7 +7,8 @@ services:
       POSTGRES_USER: kcalog
       POSTGRES_PASSWORD: kcalog
     ports:
-      - "5432:5432"
+      # 로컬 전용 — 외부 인터페이스에 노출하지 않는다
+      - "127.0.0.1:5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
