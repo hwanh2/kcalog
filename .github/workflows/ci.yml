@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+# 최소 권한 — 쓰기 권한은 필요한 잡에서만 개별 부여
+permissions:
+  contents: read
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -25,12 +29,16 @@ jobs:
       - run: ./gradlew build
       - name: 커버리지 PR 코멘트 (측정 전용, 게이트 없음)
         if: github.event_name == 'pull_request'
-        uses: madrapps/jacoco-report@v1.7.1
+        # 서드파티 액션은 커밋 SHA로 핀 고정 (태그 바꿔치기 방지)
+        uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 # v1.7.1
         with:
           paths: backend/build/reports/jacoco/test/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           title: 백엔드 커버리지
           update-comment: true
+          # 게이트 없음 방침 — 기준 미달 ❌ 이모지가 뜨지 않게 0으로
+          min-coverage-overall: 0
+          min-coverage-changed-files: 0
 
   frontend:
     runs-on: ubuntu-latest

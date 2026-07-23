@@ -33,7 +33,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest request) {
-        OAuth2User oAuth2User = super.loadUser(request);
+        OAuth2User oAuth2User = fetchUser(request);
         String registrationId = request.getClientRegistration().getRegistrationId();
         if (!"kakao".equals(registrationId)) {
             throw new OAuth2AuthenticationException(
@@ -60,6 +60,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String nameAttribute = request.getClientRegistration()
                 .getProviderDetails().getUserInfoEndpoint().getUserNameAttributeName();
         return new DefaultOAuth2User(List.of(new SimpleGrantedAuthority("ROLE_USER")), enriched, nameAttribute);
+    }
+
+    /** 카카오 userinfo API 호출 — 단위 테스트에서 스텁으로 대체하기 위한 심(seam) */
+    protected OAuth2User fetchUser(OAuth2UserRequest request) {
+        return super.loadUser(request);
     }
 
     @SuppressWarnings("unchecked")

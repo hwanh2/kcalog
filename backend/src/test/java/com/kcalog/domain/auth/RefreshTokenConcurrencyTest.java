@@ -1,6 +1,6 @@
 package com.kcalog.domain.auth;
 
-import com.kcalog.TestcontainersConfiguration;
+import com.kcalog.IntegrationTest;
 import com.kcalog.domain.auth.exception.InvalidRefreshTokenException;
 import com.kcalog.domain.auth.repository.RefreshTokenRepository;
 import com.kcalog.domain.auth.service.RefreshTokenService;
@@ -11,9 +11,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -23,13 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * 스레드별 독립 트랜잭션이 필요해 @Transactional 없이 실제 커밋으로 검증한다.
- * @AutoConfigureMockMvc는 다른 통합 테스트와 컨텍스트 캐시(컨테이너 1개)를 공유하기 위함.
- */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+/** 스레드별 독립 트랜잭션이 필요해 @Transactional 없이 실제 커밋으로 검증한다 */
+@IntegrationTest
 class RefreshTokenConcurrencyTest {
 
     @Autowired

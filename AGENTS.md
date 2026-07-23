@@ -41,7 +41,7 @@ openspec/  스펙·변경 관리
 ## 테스트
 
 - 순수 도메인 로직(계산·판정 등 Spring 불필요)은 **TDD**: 스펙 시나리오를 실패하는 테스트로 먼저 옮긴 뒤 구현한다. 프레임워크 배선 코드는 test-after 허용.
-- 통합 테스트는 `@SpringBootTest` + `@Import(TestcontainersConfiguration.class)` — 컨텍스트 캐시 공유를 위해 기존 테스트와 어노테이션 구성을 맞춘다.
+- 통합 테스트는 `@IntegrationTest`(커스텀 메타 어노테이션) 사용 — 구성 통일로 Testcontainers 컨테이너 1개를 공유한다. 개별 `@SpringBootTest` 조합 금지.
 - 커버리지(JaCoCo)는 측정·PR 가시화 전용. **게이트(강제 기준)를 추가하지 않는다** — 숫자 채우기용 테스트 금지.
 - 테스트 이름은 `@DisplayName`(한국어)으로 시나리오를 서술한다.
 
