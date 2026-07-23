@@ -59,8 +59,3 @@ cd frontend && npm run build         # tsc + vite build
 ## 환경 변수
 
 로컬은 기본값으로 DB까지 동작한다. OAuth 로그인 테스트에만 카카오 키가 필요 — 목록은 `.env.example` 참고. 소셜 로그인은 카카오만 지원한다(구글 등은 추후 변경). `.env`는 gitignore 대상이며 시크릿을 코드/문서에 하드코딩하지 않는다.
-
-## 기술 제약 (설계 원칙)
-
-- 인프라는 관리형 우선. **Kafka/Redis/MSA 도입 금지** — 학습 범위를 Security/OAuth2, JPA, 외부 API 연동, 배포 자동화로 한정한다.
-- AI 분석은 동기 처리(큐 없음), 사진은 presigned URL로 클라이언트가 직접 업로드(서버 중계 금지).
