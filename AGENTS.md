@@ -27,7 +27,16 @@ docs/      설계 문서
 openspec/  스펙·변경 관리
 ```
 
-백엔드 패키지는 모듈 경계대로 `com.kcalog.{auth, member, meal, weight, workout, report, common}`. 컨트롤러는 얇게, 로직은 서비스 계층에. Lombok 미사용(plain Java). REST 경로는 `/api/{domain}`.
+백엔드 패키지는 `com.kcalog.domain.{도메인}.{controller, service, repository, entity, dto, exception}` + `com.kcalog.global.{config, common}` (도메인: auth, member, meal, weight, workout, report).
+
+## 백엔드 코드 컨벤션
+
+- **Lombok**: `@Getter`, `@RequiredArgsConstructor`(생성자 주입만), `@NoArgsConstructor(access = PROTECTED)`, `@Slf4j`. 엔티티 `@Setter` 금지 — 상태 변경은 의도가 드러나는 도메인 메서드로. `@Builder + @AllArgsConstructor` 조합 대신 정적 팩토리(예: `Member.signUp`).
+- **DTO**: `dto/` 패키지의 Java record. `{Action}Request` / `{Domain}Response` 네이밍, `Dto` 접미사 금지. 엔티티를 API 응답으로 직접 반환하지 않는다. Jackson은 기본 camelCase 유지 (snake_case 전역 설정 금지).
+- **엔티티**: `BaseEntity`(createdAt/updatedAt, `Instant`/UTC) 상속. 시간대 변환은 클라이언트 책임.
+- **계층**: 컨트롤러는 얇게(리포지토리 직접 참조 금지), 로직은 서비스에. 조회 전용 메서드는 `@Transactional(readOnly = true)`.
+- **REST 경로**: `/api/{domain}` (예: `/api/auth`, `/api/members`).
+- **커밋 메시지**: `<타입>: <한국어 요약>` — feat / fix / refactor / test / docs / chore / review.
 
 ## 명령어
 
