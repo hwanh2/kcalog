@@ -1,5 +1,6 @@
 package com.kcalog.domain.auth;
 
+import com.kcalog.TestcontainersConfiguration;
 import com.kcalog.domain.auth.entity.RefreshToken;
 import com.kcalog.domain.auth.repository.RefreshTokenRepository;
 import com.kcalog.domain.auth.service.JwtService;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestcontainersConfiguration.class)
 @Transactional
 class AuthIntegrationTest {
 
