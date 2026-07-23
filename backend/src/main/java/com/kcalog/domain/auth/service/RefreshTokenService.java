@@ -61,12 +61,17 @@ public class RefreshTokenService {
             throw new InvalidRefreshTokenException("refresh token expired");
         }
 
-        token.revoke();
+        // 조건부 UPDATE로 회전 경합을 원자적으로 판정한다. 영향 행 0 = 방금(ms 단위) 다른 요청이
+        // 먼저 회전한 양성 레이스(멀티탭·재시도)로 보고, 전체 무효화 없이 401만 반환한다.
+        // 시간이 지난 뒤 revoked 토큰이 조회되는 위의 경로만 탈취 의심(전체 무효화)으로 다룬다.
+        if (refreshTokens.revokeIfActive(token.getId(), Instant.now()) == 0) {
+            throw new InvalidRefreshTokenException("concurrent rotation");
+        }
         return issue(token.getMemberId());
     }
 
     @Transactional
-    public void revokeByRawToken(String rawToken) {
+    public void deleteByRawToken(String rawToken) {
         refreshTokens.findByTokenHash(hash(rawToken)).ifPresent(refreshTokens::delete);
     }
 

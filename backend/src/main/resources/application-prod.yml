@@ -1,0 +1,11 @@
+# 운영 프로파일 — 시크릿은 기본값 없이 환경변수 필수. 미주입 시 기동이 실패해야 한다 (fail-closed).
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+app:
+  frontend-base-url: ${FRONTEND_BASE_URL}
+  jwt:
+    secret: ${JWT_SECRET}

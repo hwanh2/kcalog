@@ -14,7 +14,7 @@
 - [x] 2.2 Spring Security + OAuth2 Client 설정 — 카카오 provider 등록, 성공 시 회원 조회/생성(OAuth2UserService)
 - [x] 2.3 JWT access 토큰 발급·검증 (HS256, 30분, sub=member id) 및 Bearer 인증 필터 — `/api/auth/**`·OAuth 경로 외 전부 보호
 - [x] 2.4 refresh 토큰 서비스 — 불투명 토큰 생성, SHA-256 해시 저장(14일), HttpOnly 쿠키(Path=/api/auth) 설정, OAuth 성공 핸들러에서 발급 후 프론트 `/auth/callback` 리다이렉트
-- [x] 2.5 `POST /api/auth/refresh` — 회전(기존 삭제+신규 발급), 만료·무효 시 401+쿠키 만료, 회전된 토큰 재사용 시 회원 전체 토큰 무효화
+- [x] 2.5 `POST /api/auth/refresh` — 회전(기존 revoked 마킹+신규 발급, 조건부 UPDATE로 동시성 방어), 만료·무효 시 401+쿠키 만료, 회전된 토큰 재사용 시 회원 전체 토큰 무효화
 - [x] 2.6 `POST /api/auth/logout` — 토큰 삭제 + 쿠키 만료
 - [x] 2.7 인증 통합 테스트 — refresh 정상/만료/재사용 감지, 보호 API 401
 

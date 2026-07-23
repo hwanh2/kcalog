@@ -41,10 +41,6 @@ public class RefreshToken extends BaseEntity {
         this.expiresAt = expiresAt;
     }
 
-    public void revoke() {
-        this.revokedAt = Instant.now();
-    }
-
     public boolean isRevoked() {
         return revokedAt != null;
     }
