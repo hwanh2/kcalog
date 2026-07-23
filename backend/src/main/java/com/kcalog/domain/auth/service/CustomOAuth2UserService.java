@@ -4,6 +4,7 @@ import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.entity.Provider;
 import com.kcalog.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /** OAuth 로그인 성공 시 provider 프로필로 회원을 조회/생성한다 */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
@@ -46,7 +48,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String nickname = (String) profile.get("nickname");
 
         Member member = members.findByProviderAndProviderId(Provider.KAKAO, providerId)
-                .orElseGet(() -> members.save(Member.signUp(Provider.KAKAO, providerId, email, nickname)));
+                .orElseGet(() -> {
+                    Member created = members.save(Member.signUp(Provider.KAKAO, providerId, email, nickname));
+                    log.info("신규 회원 가입: memberId={}, provider=KAKAO", created.getId());
+                    return created;
+                });
 
         Map<String, Object> enriched = new HashMap<>(attributes);
         enriched.put(MEMBER_ID_ATTRIBUTE, member.getId());

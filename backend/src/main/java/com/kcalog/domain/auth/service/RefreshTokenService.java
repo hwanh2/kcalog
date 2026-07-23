@@ -5,6 +5,7 @@ import com.kcalog.domain.auth.exception.InvalidRefreshTokenException;
 import com.kcalog.domain.auth.repository.RefreshTokenRepository;
 import com.kcalog.global.common.AppProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
@@ -49,6 +51,8 @@ public class RefreshTokenService {
                 .orElseThrow(() -> new InvalidRefreshTokenException("unknown refresh token"));
 
         if (token.isRevoked()) {
+            // 탈취 의심 보안 이벤트 — 운영에서 이 로그의 빈도가 모니터링 대상 (토큰 값은 남기지 않는다)
+            log.warn("refresh token reuse detected: memberId={}", token.getMemberId());
             refreshTokens.deleteAllByMemberId(token.getMemberId());
             throw new InvalidRefreshTokenException("refresh token reuse detected");
         }
