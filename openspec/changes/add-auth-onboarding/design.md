@@ -54,7 +54,7 @@ member의 프로필 필드(gender, birth_year, height_cm, activity_level, target
 
 ### D6. Scaffold 구성
 
-- **백엔드**: Spring Boot 4.0.x, Java 21, Gradle(Kotlin DSL). (설계 문서는 Boot 3이었으나 2026-06 Boot 3.x OSS 지원 종료로 Initializr에서 제거되어 4.0.7로 결정 — 학습 범위에 영향 없음) 의존성: webmvc, security, oauth2-client, data-jpa, validation, postgresql, flyway. 패키지는 모듈 경계대로 `auth`, `member` (+ 공통 `common`). 스키마 관리는 **Flyway 마이그레이션**(V1__init.sql) — `ddl-auto=validate`.
+- **백엔드**: Spring Boot 4.0.x, Java 21, Gradle(Kotlin DSL). (설계 문서는 Boot 3이었으나 2026-06 Boot 3.x OSS 지원 종료로 Initializr에서 제거되어 4.0.7로 결정 — 학습 범위에 영향 없음) 의존성: webmvc, security, oauth2-client, data-jpa, validation, postgresql, flyway. 패키지는 `domain/{도메인}/{controller,service,repository,entity,dto,exception}` + `global/{config,common}` 구조 (2026-07-23 리팩토링으로 확정, 컨벤션은 AGENTS.md). Lombok 사용. 스키마 관리는 **Flyway 마이그레이션**(V1__init.sql) — `ddl-auto=validate`.
 - **프론트**: Vite + React + TypeScript, react-router, TanStack Query, vite-plugin-pwa. API 클라이언트는 fetch 래퍼(401 시 refresh 1회 재시도 인터셉터).
 - **로컬 개발**: `docker-compose.yml`로 Postgres 16. OAuth 키·JWT 시크릿은 `.env`/환경변수, `.gitignore` 처리. Vite dev proxy로 `/api`·`/oauth2` → 8080 포워딩(쿠키 SameSite 문제 회피).
 
