@@ -133,6 +133,16 @@ class MemberIntegrationTest {
     }
 
     @Test
+    @DisplayName("제안 칼로리 조회 — 미래 출생연도면 400 (나이 음수 → 계산 왜곡 차단)")
+    void kcalSuggestionFutureBirthYear() throws Exception {
+        mockMvc.perform(get("/api/members/me/kcal-suggestion").header("Authorization", bearer)
+                        .param("gender", "MALE").param("birthYear", "3000")
+                        .param("heightCm", "175").param("weightKg", "70")
+                        .param("targetWeightKg", "65").param("activityLevel", "MID"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("제안 칼로리 조회 — 계산기 결과와 일치 (배선 검증)")
     void kcalSuggestion() throws Exception {
         mockMvc.perform(get("/api/members/me/kcal-suggestion").header("Authorization", bearer)

@@ -34,15 +34,4 @@ public class WeightLog extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal weightKg;
 
-    public static WeightLog record(Long memberId, LocalDate logDate, BigDecimal weightKg) {
-        WeightLog log = new WeightLog();
-        log.memberId = memberId;
-        log.logDate = logDate;
-        log.weightKg = weightKg;
-        return log;
-    }
-
-    public void updateWeight(BigDecimal weightKg) {
-        this.weightKg = weightKg;
-    }
 }

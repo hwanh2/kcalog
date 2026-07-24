@@ -23,10 +23,6 @@ public class DailyKcalCalculator {
 
     private final Clock clock;
 
-    public DailyKcalCalculator() {
-        this(Clock.systemDefaultZone());
-    }
-
     public DailyKcalCalculator(Clock clock) {
         this.clock = clock;
     }
