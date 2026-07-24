@@ -35,10 +35,10 @@ class AuthIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    MemberRepository members;
+    MemberRepository memberRepository;
 
     @Autowired
-    RefreshTokenRepository refreshTokens;
+    RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
     RefreshTokenService refreshTokenService;
@@ -50,7 +50,7 @@ class AuthIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        member = members.save(Member.signUp(Provider.KAKAO, "kakao-12345", null, "테스터"));
+        member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-12345", null, "테스터"));
     }
 
     private Cookie refreshCookie(String raw) {
@@ -76,7 +76,7 @@ class AuthIntegrationTest {
                 .andExpect(cookie().httpOnly(RefreshCookie.NAME, true));
 
         // 회전 후: 기존(revoked) + 신규 = 2행 보존
-        assertThat(refreshTokens.countByMemberId(member.getId())).isEqualTo(2);
+        assertThat(refreshTokenRepository.countByMemberId(member.getId())).isEqualTo(2);
     }
 
     @Test
@@ -89,20 +89,20 @@ class AuthIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(cookie().maxAge(RefreshCookie.NAME, 0));
 
-        assertThat(refreshTokens.countByMemberId(member.getId())).isZero();
+        assertThat(refreshTokenRepository.countByMemberId(member.getId())).isZero();
     }
 
     @Test
     @DisplayName("만료된 refresh → 401 + 토큰 삭제")
     void expiredToken() throws Exception {
         String raw = "expired-raw-token";
-        refreshTokens.save(new RefreshToken(
+        refreshTokenRepository.save(new RefreshToken(
                 member.getId(), RefreshTokenService.hash(raw), Instant.now().minusSeconds(60)));
 
         mockMvc.perform(post("/api/auth/refresh").cookie(refreshCookie(raw)))
                 .andExpect(status().isUnauthorized());
 
-        assertThat(refreshTokens.countByMemberId(member.getId())).isZero();
+        assertThat(refreshTokenRepository.countByMemberId(member.getId())).isZero();
     }
 
     @Test
@@ -126,11 +126,11 @@ class AuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("보호된 API — 유효한 access 토큰이면 인증 통과 (핸들러가 없어 404, 3번 그룹에서 200 검증)")
+    @DisplayName("보호된 API — 유효한 access 토큰이면 인증을 통과해 정상 응답을 받는다")
     void protectedApiWithToken() throws Exception {
         String access = jwtService.issueAccessToken(member.getId());
 
         mockMvc.perform(get("/api/members/me").header("Authorization", "Bearer " + access))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
     }
 }
