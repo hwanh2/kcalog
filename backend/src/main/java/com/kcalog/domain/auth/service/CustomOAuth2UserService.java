@@ -28,7 +28,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     /** SuccessHandler가 회원 id를 꺼낼 때 쓰는 attribute 키 */
     public static final String MEMBER_ID_ATTRIBUTE = "memberId";
 
-    private final MemberRepository members;
+    private final MemberRepository memberRepository;
 
     @Override
     @Transactional
@@ -47,9 +47,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = (String) account.get("email");
         String nickname = (String) profile.get("nickname");
 
-        Member member = members.findByProviderAndProviderId(Provider.KAKAO, providerId)
+        Member member = memberRepository.findByProviderAndProviderId(Provider.KAKAO, providerId)
                 .orElseGet(() -> {
-                    Member created = members.save(Member.signUp(Provider.KAKAO, providerId, email, nickname));
+                    Member created = memberRepository.save(Member.signUp(Provider.KAKAO, providerId, email, nickname));
                     log.info("신규 회원 가입: memberId={}, provider=KAKAO", created.getId());
                     return created;
                 });

@@ -37,11 +37,11 @@ import static org.mockito.Mockito.verify;
 class CustomOAuth2UserServiceTest {
 
     @Mock
-    MemberRepository members;
+    MemberRepository memberRepository;
 
     /** fetchUser(카카오 userinfo 호출)를 주어진 attributes로 대체한 서비스 생성 */
     private CustomOAuth2UserService serviceReturning(Map<String, Object> kakaoAttributes) {
-        return new CustomOAuth2UserService(members) {
+        return new CustomOAuth2UserService(memberRepository) {
             @Override
             protected OAuth2User fetchUser(OAuth2UserRequest request) {
                 return new DefaultOAuth2User(
@@ -73,15 +73,15 @@ class CustomOAuth2UserServiceTest {
                 "kakao_account", Map.of(
                         "email", "user@kakao.com",
                         "profile", Map.of("nickname", "홍길동")));
-        given(members.findByProviderAndProviderId(Provider.KAKAO, "12345")).willReturn(Optional.empty());
+        given(memberRepository.findByProviderAndProviderId(Provider.KAKAO, "12345")).willReturn(Optional.empty());
         Member saved = mock(Member.class);
         given(saved.getId()).willReturn(42L);
-        given(members.save(any(Member.class))).willReturn(saved);
+        given(memberRepository.save(any(Member.class))).willReturn(saved);
 
         OAuth2User result = serviceReturning(attrs).loadUser(requestFor("kakao"));
 
         ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
-        verify(members).save(captor.capture());
+        verify(memberRepository).save(captor.capture());
         assertThat(captor.getValue().getProvider()).isEqualTo(Provider.KAKAO);
         assertThat(captor.getValue().getProviderId()).isEqualTo("12345");
         assertThat(captor.getValue().getEmail()).isEqualTo("user@kakao.com");
@@ -94,26 +94,26 @@ class CustomOAuth2UserServiceTest {
     void existingMemberLogin() {
         Member existing = mock(Member.class);
         given(existing.getId()).willReturn(7L);
-        given(members.findByProviderAndProviderId(Provider.KAKAO, "12345")).willReturn(Optional.of(existing));
+        given(memberRepository.findByProviderAndProviderId(Provider.KAKAO, "12345")).willReturn(Optional.of(existing));
 
         OAuth2User result = serviceReturning(Map.of("id", 12345L)).loadUser(requestFor("kakao"));
 
-        verify(members, never()).save(any());
+        verify(memberRepository, never()).save(any());
         assertThat(result.<Long>getAttribute(CustomOAuth2UserService.MEMBER_ID_ATTRIBUTE)).isEqualTo(7L);
     }
 
     @Test
     @DisplayName("이메일·닉네임 미동의 — kakao_account가 비어도 null로 가입된다 (email nullable 스펙)")
     void signUpWithoutEmailConsent() {
-        given(members.findByProviderAndProviderId(Provider.KAKAO, "12345")).willReturn(Optional.empty());
+        given(memberRepository.findByProviderAndProviderId(Provider.KAKAO, "12345")).willReturn(Optional.empty());
         Member saved = mock(Member.class);
         given(saved.getId()).willReturn(43L);
-        given(members.save(any(Member.class))).willReturn(saved);
+        given(memberRepository.save(any(Member.class))).willReturn(saved);
 
         serviceReturning(Map.of("id", 12345L)).loadUser(requestFor("kakao"));
 
         ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
-        verify(members).save(captor.capture());
+        verify(memberRepository).save(captor.capture());
         assertThat(captor.getValue().getEmail()).isNull();
         assertThat(captor.getValue().getNickname()).isNull();
     }
@@ -123,6 +123,6 @@ class CustomOAuth2UserServiceTest {
     void unsupportedProvider() {
         assertThatThrownBy(() -> serviceReturning(Map.of("id", 1L)).loadUser(requestFor("google")))
                 .isInstanceOf(OAuth2AuthenticationException.class);
-        verify(members, never()).save(any());
+        verify(memberRepository, never()).save(any());
     }
 }

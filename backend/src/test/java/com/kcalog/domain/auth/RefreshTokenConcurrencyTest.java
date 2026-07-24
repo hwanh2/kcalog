@@ -28,21 +28,21 @@ class RefreshTokenConcurrencyTest {
     RefreshTokenService refreshTokenService;
 
     @Autowired
-    RefreshTokenRepository refreshTokens;
+    RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
-    MemberRepository members;
+    MemberRepository memberRepository;
 
     @AfterEach
     void cleanUp() {
-        refreshTokens.deleteAll();
-        members.deleteAll();
+        refreshTokenRepository.deleteAll();
+        memberRepository.deleteAll();
     }
 
     @Test
     @DisplayName("같은 refresh 토큰 동시 회전 — 어떤 인터리빙에서도 유효 토큰 체인이 2개로 분기하지 않는다")
     void concurrentRotation() throws Exception {
-        Member member = members.save(Member.signUp(Provider.KAKAO, "kakao-race", null, "동시성"));
+        Member member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-race", null, "동시성"));
         String raw = refreshTokenService.issue(member.getId()).rawToken();
 
         int threads = 2;
@@ -75,7 +75,7 @@ class RefreshTokenConcurrencyTest {
         // 여기서는 어느 쪽이든 성립해야 하는 보안 불변식만 단정한다.
         assertThat(success.get()).as("회전 성공이 2회면 유효 체인 분기 = 취약점").isLessThanOrEqualTo(1);
         assertThat(success.get() + rejected.get()).as("예상 밖 예외 없음").isEqualTo(2);
-        assertThat(refreshTokens.countByMemberId(member.getId()))
+        assertThat(refreshTokenRepository.countByMemberId(member.getId()))
                 .as("토큰 3행이면 레이스가 뚫린 것").isLessThanOrEqualTo(2);
     }
 }
