@@ -24,7 +24,7 @@ public class RefreshTokenService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private final RefreshTokenRepository refreshTokens;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final AppProperties props;
 
     public record IssuedToken(Long memberId, String rawToken) {
@@ -36,7 +36,7 @@ public class RefreshTokenService {
         RANDOM.nextBytes(bytes);
         String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         Instant expiresAt = Instant.now().plus(props.refreshToken().ttl());
-        refreshTokens.save(new RefreshToken(memberId, hash(raw), expiresAt));
+        refreshTokenRepository.save(new RefreshToken(memberId, hash(raw), expiresAt));
         return new IssuedToken(memberId, raw);
     }
 
@@ -47,24 +47,24 @@ public class RefreshTokenService {
      */
     @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public IssuedToken rotate(String rawToken) {
-        RefreshToken token = refreshTokens.findByTokenHash(hash(rawToken))
+        RefreshToken token = refreshTokenRepository.findByTokenHash(hash(rawToken))
                 .orElseThrow(() -> new InvalidRefreshTokenException("unknown refresh token"));
 
         if (token.isRevoked()) {
             // 탈취 의심 보안 이벤트 — 운영에서 이 로그의 빈도가 모니터링 대상 (토큰 값은 남기지 않는다)
-            log.warn("refresh token reuse detected: memberId={}", token.getMemberId());
-            refreshTokens.deleteAllByMemberId(token.getMemberId());
+            log.warn("refresh 토큰 재사용 감지 (탈취 의심): memberId={}", token.getMemberId());
+            refreshTokenRepository.deleteAllByMemberId(token.getMemberId());
             throw new InvalidRefreshTokenException("refresh token reuse detected");
         }
         if (token.isExpired()) {
-            refreshTokens.delete(token);
+            refreshTokenRepository.delete(token);
             throw new InvalidRefreshTokenException("refresh token expired");
         }
 
         // 조건부 UPDATE로 회전 경합을 원자적으로 판정한다. 영향 행 0 = 방금(ms 단위) 다른 요청이
         // 먼저 회전한 양성 레이스(멀티탭·재시도)로 보고, 전체 무효화 없이 401만 반환한다.
         // 시간이 지난 뒤 revoked 토큰이 조회되는 위의 경로만 탈취 의심(전체 무효화)으로 다룬다.
-        if (refreshTokens.revokeIfActive(token.getId(), Instant.now()) == 0) {
+        if (refreshTokenRepository.revokeIfActive(token.getId(), Instant.now()) == 0) {
             throw new InvalidRefreshTokenException("concurrent rotation");
         }
         return issue(token.getMemberId());
@@ -72,7 +72,7 @@ public class RefreshTokenService {
 
     @Transactional
     public void deleteByRawToken(String rawToken) {
-        refreshTokens.findByTokenHash(hash(rawToken)).ifPresent(refreshTokens::delete);
+        refreshTokenRepository.findByTokenHash(hash(rawToken)).ifPresent(refreshTokenRepository::delete);
     }
 
     public static String hash(String raw) {

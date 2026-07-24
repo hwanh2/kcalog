@@ -20,13 +20,13 @@
 
 ## 3. 백엔드: 온보딩·프로필 (member)
 
-- [ ] 3.1 `DailyKcalCalculator` 순수 서비스 — Mifflin-St Jeor, 활동계수, 목표 조정(−500/+300/0), 하한선 클램프, 10 단위 반올림 + 단위 테스트
-- [ ] 3.2 weight_log 엔티티·리포지토리 (member_id+log_date UNIQUE, 최신 체중 조회)
-- [ ] 3.3 `GET /api/members/me` — 프로필+최신 체중+onboardingCompleted(daily_kcal_target null 판정)
-- [ ] 3.4 `POST /api/members/me/onboarding` — 입력 검증(키 100~230, 체중 30~250, 출생연도 1920~현재), 프로필 저장 + 오늘 weight_log 생성 + 확정 칼로리 저장 (트랜잭션)
-- [ ] 3.5 `GET /api/members/me/kcal-suggestion` — 입력값 기반 제안 칼로리 계산 (온보딩·프로필 수정 공용)
-- [ ] 3.6 `PATCH /api/members/me` — 키/목표체중/활동량/일일 칼로리 수정 (동일 검증 적용)
-- [ ] 3.7 온보딩·프로필 통합 테스트 — 정상 제출, 검증 실패 시 미저장, 수정 흐름
+- [x] 3.1 `DailyKcalCalculator` 순수 서비스 — Mifflin-St Jeor, 활동계수, 목표 조정(−500/+300/0), 하한선 클램프, 10 단위 반올림 + 단위 테스트
+- [x] 3.2 weight_log 엔티티·리포지토리 (member_id+log_date UNIQUE, 최신 체중 조회)
+- [x] 3.3 `GET /api/members/me` — 프로필+최신 체중+onboardingCompleted(daily_kcal_target null 판정)
+- [x] 3.4 `POST /api/members/me/onboarding` — 입력 검증(키 100~230, 체중 30~250, 출생연도 1920~현재), 프로필 저장 + 오늘 weight_log 생성 + 확정 칼로리 저장 (트랜잭션)
+- [x] 3.5 `GET /api/members/me/kcal-suggestion` — 입력값 기반 제안 칼로리 계산 (온보딩·프로필 수정 공용)
+- [x] 3.6 `PATCH /api/members/me` — 키/목표체중/활동량/일일 칼로리 수정 (동일 검증 적용)
+- [x] 3.7 온보딩·프로필 통합 테스트 — 정상 제출, 검증 실패 시 미저장, 수정 흐름
 
 ## 4. 프론트: 인증 흐름
 
