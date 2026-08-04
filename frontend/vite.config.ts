@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -25,6 +26,16 @@ export default defineConfig({
       '/api': 'http://localhost:8080',
       '/oauth2': 'http://localhost:8080',
       '/login/oauth2': 'http://localhost:8080',
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    coverage: {
+      // 측정 전용 — 게이트(thresholds) 없음 (백엔드 JaCoCo와 동일 방침)
+      include: ['src/**'],
+      exclude: ['src/test/**', 'src/main.tsx'],
+      reporter: ['text', 'json-summary', 'json'],
     },
   },
 })

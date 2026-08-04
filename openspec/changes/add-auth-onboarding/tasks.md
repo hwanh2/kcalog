@@ -30,10 +30,11 @@
 
 ## 4. 프론트: 인증 흐름
 
-- [ ] 4.1 API 클라이언트 — access 토큰 메모리 보관, 401 시 refresh 1회 후 재시도, 실패 시 로그인 화면 이동
-- [ ] 4.2 로그인 화면 — 카카오 버튼(`{API}/oauth2/authorization/kakao` 이동), OAuth 실패 오류 표시
-- [ ] 4.3 `/auth/callback` 페이지 — refresh 호출로 access 획득 → me 조회 → 온보딩 여부에 따라 분기
-- [ ] 4.4 라우터 가드 — 미로그인은 로그인 화면, 온보딩 미완료는 온보딩 화면 강제, 앱 부트스트랩 시 refresh로 세션 복구
+- [x] 4.1 API 클라이언트 — access 토큰 메모리 보관, 401 시 refresh 1회 후 재시도, 실패 시 로그인 화면 이동
+- [x] 4.2 로그인 화면 — 카카오 버튼(`{API}/oauth2/authorization/kakao` 이동), OAuth 실패 오류 표시
+- [x] 4.3 `/auth/callback` 페이지 — refresh 호출로 access 획득 → me 조회 → 온보딩 여부에 따라 분기
+- [x] 4.4 라우터 가드 — 미로그인은 로그인 화면, 온보딩 미완료는 온보딩 화면 강제, 앱 부트스트랩 시 refresh로 세션 복구
+- [x] 4.5 프론트 테스트 도입(vitest+Testing Library, CI 포함) — 401 재시도·refresh 단일 비행, 가드·콜백·로그인 분기 (2026-07-29 추가)
 
 ## 5. 프론트: 온보딩·프로필 화면
 
