@@ -1,0 +1,45 @@
+# mise (https://mise.jdx.dev) — 런타임 버전 고정 + .env 자동 로드 + 개발 태스크
+# 최초 1회: `mise trust && mise install`
+
+[tools]
+java = "temurin-21"
+node = "24"
+
+[env]
+# 폴더 진입 시 .env 자동 로드 (없으면 무시) — source 깜빡함으로 인한 placeholder 기동 방지
+_.file = { path = ".env", redact = true }
+
+[tasks."dev:db"]
+description = "로컬 Postgres 기동"
+run = "docker compose up -d"
+
+[tasks."dev:backend"]
+description = "API 서버 :8080"
+dir = "backend"
+run = "./gradlew bootRun"
+depends = ["dev:db"]
+
+[tasks."dev:frontend"]
+description = "Vite dev 서버 :5173"
+dir = "frontend"
+run = "npm run dev"
+
+[tasks.dev]
+description = "DB + 백엔드 + 프론트 한 방 기동 (Ctrl+C로 종료, DB 컨테이너는 유지)"
+depends = ["dev:backend", "dev:frontend"]
+
+[tasks.test]
+description = "백엔드 + 프론트 전체 테스트"
+depends = ["test:backend", "test:frontend"]
+
+[tasks."test:backend"]
+dir = "backend"
+run = "./gradlew test"
+
+[tasks."test:frontend"]
+dir = "frontend"
+run = "npm test"
+
+[tasks."db:reset"]
+description = "DB 초기화 (마이그레이션 수정 후 필수)"
+run = "docker compose down -v && docker compose up -d"
