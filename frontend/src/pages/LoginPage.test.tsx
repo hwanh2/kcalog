@@ -1,36 +1,18 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
-import type { MemberResponse } from '../api/member'
-import { AuthContext } from '../auth/context'
+import { screen } from '@testing-library/react'
+import { Route } from 'react-router'
+import { describe, expect, it } from 'vitest'
 import type { AuthState } from '../auth/context'
+import { makeMember, renderWithAuth } from '../test/utils'
 import { LoginPage } from './LoginPage'
 
 function renderLogin(path: string, state: AuthState) {
-  render(
-    <AuthContext value={{ state, reloadMember: vi.fn(), signOut: vi.fn() }}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<div>홈 화면</div>} />
-        </Routes>
-      </MemoryRouter>
-    </AuthContext>,
+  renderWithAuth(
+    <>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<div>홈 화면</div>} />
+    </>,
+    { state, path },
   )
-}
-
-const authedMember: MemberResponse = {
-  id: 1,
-  nickname: '테스터',
-  email: null,
-  gender: null,
-  birthYear: null,
-  heightCm: null,
-  activityLevel: null,
-  targetWeightKg: null,
-  dailyKcalTarget: 1930,
-  latestWeightKg: null,
-  onboardingCompleted: true,
 }
 
 describe('LoginPage', () => {
@@ -51,7 +33,10 @@ describe('LoginPage', () => {
   })
 
   it('이미 로그인된 사용자는 홈으로 보낸다', () => {
-    renderLogin('/login', { status: 'authed', member: authedMember })
+    renderLogin('/login', {
+      status: 'authed',
+      member: makeMember({ onboardingCompleted: true, dailyKcalTarget: 1930 }),
+    })
     expect(screen.getByText('홈 화면')).toBeInTheDocument()
   })
 })

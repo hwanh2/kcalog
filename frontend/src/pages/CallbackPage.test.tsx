@@ -1,26 +1,9 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
-import type { MemberResponse } from '../api/member'
-import { AuthContext } from '../auth/context'
+import { screen } from '@testing-library/react'
+import { Route, useLocation } from 'react-router'
+import { describe, expect, it } from 'vitest'
 import type { AuthState } from '../auth/context'
+import { makeMember, renderWithAuth } from '../test/utils'
 import { CallbackPage } from './CallbackPage'
-
-function member(onboardingCompleted: boolean): MemberResponse {
-  return {
-    id: 1,
-    nickname: '테스터',
-    email: null,
-    gender: null,
-    birthYear: null,
-    heightCm: null,
-    activityLevel: null,
-    targetWeightKg: null,
-    dailyKcalTarget: null,
-    latestWeightKg: null,
-    onboardingCompleted,
-  }
-}
 
 /** 로그인 스텁 — 리다이렉트로 전달된 쿼리까지 함께 노출해 검증한다 */
 function LoginStub() {
@@ -29,17 +12,14 @@ function LoginStub() {
 }
 
 function renderCallback(state: AuthState) {
-  render(
-    <AuthContext value={{ state, reloadMember: vi.fn(), signOut: vi.fn() }}>
-      <MemoryRouter initialEntries={['/auth/callback']}>
-        <Routes>
-          <Route path="/auth/callback" element={<CallbackPage />} />
-          <Route path="/login" element={<LoginStub />} />
-          <Route path="/" element={<div>홈 화면</div>} />
-          <Route path="/onboarding" element={<div>온보딩 화면</div>} />
-        </Routes>
-      </MemoryRouter>
-    </AuthContext>,
+  renderWithAuth(
+    <>
+      <Route path="/auth/callback" element={<CallbackPage />} />
+      <Route path="/login" element={<LoginStub />} />
+      <Route path="/" element={<div>홈 화면</div>} />
+      <Route path="/onboarding" element={<div>온보딩 화면</div>} />
+    </>,
+    { state, path: '/auth/callback' },
   )
 }
 
@@ -55,12 +35,12 @@ describe('CallbackPage', () => {
   })
 
   it('온보딩 미완료 회원은 온보딩 화면으로 보낸다', () => {
-    renderCallback({ status: 'authed', member: member(false) })
+    renderCallback({ status: 'authed', member: makeMember({ onboardingCompleted: false }) })
     expect(screen.getByText('온보딩 화면')).toBeInTheDocument()
   })
 
   it('온보딩 완료 회원은 홈으로 보낸다', () => {
-    renderCallback({ status: 'authed', member: member(true) })
+    renderCallback({ status: 'authed', member: makeMember({ onboardingCompleted: true }) })
     expect(screen.getByText('홈 화면')).toBeInTheDocument()
   })
 })

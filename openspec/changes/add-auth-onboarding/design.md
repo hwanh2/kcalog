@@ -27,6 +27,7 @@ MVP 설계 문서(docs/2026-07-22-mvp-design.md)에서 기술 스택과 데이�
 
 - 대안(프론트에서 SDK로 인가 코드 받아 백엔드에 전달)은 클라이언트 시크릿 관리와 provider별 분기가 늘어나 학습 목적(Spring Security/OAuth2)에도 맞지 않아 기각.
 - access 토큰을 리다이렉트 URL 쿼리로 넘기지 않는다(브라우저 히스토리·로그 노출). refresh 쿠키 → refresh 호출 경로로 통일.
+- **구현 이탈(2026-08, tasks 4.1~4.4)**: refresh 호출 주체를 콜백 페이지가 아닌 **AuthProvider 부트스트랩으로 단일화**했다. 콜백 착지는 전체 페이지 로드라 부트스트랩이 어차피 실행되는데, 콜백이 별도로 refresh를 호출하면 회전 방식 특성상 이중 호출 경합(한쪽이 401)이 생긴다. 같은 이유로 refresh fetch 자체도 진행 중 Promise를 공유하는 단일 비행(single-flight)으로 구현(StrictMode 이중 마운트 대비). 콜백 페이지는 부트스트랩 결과(guest/authed)를 구독해 분기만 담당한다.
 
 ### D2. 토큰 정책
 

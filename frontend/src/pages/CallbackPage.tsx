@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router'
+import { landingPathFor } from '../auth/landingPath'
 import { useAuth } from '../auth/useAuth'
 
 /**
@@ -14,5 +15,5 @@ export function CallbackPage() {
   if (state.status === 'guest') {
     return <Navigate to="/login?error=session" replace />
   }
-  return <Navigate to={state.member.onboardingCompleted ? '/' : '/onboarding'} replace />
+  return <Navigate to={landingPathFor(state.member)} replace />
 }

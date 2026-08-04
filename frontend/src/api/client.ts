@@ -28,7 +28,8 @@ let refreshInflight: Promise<string | null> | null = null
 export function refreshAccessToken(): Promise<string | null> {
   refreshInflight ??= (async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST' })
+      // credentials: 프론트·백엔드가 다른 오리진으로 배포돼도 refresh 쿠키가 실리도록 (same-origin에선 동작 동일)
+      const res = await fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
       if (!res.ok) {
         setAccessToken(null)
         return null
