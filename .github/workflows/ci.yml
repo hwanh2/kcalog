@@ -36,12 +36,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: 백엔드 커버리지
           update-comment: true
-          # 게이트 없음 방침 — 기준 미달 ❌ 이모지가 뜨지 않게 0으로
           min-coverage-overall: 0
           min-coverage-changed-files: 0
 
   frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 커버리지 코멘트 게시용
     defaults:
       run:
         working-directory: frontend
@@ -54,4 +56,11 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run test:coverage
+      - name: 커버리지 PR 코멘트 (측정 전용, 게이트 없음)
+        if: github.event_name == 'pull_request'
+        # 서드파티 액션은 커밋 SHA로 핀 고정 (태그 바꿔치기 방지)
+        uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2.12.2
+        with:
+          working-directory: frontend
       - run: npm run build
