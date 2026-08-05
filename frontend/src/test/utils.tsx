@@ -24,13 +24,20 @@ export function makeMember(overrides: Partial<MemberResponse> = {}): MemberRespo
   }
 }
 
-/** AuthContext + MemoryRouter + Routes 공통 셸 — routes에는 <Route> 목록을 넘긴다 */
-export function renderWithAuth(routes: ReactNode, { state, path }: { state: AuthState; path: string }) {
-  return render(
-    <AuthContext value={{ state, reloadMember: vi.fn(), signOut: vi.fn() }}>
+/** AuthContext + MemoryRouter + Routes 공통 셸 — routes에는 <Route> 목록을 넘긴다.
+ *  반환된 reloadMember/signOut 목으로 호출 여부를 검증할 수 있다 */
+export function renderWithAuth(
+  routes: ReactNode,
+  { state, path }: { state: AuthState; path: string },
+) {
+  const reloadMember = vi.fn().mockResolvedValue(undefined)
+  const signOut = vi.fn().mockResolvedValue(undefined)
+  render(
+    <AuthContext value={{ state, reloadMember, signOut }}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>{routes}</Routes>
       </MemoryRouter>
     </AuthContext>,
   )
+  return { reloadMember, signOut }
 }

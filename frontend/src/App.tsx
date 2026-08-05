@@ -6,6 +6,7 @@ import { CallbackPage } from './pages/CallbackPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 const queryClient = new QueryClient()
 
@@ -20,6 +21,7 @@ function App() {
             <Route element={<RequireAuth />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Routes>
         </BrowserRouter>
