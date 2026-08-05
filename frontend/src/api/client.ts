@@ -21,6 +21,15 @@ export class ApiError extends Error {
   }
 }
 
+/** 검증 400 응답(ProblemDetail)의 항목별 오류 맵 추출 — 아니면 null */
+export function fieldErrorsFrom(error: unknown): Record<string, string> | null {
+  if (error instanceof ApiError && error.body && typeof error.body === 'object') {
+    const errors = (error.body as { errors?: unknown }).errors
+    if (errors && typeof errors === 'object') return errors as Record<string, string>
+  }
+  return null
+}
+
 // refresh는 회전 방식이라 같은 쿠키로 두 번 나가면 한쪽이 401이 된다.
 // StrictMode 이중 마운트·동시 401 재시도가 겹쳐도 실제 호출은 한 번만 나가도록 진행 중 Promise를 공유한다.
 let refreshInflight: Promise<string | null> | null = null
