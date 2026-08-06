@@ -1,6 +1,6 @@
 package com.kcalog.domain.weight.controller;
 
-import com.kcalog.domain.weight.dto.WeightRequest;
+import com.kcalog.domain.weight.dto.RecordWeightRequest;
 import com.kcalog.domain.weight.dto.WeightResponse;
 import com.kcalog.domain.weight.service.WeightService;
 import jakarta.validation.Valid;
@@ -27,7 +27,7 @@ public class WeightController {
 
     @PostMapping
     public WeightResponse record(@AuthenticationPrincipal Jwt jwt,
-                                 @Valid @RequestBody WeightRequest request) {
+                                 @Valid @RequestBody RecordWeightRequest request) {
         return weightService.record(memberId(jwt), request);
     }
 

@@ -98,6 +98,29 @@ class WeightIntegrationTest {
     }
 
     @Test
+    @DisplayName("소수 2자리 체중 — 400 (컬럼 스케일 초과 입력 차단)")
+    void tooManyDecimals() throws Exception {
+        mockMvc.perform(post("/api/weights").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"weightKg\": 70.55}"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(weightLogRepository.findTopByMemberIdOrderByLogDateDesc(member.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("POST 응답은 저장된 실제 값(스케일 반영)과 일치한다")
+    void responseMatchesStored() throws Exception {
+        mockMvc.perform(post("/api/weights").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"weightKg\": 70.5, \"logDate\": \"2026-08-03\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.weightKg").value(70.5));
+
+        mockMvc.perform(get("/api/weights").header("Authorization", bearer)
+                        .param("from", "2026-08-03").param("to", "2026-08-03"))
+                .andExpect(jsonPath("$[0].weightKg").value(70.5));
+    }
+
+    @Test
     @DisplayName("기간 조회 — 범위 내 기록만 날짜 오름차순으로 반환한다")
     void history() throws Exception {
         weightLogRepository.upsert(member.getId(), LocalDate.parse("2026-07-30"), new java.math.BigDecimal("71"));
