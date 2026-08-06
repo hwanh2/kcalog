@@ -3,11 +3,10 @@ package com.kcalog.domain.weight.controller;
 import com.kcalog.domain.weight.dto.RecordWeightRequest;
 import com.kcalog.domain.weight.dto.WeightResponse;
 import com.kcalog.domain.weight.service.WeightService;
+import com.kcalog.global.common.LoginMemberId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,19 +25,15 @@ public class WeightController {
     private final WeightService weightService;
 
     @PostMapping
-    public WeightResponse record(@AuthenticationPrincipal Jwt jwt,
+    public WeightResponse record(@LoginMemberId Long memberId,
                                  @Valid @RequestBody RecordWeightRequest request) {
-        return weightService.record(memberId(jwt), request);
+        return weightService.record(memberId, request);
     }
 
     @GetMapping
-    public List<WeightResponse> history(@AuthenticationPrincipal Jwt jwt,
+    public List<WeightResponse> history(@LoginMemberId Long memberId,
                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return weightService.history(memberId(jwt), from, to);
-    }
-
-    private Long memberId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
+        return weightService.history(memberId, from, to);
     }
 }

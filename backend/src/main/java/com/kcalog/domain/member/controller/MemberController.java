@@ -6,10 +6,9 @@ import com.kcalog.domain.member.dto.MemberResponse;
 import com.kcalog.domain.member.dto.OnboardingRequest;
 import com.kcalog.domain.member.dto.UpdateMemberRequest;
 import com.kcalog.domain.member.service.MemberService;
+import com.kcalog.global.common.LoginMemberId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,14 +24,14 @@ public class MemberController {
     private final MemberService memberService;
 
     @GetMapping("/me")
-    public MemberResponse me(@AuthenticationPrincipal Jwt jwt) {
-        return memberService.getMe(memberId(jwt));
+    public MemberResponse me(@LoginMemberId Long memberId) {
+        return memberService.getMe(memberId);
     }
 
     @PostMapping("/me/onboarding")
-    public MemberResponse onboarding(@AuthenticationPrincipal Jwt jwt,
+    public MemberResponse onboarding(@LoginMemberId Long memberId,
                                      @Valid @RequestBody OnboardingRequest request) {
-        return memberService.completeOnboarding(memberId(jwt), request);
+        return memberService.completeOnboarding(memberId, request);
     }
 
     @GetMapping("/me/kcal-suggestion")
@@ -41,12 +40,8 @@ public class MemberController {
     }
 
     @PatchMapping("/me")
-    public MemberResponse update(@AuthenticationPrincipal Jwt jwt,
+    public MemberResponse update(@LoginMemberId Long memberId,
                                  @Valid @RequestBody UpdateMemberRequest request) {
-        return memberService.updateProfile(memberId(jwt), request);
-    }
-
-    private Long memberId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
+        return memberService.updateProfile(memberId, request);
     }
 }
