@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
 import { fieldErrorsFrom } from '../api/client'
 import { getKcalSuggestion, updateMember } from '../api/member'
 import type { ActivityLevel, MemberResponse, UpdateMemberRequest } from '../api/member'
 import { toNumber, validateProfileFields } from '../api/memberValidation'
 import type { FieldErrors } from '../api/memberValidation'
 import { useAuth } from '../auth/useAuth'
+import { Button, Field, Select, TextInput } from '../ui/form'
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   LOW: '낮음 (좌식 위주)',
@@ -109,57 +109,60 @@ function ProfileForm({
   }
 
   return (
-    <main>
-      <h1>프로필</h1>
-      <p>
+    <section>
+      <h1 className="text-xl font-semibold">프로필</h1>
+      <p className="mt-1 text-muted">
         {member.nickname}
         {member.email ? ` · ${member.email}` : ''}
       </p>
-      <p>최신 체중: {member.latestWeightKg ?? '-'} kg</p>
+      <p className="text-muted">최신 체중: {member.latestWeightKg ?? '-'} kg</p>
 
-      {message && <p role="status">{message}</p>}
-
-      <label htmlFor="heightCm">키 (cm)</label>
-      <input id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-      {errors.heightCm && <p role="alert">{errors.heightCm}</p>}
-
-      <label htmlFor="targetWeightKg">목표 체중 (kg)</label>
-      <input id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
-      {errors.targetWeightKg && <p role="alert">{errors.targetWeightKg}</p>}
-
-      <label htmlFor="activityLevel">활동량</label>
-      <select id="activityLevel" value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
-        {Object.entries(ACTIVITY_LABELS).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
-
-      {suggested !== null && (
-        <p>
-          새 제안 일일 칼로리: <strong>{suggested} kcal</strong>{' '}
-          <button type="button" onClick={() => setKcalInput(String(suggested))}>
-            제안 적용
-          </button>
+      {message && (
+        <p role="status" className="mt-3 text-sm text-brand">
+          {message}
         </p>
       )}
 
-      <label htmlFor="dailyKcalTarget">일일 칼로리 목표</label>
-      <input id="dailyKcalTarget" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} />
-      {errors.dailyKcalTarget && <p role="alert">{errors.dailyKcalTarget}</p>}
+      <div className="mt-4 rounded-card bg-surface p-4 shadow-sm">
+        <Field id="heightCm" label="키 (cm)" error={errors.heightCm}>
+          <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+        </Field>
 
-      <div>
-        <button type="button" onClick={save} disabled={busy}>
+        <Field id="targetWeightKg" label="목표 체중 (kg)" error={errors.targetWeightKg}>
+          <TextInput id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
+        </Field>
+
+        <Field id="activityLevel" label="활동량">
+          <Select id="activityLevel" value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
+            {Object.entries(ACTIVITY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        {suggested !== null && (
+          <p className="mb-4 text-sm text-muted">
+            새 제안 일일 칼로리: <strong className="text-ink">{suggested} kcal</strong>{' '}
+            <Button type="button" variant="ghost" onClick={() => setKcalInput(String(suggested))}>
+              제안 적용
+            </Button>
+          </p>
+        )}
+
+        <Field id="dailyKcalTarget" label="일일 칼로리 목표" error={errors.dailyKcalTarget}>
+          <TextInput id="dailyKcalTarget" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} />
+        </Field>
+
+        <Button type="button" onClick={save} disabled={busy} className="w-full">
           저장
-        </button>
+        </Button>
       </div>
 
-      <hr />
-      <Link to="/">홈으로</Link>
-      <button type="button" onClick={() => void signOut()}>
+      <Button type="button" variant="secondary" onClick={() => void signOut()} className="mt-4 w-full">
         로그아웃
-      </button>
-    </main>
+      </Button>
+    </section>
   )
 }

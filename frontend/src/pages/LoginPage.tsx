@@ -18,11 +18,20 @@ export function LoginPage() {
   const error = params.get('error')
 
   return (
-    <main>
-      <h1>kcalog</h1>
-      <p>사진 한 장으로 10초 안에 기록하는 체중 관리</p>
-      {error && <p role="alert">{ERROR_MESSAGES[error] ?? '로그인에 실패했어요. 다시 시도해주세요.'}</p>}
-      <a href={kakaoLoginUrl()}>카카오로 시작하기</a>
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 text-center">
+      <h1 className="text-3xl font-bold text-brand">kcalog</h1>
+      <p className="mt-2 text-muted">사진 한 장으로 10초 안에 기록하는 체중 관리</p>
+      {error && (
+        <p role="alert" className="mt-4 text-sm text-danger">
+          {ERROR_MESSAGES[error] ?? '로그인에 실패했어요. 다시 시도해주세요.'}
+        </p>
+      )}
+      <a
+        href={kakaoLoginUrl()}
+        className="mt-8 w-full rounded-md bg-[#FEE500] py-3 font-medium text-[#191600]"
+      >
+        카카오로 시작하기
+      </a>
     </main>
   )
 }

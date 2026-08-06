@@ -1,18 +1,20 @@
-import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 
-/** 홈 자리표시자 — 일일 목표만 표시. 대시보드(칼로리 링·타임라인)는 후속 변경에서 구현 */
+/** 오늘 탭 자리표시자 — 대시보드(잔여 칼로리·타임라인)와 카메라 진입점은 후속 태스크에서 구현 */
 export function HomePage() {
   const { state } = useAuth()
   if (state.status !== 'authed') return null
 
   return (
-    <main>
-      <h1>오늘</h1>
-      <p>
-        {state.member.nickname}님의 일일 칼로리 목표: <strong>{state.member.dailyKcalTarget} kcal</strong>
-      </p>
-      <Link to="/profile">프로필</Link>
-    </main>
+    <section>
+      <h1 className="text-xl font-semibold">오늘</h1>
+      <div className="mt-4 rounded-card bg-surface p-4 shadow-sm">
+        <p className="text-muted">{state.member.nickname}님의 일일 칼로리 목표</p>
+        <p className="mt-1 text-3xl font-bold text-brand">
+          {state.member.dailyKcalTarget}
+          <span className="ml-1 text-base font-normal text-muted">kcal</span>
+        </p>
+      </div>
+    </section>
   )
 }
