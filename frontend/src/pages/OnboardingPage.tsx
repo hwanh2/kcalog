@@ -5,6 +5,7 @@ import type { ActivityLevel, Gender, KcalSuggestionParams } from '../api/member'
 import { toNumber, validateProfileFields } from '../api/memberValidation'
 import type { FieldErrors } from '../api/memberValidation'
 import { useAuth } from '../auth/useAuth'
+import { Button, Card, Field, Select, TextInput } from '../ui/form'
 
 /**
  * 온보딩 2스텝: ① 프로필 입력 → ② 제안 칼로리 확인·수정 → 제출.
@@ -92,71 +93,77 @@ export function OnboardingPage() {
   }
 
   return (
-    <main>
-      <h1>온보딩</h1>
-      {globalError && <p role="alert">{globalError}</p>}
+    <main className="mx-auto max-w-md px-4 py-6">
+      <h1 className="text-xl font-semibold">온보딩</h1>
+      {globalError && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {globalError}
+        </p>
+      )}
 
       {step === 'input' && (
-        <section>
-          <p>목표 계산을 위해 기본 정보를 입력해주세요.</p>
+        <Card className="mt-4">
+          <p className="mb-4 text-muted">목표 계산을 위해 기본 정보를 입력해주세요.</p>
 
-          <label htmlFor="gender">성별</label>
-          <select id="gender" value={gender} onChange={(e) => setGender(e.target.value)}>
-            <option value="">선택</option>
-            <option value="MALE">남성</option>
-            <option value="FEMALE">여성</option>
-          </select>
-          {errors.gender && <p role="alert">{errors.gender}</p>}
+          <Field id="gender" label="성별" error={errors.gender}>
+            <Select id="gender" value={gender} onChange={(e) => setGender(e.target.value)}>
+              <option value="">선택</option>
+              <option value="MALE">남성</option>
+              <option value="FEMALE">여성</option>
+            </Select>
+          </Field>
 
-          <label htmlFor="birthYear">출생연도</label>
-          <input id="birthYear" inputMode="numeric" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
-          {errors.birthYear && <p role="alert">{errors.birthYear}</p>}
+          <Field id="birthYear" label="출생연도" error={errors.birthYear}>
+            <TextInput id="birthYear" inputMode="numeric" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
+          </Field>
 
-          <label htmlFor="heightCm">키 (cm)</label>
-          <input id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-          {errors.heightCm && <p role="alert">{errors.heightCm}</p>}
+          <Field id="heightCm" label="키 (cm)" error={errors.heightCm}>
+            <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+          </Field>
 
-          <label htmlFor="weightKg">현재 체중 (kg)</label>
-          <input id="weightKg" inputMode="decimal" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
-          {errors.weightKg && <p role="alert">{errors.weightKg}</p>}
+          <Field id="weightKg" label="현재 체중 (kg)" error={errors.weightKg}>
+            <TextInput id="weightKg" inputMode="decimal" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
+          </Field>
 
-          <label htmlFor="targetWeightKg">목표 체중 (kg)</label>
-          <input id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
-          {errors.targetWeightKg && <p role="alert">{errors.targetWeightKg}</p>}
+          <Field id="targetWeightKg" label="목표 체중 (kg)" error={errors.targetWeightKg}>
+            <TextInput id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
+          </Field>
 
-          <label htmlFor="activityLevel">활동량</label>
-          <select id="activityLevel" value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
-            <option value="">선택</option>
-            <option value="LOW">낮음 (좌식 위주)</option>
-            <option value="MID">보통 (가벼운 활동)</option>
-            <option value="HIGH">높음 (활동적)</option>
-          </select>
-          {errors.activityLevel && <p role="alert">{errors.activityLevel}</p>}
+          <Field id="activityLevel" label="활동량" error={errors.activityLevel}>
+            <Select id="activityLevel" value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
+              <option value="">선택</option>
+              <option value="LOW">낮음 (좌식 위주)</option>
+              <option value="MID">보통 (가벼운 활동)</option>
+              <option value="HIGH">높음 (활동적)</option>
+            </Select>
+          </Field>
 
-          <button type="button" onClick={goConfirm} disabled={busy}>
+          <Button type="button" onClick={goConfirm} disabled={busy} className="w-full">
             다음
-          </button>
-        </section>
+          </Button>
+        </Card>
       )}
 
       {step === 'confirm' && (
-        <section>
+        <Card className="mt-4">
           <p>
-            제안 일일 칼로리: <strong>{suggested} kcal</strong>
+            제안 일일 칼로리: <strong className="text-brand">{suggested} kcal</strong>
           </p>
-          <p>그대로 쓰거나 원하는 값으로 수정할 수 있어요.</p>
+          <p className="mb-4 text-muted">그대로 쓰거나 원하는 값으로 수정할 수 있어요.</p>
 
-          <label htmlFor="dailyKcalTarget">일일 칼로리 목표</label>
-          <input id="dailyKcalTarget" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} />
-          {errors.dailyKcalTarget && <p role="alert">{errors.dailyKcalTarget}</p>}
+          <Field id="dailyKcalTarget" label="일일 칼로리 목표" error={errors.dailyKcalTarget}>
+            <TextInput id="dailyKcalTarget" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} />
+          </Field>
 
-          <button type="button" onClick={() => setStep('input')} disabled={busy}>
-            이전
-          </button>
-          <button type="button" onClick={submit} disabled={busy}>
-            시작하기
-          </button>
-        </section>
+          <div className="flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setStep('input')} disabled={busy} className="flex-1">
+              이전
+            </Button>
+            <Button type="button" onClick={submit} disabled={busy} className="flex-1">
+              시작하기
+            </Button>
+          </div>
+        </Card>
       )}
     </main>
   )

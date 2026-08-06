@@ -1,13 +1,31 @@
-:root {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light dark;
+@import 'tailwindcss';
+
+/* 디자인 토큰 — Tailwind v4 CSS-first(@theme). 유틸리티(bg-brand, text-muted 등)로 노출된다 */
+@theme {
+  --color-brand: #16a34a;
+  --color-brand-dark: #15803d;
+  --color-ink: #1f2937;
+  --color-muted: #6b7280;
+  --color-surface: #ffffff;
+  --color-canvas: #f9fafb;
+  --color-danger: #dc2626;
+  --color-border: #d1d5db;
+  --color-on-brand: #ffffff;
+
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --radius-card: 0.75rem;
 }
 
-* {
-  box-sizing: border-box;
+html,
+body,
+#root {
+  min-height: 100dvh;
 }
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }

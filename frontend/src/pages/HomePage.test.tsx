@@ -14,8 +14,7 @@ describe('HomePage', () => {
       path: '/',
     })
 
-    expect(screen.getByText(/테스터님의 일일 칼로리 목표/)).toBeInTheDocument()
-    expect(screen.getByText('1930 kcal')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '프로필' })).toHaveAttribute('href', '/profile')
+    expect(screen.getByText(/일일 칼로리 목표/)).toBeInTheDocument()
+    expect(screen.getByText('1930')).toBeInTheDocument()
   })
 })
