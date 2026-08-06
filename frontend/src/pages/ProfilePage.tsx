@@ -5,7 +5,7 @@ import type { ActivityLevel, MemberResponse, UpdateMemberRequest } from '../api/
 import { toNumber, validateProfileFields } from '../api/memberValidation'
 import type { FieldErrors } from '../api/memberValidation'
 import { useAuth } from '../auth/useAuth'
-import { Button, Field, Select, TextInput } from '../ui/form'
+import { Button, Card, Field, Select, TextInput } from '../ui/form'
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
   LOW: '낮음 (좌식 위주)',
@@ -123,7 +123,7 @@ function ProfileForm({
         </p>
       )}
 
-      <div className="mt-4 rounded-card bg-surface p-4 shadow-sm">
+      <Card className="mt-4">
         <Field id="heightCm" label="키 (cm)" error={errors.heightCm}>
           <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
         </Field>
@@ -158,7 +158,7 @@ function ProfileForm({
         <Button type="button" onClick={save} disabled={busy} className="w-full">
           저장
         </Button>
-      </div>
+      </Card>
 
       <Button type="button" variant="secondary" onClick={() => void signOut()} className="mt-4 w-full">
         로그아웃

@@ -14,7 +14,6 @@ function shellRoutes() {
     <>
       <Route path="/onboarding" element={<div>온보딩 화면</div>} />
       <Route element={<RequireAuth />}>
-        <Route path="/onboarding-guarded" element={<div>guarded onboarding</div>} />
         <Route element={<AppShell />}>
           <Route path="/" element={<div>오늘 화면</div>} />
           <Route path="/records" element={<div>기록 화면</div>} />

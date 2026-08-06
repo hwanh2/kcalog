@@ -5,7 +5,7 @@ import type { ActivityLevel, Gender, KcalSuggestionParams } from '../api/member'
 import { toNumber, validateProfileFields } from '../api/memberValidation'
 import type { FieldErrors } from '../api/memberValidation'
 import { useAuth } from '../auth/useAuth'
-import { Button, Field, Select, TextInput } from '../ui/form'
+import { Button, Card, Field, Select, TextInput } from '../ui/form'
 
 /**
  * 온보딩 2스텝: ① 프로필 입력 → ② 제안 칼로리 확인·수정 → 제출.
@@ -102,7 +102,7 @@ export function OnboardingPage() {
       )}
 
       {step === 'input' && (
-        <section className="mt-4 rounded-card bg-surface p-4 shadow-sm">
+        <Card className="mt-4">
           <p className="mb-4 text-muted">목표 계산을 위해 기본 정보를 입력해주세요.</p>
 
           <Field id="gender" label="성별" error={errors.gender}>
@@ -141,11 +141,11 @@ export function OnboardingPage() {
           <Button type="button" onClick={goConfirm} disabled={busy} className="w-full">
             다음
           </Button>
-        </section>
+        </Card>
       )}
 
       {step === 'confirm' && (
-        <section className="mt-4 rounded-card bg-surface p-4 shadow-sm">
+        <Card className="mt-4">
           <p>
             제안 일일 칼로리: <strong className="text-brand">{suggested} kcal</strong>
           </p>
@@ -163,7 +163,7 @@ export function OnboardingPage() {
               시작하기
             </Button>
           </div>
-        </section>
+        </Card>
       )}
     </main>
   )

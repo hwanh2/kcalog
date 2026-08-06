@@ -15,7 +15,7 @@ export function AppShell() {
       </main>
       <nav
         aria-label="주요 메뉴"
-        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md border-t border-gray-200 bg-surface"
+        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md border-t border-border bg-surface"
       >
         {TABS.map((tab) => (
           <NavLink
