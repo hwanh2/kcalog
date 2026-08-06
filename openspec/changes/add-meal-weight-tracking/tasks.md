@@ -15,12 +15,14 @@
 
 ## 3. 백엔드: 식사 스키마·CRUD (meal-logging)
 
-- [ ] 3.1 Flyway `V4__meal.sql` — meal 테이블(member_id, eaten_at, meal_type, source, total_kcal, carb_g, protein_g, fat_g), FK CASCADE
-- [ ] 3.2 meal 엔티티·리포지토리 — BaseEntity 상속, source/meal_type enum, 소유권 조회 메서드
-- [ ] 3.3 `POST /api/meals` — 확인·수정된 영양값 저장(source AI/MANUAL), 범위·음수 검증
-- [ ] 3.4 `GET /api/meals?date=` — 날짜별 자신의 기록 시각순 조회
-- [ ] 3.5 `PATCH /api/meals/{id}` · `DELETE /api/meals/{id}` — 소유권 검증(memberId=sub), 타인 접근 404
-- [ ] 3.6 식사 CRUD 통합 테스트 — 저장·조회·수정·삭제·타인 접근 차단·검증 실패
+- [x] 3.1 Flyway `V4__meal.sql` — meal 테이블(member_id, eaten_at, meal_type, source, total_kcal, carb_g, protein_g, fat_g), FK CASCADE
+- [x] 3.2 meal 엔티티·리포지토리 — BaseEntity 상속, source/meal_type enum, 소유권 조회 메서드
+- [x] 3.3 `POST /api/meals` — 확인·수정된 영양값 저장(source AI/MANUAL), 범위·음수 검증
+- [x] 3.4 `GET /api/meals?date=` — 날짜별 자신의 기록 시각순 조회
+- [x] 3.5 `PATCH /api/meals/{id}` · `DELETE /api/meals/{id}` — 소유권 검증(memberId=sub), 타인 접근 404
+- [x] 3.6 식사 CRUD 통합 테스트 — 저장·조회·수정·삭제·타인 접근 차단·검증 실패
+- [x] 3.7 `DayRange` 순수 단위 테스트 — 날짜별 조회의 시간대 자정 경계(반개구간) 검증
+- [x] 3.0 `@LoginMemberId` ArgumentResolver 도입 — Jwt→memberId 추출 중복 제거(Member·Weight·Meal 3곳) [PR #12 리뷰 이월]
 
 ## 4. 백엔드: 식사 AI 분석 (meal-logging)
 
