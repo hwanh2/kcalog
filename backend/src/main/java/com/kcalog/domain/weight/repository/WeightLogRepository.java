@@ -8,9 +8,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface WeightLogRepository extends JpaRepository<WeightLog, Long> {
+
+    List<WeightLog> findByMemberIdAndLogDateBetweenOrderByLogDateAsc(Long memberId, LocalDate from, LocalDate to);
+
 
     /** 하루 1회 체중 기록의 원자적 upsert — 동시 제출 경합에서도 UNIQUE 충돌 없이 마지막 값이 남는다 */
     @Modifying
