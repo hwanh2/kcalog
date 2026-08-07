@@ -25,23 +25,27 @@ add-auth-onboarding으로 회원·목표·JWT 인증·프론트 인증 흐름이
 
 ### D1. meal 테이블: 사진 단위 총량 (meal_item 없음)
 `meal(id, member_id, eaten_at, meal_type, source, total_kcal, carb_g, protein_g, fat_g)`. 사진 1장 = 기록 1건, 영양값 4개는 meal에 직접. `meal_item`·`photo_key` 컬럼 없음.
-- 대안(meal_item 1:N)은 한식 반찬 분리 분석에 필요하나 1차 비범위. 나중에 additive 마이그레이션으로 도입 가능(총량은 유지, 아이템 합계로 재계산).
+- 대안(meal_item 1:N)은 음식별 아이템 분리 분석에 필요하나 1차 비범위. 나중에 additive 마이그레이션으로 도입 가능(총량은 유지, 아이템 합계로 재계산).
 - `source`(AI/MANUAL): 수동 입력과 AI 추정 구분. `meal_type`(BREAKFAST/LUNCH/DINNER/SNACK): 시간대 기반 기본값 자동 제안.
 - Flyway `V4__meal.sql`. member FK ON DELETE CASCADE.
 
 ### D2. 분석은 동기 처리, 확인 후에만 저장
-`POST /api/meals/analyze`(멀티파트 이미지 + mealType) → OpenAI 호출 → 3~8초 내 영양 JSON 반환. **이 시점엔 저장하지 않는다.** 사용자가 확인·수정 후 `POST /api/meals`로 최종 저장.
+`POST /api/meals/analyze`(멀티파트 이미지) → OpenAI 호출 → 3~8초 내 영양 JSON 반환. **이 시점엔 저장하지 않는다.** 사용자가 확인·수정 후 `POST /api/meals`로 최종 저장.
+- **구현 이탈**: analyze는 이미지만 받는다(mealType 미수신). 끼니 구분은 영양 추정에 쓰이지 않고 저장 시점(`POST /api/meals`)에만 필요하므로 분석 요청에서 제외했다. 프론트가 시간대 기본값으로 정해 저장 요청에 담는다.
 - 큐·배치 없음(학습 범위 밖, MVP 규모엔 과함). 프론트는 분석 중 로딩 표시.
 - 사진은 분석 호출에만 쓰고 응답 후 폐기 — S3/R2·presigned 불필요.
 
-### D3. OpenAI 연동: WebClient + 구조화 출력
-Spring WebClient로 OpenAI Chat Completions(vision) 호출. `response_format`의 json_schema(strict)로 `{ totalKcal, carbG, proteinG, fatG, confidence, notes }` 강제.
+### D3. OpenAI 연동: RestClient + 구조화 출력
+OpenAI Chat Completions(vision) 호출. `response_format`의 json_schema(strict)로 `{ foodFound, totalKcal, carbG, proteinG, fatG, confidence, notes }` 강제.
+- **구현 이탈(WebClient→RestClient)**: 설계 원안은 WebClient였으나, 분석은 동기 처리(D2)라 reactive 스택(spring-webflux)을 새로 들이지 않고 **RestClient**(Spring 6.1+ 동기 HTTP 클라이언트, spring-web 내장)를 쓴다. 동기 요청에 자연스럽고 의존성이 가볍다.
 - 모델명·API 키·일일 제한은 설정값(`app.openai.*`). GPT-5.4 mini 기본, eval 결과로 교체.
-- 파싱 실패 시 1회 재요청 후 폴백(수동 입력). 음식 아님(빈 결과 신호) → "음식을 찾지 못했어요" + 수동 입력.
-- 타임아웃(예: 15초) + 재시도 1회. 원본 응답 로그 보존(프롬프트 개선 재료).
+- 이미지는 base64 data URL로 인라인 전송(사진 무저장 방침 — 별도 스토리지·URL 없음).
+- 파싱 실패 시 1회 재요청 후 폴백(수동 입력). 음식 아님(`foodFound=false`) → "음식을 찾지 못했어요" + 수동 입력.
+- 타임아웃 + 재시도 1회. 원본 응답 로그 보존(프롬프트 개선 재료).
 
 ### D4. 일일 분석 횟수 제한 (비용 가드레일)
-회원당 일일 analyze 호출 횟수 제한(설정값, 예: 20). 저장이 아닌 **분석 호출** 기준. 카운트는 당일 호출 수를 집계(별도 테이블 또는 meal source=AI 당일 카운트 + 실패분 포함 여부는 구현에서 결정). 초과 시 429 + 안내.
+회원당 일일 analyze 호출 횟수 제한(설정값, 예: 20). 저장이 아닌 **분석 호출** 기준. 초과 시 429 + 안내.
+- **구현 결정(Open Question 해소)**: 별도 카운터 테이블 `analysis_usage(member_id, usage_date, call_count)`로 집계한다. 분석은 저장(meal) 전 단계라 meal(source=AI) 카운트로는 "저장 안 하고 버린 분석"까지 못 잡아 비용 방어가 샌다. 카운트는 **OpenAI 호출 직전 원자적 증가(upsert `call_count + 1`)** — 실패한 호출도 API 비용이 발생하므로 포함한다. 상한 도달 시 호출 없이 429.
 
 ### D5. 체중: 기존 upsert 재사용 + 추이 조회 추가
 `weight_log`는 이미 존재. `POST /api/weights`(오늘 또는 지정일 upsert), `GET /api/weights?from=&to=`(기간별 추이). 온보딩의 upsert 네이티브 쿼리를 재사용.
@@ -60,8 +64,8 @@ Tailwind CSS(Vite 플러그인)로 스타일 시스템 도입. 하단 탭 3개: 
 ### D9. 식사 기록 조회·수정·삭제
 `GET /api/meals?date=`(날짜별), `PATCH /api/meals/{id}`(영양값·meal_type 수정, 본인 것만), `DELETE /api/meals/{id}`. 모두 `/me` 소유권 검증(memberId=sub).
 
-### D10. eval: 스크립트 + 한식 세트
-`eval/`에 한식 사진 20~30장 + 기대값(JSON), 채점 스크립트(각 사진 분석 → MAPE 등 오차 집계). 백엔드 통합 테스트가 아닌 독립 실행 도구(수동 실행, CI 비포함 — 실제 API 비용·키 필요). GPT-5.4 mini vs nano 비교, 프롬프트 변경 검증에 사용.
+### D10. eval: 스크립트 + 음식 세트
+`eval/`에 다양한 음식 사진 20~30장 + 기대값(JSON), 채점 스크립트(각 사진 분석 → MAPE 등 오차 집계). 백엔드 통합 테스트가 아닌 독립 실행 도구(수동 실행, CI 비포함 — 실제 API 비용·키 필요). GPT-5.4 mini vs nano 비교, 프롬프트 변경 검증에 사용.
 
 ### D11. TanStack Query 도입
 대시보드·기록 조회 등 서버 상태가 여럿 생기므로 이 change부터 TanStack Query를 실제 사용(캐시·무효화). 저장·수정 후 관련 쿼리 무효화로 대시보드 자동 갱신.
@@ -71,7 +75,7 @@ Tailwind CSS(Vite 플러그인)로 스타일 시스템 도입. 하단 탭 3개: 
 - [분석 정확도가 낮을 수 있음(총량 단순화·사진 정보 한계, 연구상 오차 ~36%)] → 사용자 확인·수정 단계가 필수 안전장치. eval로 측정하고 프롬프트·모델로 개선. "정확도보다 기록 속도" 제품 방침과 정합.
 - [OpenAI 비용·장애] → 일일 제한(D4), 타임아웃·재시도·수동 입력 폴백(D3). 사진 무저장이라 "나중에 재분석"은 불가(1차 트레이드오프).
 - [사진 무저장으로 타임라인에 썸네일 없음] → 1차 수용. 사진 보관은 이후 change(additive).
-- [한식 반찬 분리 분석 차별화가 1차엔 빠짐] → meal_item 도입 시 복원(스키마 additive).
+- [음식별 아이템 분리 분석이 1차엔 빠짐(총량만)] → meal_item 도입 시 복원(스키마 additive).
 - [분석 동기 처리로 요청이 3~8초 점유] → MVP 트래픽엔 문제없음. 커지면 큐 전환(설계 문서 명시).
 
 ## Migration Plan

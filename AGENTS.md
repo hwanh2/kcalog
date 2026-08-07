@@ -4,7 +4,7 @@ AI 코딩 에이전트(Claude Code, Cursor 등)를 위한 저장소 가이드. �
 
 ## 프로젝트 개요
 
-"한식 사진 한 장으로 10초 안에 식사가 기록되는 체중 관리 앱" MVP. 실서비스 출시 지향 + Spring 학습 목적 사이드 프로젝트. **서비스명 미정** — kcalog는 임시 이름이며 확정 시 레포명/패키지명(`com.kcalog`)을 일괄 변경한다.
+"사진 한 장으로 10초 안에 식사가 기록되는 체중 관리 앱" MVP (범용 식단 관리 — 2026-08-07 한식 특화에서 전환). 실서비스 출시 지향 + Spring 학습 목적 사이드 프로젝트. **서비스명 미정** — kcalog는 임시 이름이며 확정 시 레포명/패키지명(`com.kcalog`)을 일괄 변경한다.
 
 설계 확정본: `docs/2026-07-22-mvp-design.md` — 기능 범위·데이터 모델·아키텍처 결정은 이 문서가 기준.
 
@@ -22,7 +22,7 @@ AI 코딩 에이전트(Claude Code, Cursor 등)를 위한 저장소 가이드. �
 ```
 backend/   Spring Boot 4.0.x · Java 21 · Gradle Kotlin DSL · JPA · Postgres · Flyway
 frontend/  Vite 8 · React 19 · TypeScript · react-router 8 · TanStack Query · PWA
-eval/      프롬프트 평가 세트 (한식 사진 + 기대값)
+eval/      프롬프트 평가 세트 (음식 사진 + 기대값)
 docs/      설계 문서
 openspec/  스펙·변경 관리
 ```

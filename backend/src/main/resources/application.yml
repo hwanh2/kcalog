@@ -43,3 +43,10 @@ app:
     access-token-ttl: 30m
   refresh-token:
     ttl: 14d
+  openai:
+    # 식사 사진 분석. 로컬은 placeholder라 분석 호출 시 에러 — 실제 테스트엔 .env에 OPENAI_API_KEY 필요
+    api-key: ${OPENAI_API_KEY:openai-key-placeholder}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    model: ${OPENAI_MODEL:gpt-5.4-mini}
+    timeout: 20s
+    daily-analysis-limit: 20
