@@ -26,11 +26,11 @@
 
 ## 4. 백엔드: 식사 AI 분석 (meal-logging)
 
-- [ ] 4.1 OpenAI 설정 — `app.openai.*`(api-key, model, 일일 제한) AppProperties, WebClient 빈, application.yml/.env.example 갱신
-- [ ] 4.2 분석 서비스 — vision 호출 + 구조화 출력(json_schema strict)으로 {totalKcal, carbG, proteinG, fatG, confidence, notes} 강제, 타임아웃·재시도 1회, 파싱 실패·음식 아님 처리, 원본 응답 로그
-- [ ] 4.3 `POST /api/meals/analyze` — 멀티파트 이미지+mealType 수신, 분석 결과 반환(미저장)
-- [ ] 4.4 일일 분석 횟수 제한 — 회원당 당일 호출 상한, 초과 시 429
-- [ ] 4.5 분석 통합 테스트 — OpenAI 응답 목킹으로 정상 파싱·음식 아님·파싱 실패 폴백·상한 초과 429
+- [x] 4.1 OpenAI 설정 — `app.openai.*`(api-key, model, 일일 제한) AppProperties, RestClient 빈, application.yml/.env.example 갱신
+- [x] 4.2 분석 서비스 — vision 호출 + 구조화 출력(json_schema strict)으로 {foodFound, totalKcal, carbG, proteinG, fatG, confidence, notes} 강제, 타임아웃·재시도 1회, 파싱 실패·음식 아님 처리, 원본 응답 로그
+- [x] 4.3 `POST /api/meals/analyze` — 멀티파트 이미지 수신, 분석 결과 반환(미저장)
+- [x] 4.4 일일 분석 횟수 제한 — 회원당 당일 호출 상한(analysis_usage 카운터), 초과 시 429
+- [x] 4.5 분석 테스트 — 단위 8(제한·재시도·파싱·음식아님) + 통합 4(멀티파트·502·429·401)
 
 ## 5. 프론트: 식사 기록 흐름 (meal-logging)
 
@@ -51,7 +51,7 @@
 
 ## 7. 평가 세트 (meal-analysis-eval)
 
-- [ ] 7.1 `eval/` 한식 사진 20~30장 + 기대값(JSON) 수집·정리
+- [ ] 7.1 `eval/` 다양한 음식 사진 20~30장 + 기대값(JSON) 수집·정리
 - [ ] 7.2 채점 스크립트 — 각 사진 분석→기대값 대비 오차(MAPE 등) 집계, 모델·프롬프트 비교 출력 (수동 실행, CI 비포함)
 - [ ] 7.3 GPT-5.4 mini 기준 실측 → nano 강등/5.5 승격 판단, 결과를 design.md에 기록
 

@@ -1,5 +1,7 @@
 package com.kcalog.global.exception;
 
+import com.kcalog.domain.meal.exception.DailyAnalysisLimitException;
+import com.kcalog.domain.meal.exception.MealAnalysisException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -37,5 +39,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoSuchElementException.class)
     public ProblemDetail handleNotFound(NoSuchElementException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(DailyAnalysisLimitException.class)
+    public ProblemDetail handleAnalysisLimit(DailyAnalysisLimitException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+    }
+
+    @ExceptionHandler(MealAnalysisException.class)
+    public ProblemDetail handleAnalysisFailure(MealAnalysisException e) {
+        log.warn("식사 분석 실패: {}", e.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, "사진 분석에 실패했어요. 잠시 후 다시 시도하거나 직접 입력해주세요.");
     }
 }
