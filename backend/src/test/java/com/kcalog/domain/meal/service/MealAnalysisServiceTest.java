@@ -53,7 +53,7 @@ class MealAnalysisServiceTest {
     @Test
     @DisplayName("정상 분석 — 구조화 JSON을 파싱해 반환하고 호출을 카운트한다")
     void analyzeSuccess() {
-        when(analysisUsageRepository.currentCount(1L, TODAY)).thenReturn(3);
+        when(analysisUsageRepository.incrementAndGet(1L, TODAY)).thenReturn(4);
         when(openAiClient.complete(any())).thenReturn("""
                 {"foodFound":true,"totalKcal":650,"carbG":75.0,"proteinG":30.0,"fatG":22.0,"confidence":0.8,"notes":""}
                 """);
@@ -63,13 +63,13 @@ class MealAnalysisServiceTest {
         assertThat(result.foodFound()).isTrue();
         assertThat(result.totalKcal()).isEqualTo(650);
         assertThat(result.carbG()).isEqualByComparingTo("75.0");
-        verify(analysisUsageRepository).increment(1L, TODAY);
+        verify(analysisUsageRepository).incrementAndGet(1L, TODAY);
     }
 
     @Test
     @DisplayName("음식 미검출 — foodFound=false면 안내 문구와 함께 notFound로 반환")
     void foodNotFound() {
-        when(analysisUsageRepository.currentCount(anyLong(), any())).thenReturn(0);
+        when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any())).thenReturn("""
                 {"foodFound":false,"totalKcal":0,"carbG":0,"proteinG":0,"fatG":0,"confidence":0,"notes":"음식을 찾지 못했어요"}
                 """);
@@ -81,21 +81,33 @@ class MealAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("상한 초과 — 카운트가 상한 이상이면 OpenAI 호출 없이 429 예외")
+    @DisplayName("상한 초과 — 증가 결과가 상한을 넘으면 OpenAI 호출 없이 429 예외")
     void limitExceeded() {
-        when(analysisUsageRepository.currentCount(1L, TODAY)).thenReturn(20);
+        when(analysisUsageRepository.incrementAndGet(1L, TODAY)).thenReturn(21); // 상한 20 초과
 
         assertThatThrownBy(() -> service.analyze(1L, IMAGE, "image/jpeg"))
                 .isInstanceOf(DailyAnalysisLimitException.class);
 
         verify(openAiClient, never()).complete(any());
-        verify(analysisUsageRepository, never()).increment(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("상한 경계 — 증가 결과가 정확히 상한이면 허용된다")
+    void limitBoundaryAllowed() {
+        when(analysisUsageRepository.incrementAndGet(1L, TODAY)).thenReturn(20); // 상한과 동일
+        when(openAiClient.complete(any())).thenReturn("""
+                {"foodFound":true,"totalKcal":300,"carbG":30,"proteinG":10,"fatG":8,"confidence":0.6,"notes":""}
+                """);
+
+        MealAnalysisResponse result = service.analyze(1L, IMAGE, "image/jpeg");
+
+        assertThat(result.totalKcal()).isEqualTo(300);
     }
 
     @Test
     @DisplayName("1차 호출 실패 — 재시도 후 성공하면 결과 반환")
     void retryThenSucceed() {
-        when(analysisUsageRepository.currentCount(anyLong(), any())).thenReturn(0);
+        when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any()))
                 .thenThrow(new RuntimeException("timeout"))
                 .thenReturn("""
@@ -111,7 +123,7 @@ class MealAnalysisServiceTest {
     @Test
     @DisplayName("재시도도 실패 — MealAnalysisException으로 폴백")
     void retryThenFail() {
-        when(analysisUsageRepository.currentCount(anyLong(), any())).thenReturn(0);
+        when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any())).thenThrow(new RuntimeException("down"));
 
         assertThatThrownBy(() -> service.analyze(1L, IMAGE, "image/jpeg"))
@@ -122,7 +134,7 @@ class MealAnalysisServiceTest {
     @Test
     @DisplayName("파싱 불가 응답 — MealAnalysisException으로 폴백")
     void parseFailure() {
-        when(analysisUsageRepository.currentCount(anyLong(), any())).thenReturn(0);
+        when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any())).thenReturn("not json at all");
 
         assertThatThrownBy(() -> service.analyze(1L, IMAGE, "image/jpeg"))
@@ -132,7 +144,7 @@ class MealAnalysisServiceTest {
     @Test
     @DisplayName("데이터 URL — content-type이 이미지가 아니면 image/jpeg로 대체")
     void dataUrlFallback() {
-        when(analysisUsageRepository.currentCount(anyLong(), any())).thenReturn(0);
+        when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any())).thenReturn("""
                 {"foodFound":true,"totalKcal":100,"carbG":1,"proteinG":1,"fatG":1,"confidence":0.5,"notes":""}
                 """);

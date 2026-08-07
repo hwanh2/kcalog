@@ -30,7 +30,8 @@ add-auth-onboarding으로 회원·목표·JWT 인증·프론트 인증 흐름이
 - Flyway `V4__meal.sql`. member FK ON DELETE CASCADE.
 
 ### D2. 분석은 동기 처리, 확인 후에만 저장
-`POST /api/meals/analyze`(멀티파트 이미지 + mealType) → OpenAI 호출 → 3~8초 내 영양 JSON 반환. **이 시점엔 저장하지 않는다.** 사용자가 확인·수정 후 `POST /api/meals`로 최종 저장.
+`POST /api/meals/analyze`(멀티파트 이미지) → OpenAI 호출 → 3~8초 내 영양 JSON 반환. **이 시점엔 저장하지 않는다.** 사용자가 확인·수정 후 `POST /api/meals`로 최종 저장.
+- **구현 이탈**: analyze는 이미지만 받는다(mealType 미수신). 끼니 구분은 영양 추정에 쓰이지 않고 저장 시점(`POST /api/meals`)에만 필요하므로 분석 요청에서 제외했다. 프론트가 시간대 기본값으로 정해 저장 요청에 담는다.
 - 큐·배치 없음(학습 범위 밖, MVP 규모엔 과함). 프론트는 분석 중 로딩 표시.
 - 사진은 분석 호출에만 쓰고 응답 후 폐기 — S3/R2·presigned 불필요.
 

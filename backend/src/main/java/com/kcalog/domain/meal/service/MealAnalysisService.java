@@ -38,11 +38,13 @@ public class MealAnalysisService {
         AppProperties.Openai openai = props.openai();
         LocalDate today = LocalDate.now(clock);
 
-        if (analysisUsageRepository.currentCount(memberId, today) >= openai.dailyAnalysisLimit()) {
+        // 증가와 판정을 단일 원자 연산(upsert RETURNING)으로 — 동시 요청도 정확히 상한에서 막힌다(TOCTOU 없음).
+        // 별도 @Transactional 없이 statement 자체가 원자적이라, 느린 OpenAI 호출 동안 DB 커넥션을 잡지 않는다.
+        // 실패 호출도 비용이 발생하므로 증가는 유지한다(초과분은 그대로 카운트).
+        int used = analysisUsageRepository.incrementAndGet(memberId, today);
+        if (used > openai.dailyAnalysisLimit()) {
             throw new DailyAnalysisLimitException("오늘 분석 가능 횟수(%d회)를 초과했어요".formatted(openai.dailyAnalysisLimit()));
         }
-        // API 호출은 실패해도 비용이 발생하므로 호출 전에 카운트한다 (동시 호출 경합 최소화)
-        analysisUsageRepository.increment(memberId, today);
 
         String dataUrl = toDataUrl(image, contentType);
         Map<String, Object> body = MealAnalysisPrompt.requestBody(openai.model(), dataUrl);
@@ -51,7 +53,7 @@ public class MealAnalysisService {
         return parse(content);
     }
 
-    /** 파싱까지 실패하면 1회 재시도 후 폴백(MealAnalysisException) */
+    /** OpenAI 호출 실패 시 1회 재시도, 그래도 실패하면 폴백(MealAnalysisException). 파싱 실패는 재시도하지 않는다 */
     private String callWithRetry(Map<String, Object> body) {
         try {
             return openAiClient.complete(body);

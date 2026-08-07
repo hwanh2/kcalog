@@ -3,7 +3,7 @@ package com.kcalog.domain.meal.service;
 import java.util.List;
 import java.util.Map;
 
-/** OpenAI 요청 본문(구조화 출력 스키마·프롬프트) 구성 — 한식 총량 영양 분석 */
+/** OpenAI 요청 본문(구조화 출력 스키마·프롬프트) 구성 — 음식 총량 영양 분석 */
 final class MealAnalysisPrompt {
 
     static final String SYSTEM = """

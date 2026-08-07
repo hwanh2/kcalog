@@ -30,7 +30,7 @@
 - [x] 4.2 분석 서비스 — vision 호출 + 구조화 출력(json_schema strict)으로 {foodFound, totalKcal, carbG, proteinG, fatG, confidence, notes} 강제, 타임아웃·재시도 1회, 파싱 실패·음식 아님 처리, 원본 응답 로그
 - [x] 4.3 `POST /api/meals/analyze` — 멀티파트 이미지 수신, 분석 결과 반환(미저장)
 - [x] 4.4 일일 분석 횟수 제한 — 회원당 당일 호출 상한(analysis_usage 카운터), 초과 시 429
-- [x] 4.5 분석 테스트 — 단위 8(제한·재시도·파싱·음식아님) + 통합 4(멀티파트·502·429·401)
+- [x] 4.5 분석 테스트 — 단위 8(제한·경계·재시도·파싱·음식아님·dataURL) + 통합 4(멀티파트·502·429·401)
 
 ## 5. 프론트: 식사 기록 흐름 (meal-logging)
 

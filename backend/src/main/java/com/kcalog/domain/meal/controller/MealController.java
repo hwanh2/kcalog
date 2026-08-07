@@ -42,7 +42,11 @@ public class MealController {
         if (image.isEmpty()) {
             throw new IllegalArgumentException("이미지가 비어 있습니다");
         }
-        return mealAnalysisService.analyze(memberId, image.getBytes(), image.getContentType());
+        String contentType = image.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다");
+        }
+        return mealAnalysisService.analyze(memberId, image.getBytes(), contentType);
     }
 
     @PostMapping
