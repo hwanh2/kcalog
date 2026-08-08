@@ -1,7 +1,9 @@
 package com.kcalog.domain.meal.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,14 +15,18 @@ import java.util.Map;
 public class OpenAiClient {
 
     private final RestClient openAiRestClient;
+    // 응답을 String으로 받아 직접 파싱 — RestClient 기본 컨버터의 JsonNode 역직렬화 이슈를 피한다
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** 요청 본문(Map)을 보내고 첫 choice의 message.content(구조화 출력 JSON 문자열)를 반환한다 */
+    @SneakyThrows
     public String complete(Map<String, Object> requestBody) {
-        JsonNode response = openAiRestClient.post()
+        String raw = openAiRestClient.post()
                 .uri("/chat/completions")
                 .body(requestBody)
                 .retrieve()
-                .body(JsonNode.class);
+                .body(String.class);
+        JsonNode response = objectMapper.readTree(raw);
         return response.path("choices").path(0).path("message").path("content").asText();
     }
 }

@@ -5,6 +5,7 @@ import { RequireAuth } from './auth/RequireAuth'
 import { CallbackPage } from './pages/CallbackPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { MealRecordPage } from './pages/MealRecordPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RecordsPage } from './pages/RecordsPage'
@@ -26,6 +27,7 @@ function App() {
               {/* 완료 회원용 3탭 셸 */}
               <Route element={<AppShell />}>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/meals/new" element={<MealRecordPage />} />
                 <Route path="/records" element={<RecordsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
