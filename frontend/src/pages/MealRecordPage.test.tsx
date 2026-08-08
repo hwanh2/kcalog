@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../api/client'
 import { analyzeMeal, saveMeal } from '../api/meal'
+import type { AnalyzedItem } from '../api/meal'
 import { MealRecordPage } from './MealRecordPage'
 
 vi.mock('../api/meal', () => ({
@@ -18,6 +19,16 @@ vi.mock('../features/meal/imageResize', () => ({
 
 const analyzeMealMock = vi.mocked(analyzeMeal)
 const saveMealMock = vi.mocked(saveMeal)
+
+const item = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
+  name: '김치찌개',
+  kcal: 400,
+  carbG: 30,
+  proteinG: 20,
+  fatG: 18,
+  box: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
+  ...over,
+})
 
 function renderPage() {
   const client = new QueryClient()
@@ -41,30 +52,58 @@ function pickPhoto() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // jsdom엔 objectURL API가 없어 미리보기용으로 스텁
+  globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock')
+  globalThis.URL.revokeObjectURL = vi.fn()
 })
 
 describe('MealRecordPage', () => {
-  it('사진 분석 성공 — AI 추정값을 채워 확인 화면을 보여준다', async () => {
+  it('분석 성공 + 유효 박스·높은 신뢰도 — 오버레이 모드로 항목 라벨을 사진 위에 보여준다', async () => {
     analyzeMealMock.mockResolvedValue({
-      foodFound: true, totalKcal: 650, carbG: 75, proteinG: 30, fatG: 22, confidence: 0.8, notes: '',
+      foodFound: true,
+      items: [item(), item({ name: '공기밥', kcal: 250, box: { x: 0.5, y: 0.55, w: 0.25, h: 0.25 } })],
+      overallConfidence: 0.8,
+      notes: '',
     })
     renderPage()
     await pickPhoto()
 
     expect(await screen.findByText('AI 추정값이에요. 확인하고 수정할 수 있어요.')).toBeInTheDocument()
-    expect(screen.getByLabelText('칼로리 (kcal)')).toHaveValue('650')
-    expect(screen.getByLabelText('탄수화물 (g)')).toHaveValue('75')
+    // 오버레이 라벨(이름+kcal 붙은 형태)은 오버레이 모드에서만 렌더
+    expect(screen.getByText(/김치찌개\s*400kcal/)).toBeInTheDocument()
+    // 항목 편집 필드도 채워진다
+    expect(screen.getAllByLabelText('이름')[0]).toHaveValue('김치찌개')
+    // 합계 = 400 + 250
+    expect(screen.getByText('650 kcal')).toBeInTheDocument()
   })
 
-  it('음식 미검출 — 안내와 함께 빈 수동 입력으로 넘어간다', async () => {
+  it('낮은 신뢰도 — 오버레이 없이 목록형으로 폴백한다', async () => {
     analyzeMealMock.mockResolvedValue({
-      foodFound: false, totalKcal: 0, carbG: 0, proteinG: 0, fatG: 0, confidence: 0, notes: '음식을 찾지 못했어요',
+      foodFound: true,
+      items: [item()],
+      overallConfidence: 0.3, // 임계 미만
+      notes: '',
+    })
+    renderPage()
+    await pickPhoto()
+
+    await screen.findByText('AI 추정값이에요. 확인하고 수정할 수 있어요.')
+    expect(screen.queryByText(/김치찌개\s*400kcal/)).not.toBeInTheDocument() // 오버레이 라벨 없음
+    expect(screen.getAllByLabelText('이름')[0]).toHaveValue('김치찌개') // 목록 편집은 그대로
+  })
+
+  it('음식 미검출 — 안내와 함께 빈 수동 항목으로 넘어간다', async () => {
+    analyzeMealMock.mockResolvedValue({
+      foodFound: false,
+      items: [],
+      overallConfidence: 0,
+      notes: '음식을 찾지 못했어요',
     })
     renderPage()
     await pickPhoto()
 
     expect(await screen.findByText('음식을 찾지 못했어요')).toBeInTheDocument()
-    expect(screen.getByLabelText('칼로리 (kcal)')).toHaveValue('')
+    expect(screen.getByLabelText('이름')).toHaveValue('')
   })
 
   it('분석 429 — 횟수 초과 안내와 함께 수동 입력 폴백', async () => {
@@ -75,23 +114,51 @@ describe('MealRecordPage', () => {
     expect(await screen.findByText(/오늘 분석 횟수를 초과/)).toBeInTheDocument()
   })
 
-  it('직접 입력 → 저장 — saveMeal 호출 후 홈으로 이동', async () => {
+  it('항목 추가·삭제 — 합계가 재계산된다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: '직접 입력' }))
+
+    await user.type(screen.getByLabelText('칼로리 (kcal)'), '400')
+    expect(screen.getByText('400 kcal')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '+ 음식 추가' }))
+    await user.type(screen.getAllByLabelText('칼로리 (kcal)')[1], '250')
+    expect(screen.getByText('650 kcal')).toBeInTheDocument() // 합계 재계산
+
+    await user.click(screen.getByRole('button', { name: '음식 2 삭제' }))
+    expect(screen.getByText('400 kcal')).toBeInTheDocument() // 삭제 후 재계산
+  })
+
+  it('직접 입력 → 저장 — items로 saveMeal 호출 후 홈으로 이동', async () => {
     const user = userEvent.setup()
     saveMealMock.mockResolvedValue({
-      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'MANUAL', totalKcal: 500, carbG: 60, proteinG: 20, fatG: 15,
+      id: 1,
+      eatenAt: '',
+      mealType: 'LUNCH',
+      source: 'MANUAL',
+      totalKcal: 500,
+      carbG: 60,
+      proteinG: 20,
+      fatG: 15,
+      items: [{ name: '비빔밥', kcal: 500, carbG: 60, proteinG: 20, fatG: 15 }],
     })
     renderPage()
 
     await user.click(screen.getByRole('button', { name: '직접 입력' }))
+    await user.type(screen.getByLabelText('이름'), '비빔밥')
     await user.type(screen.getByLabelText('칼로리 (kcal)'), '500')
-    await user.type(screen.getByLabelText('탄수화물 (g)'), '60')
-    await user.type(screen.getByLabelText('단백질 (g)'), '20')
-    await user.type(screen.getByLabelText('지방 (g)'), '15')
+    await user.type(screen.getByLabelText('탄 (g)'), '60')
+    await user.type(screen.getByLabelText('단 (g)'), '20')
+    await user.type(screen.getByLabelText('지 (g)'), '15')
     await user.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() => expect(screen.getByText('홈 화면')).toBeInTheDocument())
     expect(saveMealMock).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'MANUAL', totalKcal: 500, carbG: 60 }),
+      expect.objectContaining({
+        source: 'MANUAL',
+        items: [{ name: '비빔밥', kcal: 500, carbG: 60, proteinG: 20, fatG: 15 }],
+      }),
     )
   })
 
@@ -100,13 +167,11 @@ describe('MealRecordPage', () => {
     renderPage()
 
     await user.click(screen.getByRole('button', { name: '직접 입력' }))
-    await user.type(screen.getByLabelText('칼로리 (kcal)'), '-5')
-    await user.type(screen.getByLabelText('탄수화물 (g)'), '10')
-    await user.type(screen.getByLabelText('단백질 (g)'), '10')
-    await user.type(screen.getByLabelText('지방 (g)'), '10')
+    await user.type(screen.getByLabelText('이름'), '음식')
+    await user.type(screen.getByLabelText('칼로리 (kcal)'), '99999')
     await user.click(screen.getByRole('button', { name: '저장' }))
 
-    expect(screen.getByText('0~10000 범위여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('0~10000 정수여야 합니다')).toBeInTheDocument()
     expect(saveMealMock).not.toHaveBeenCalled()
   })
 })

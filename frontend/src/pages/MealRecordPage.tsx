@@ -1,22 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
 import { analyzeMeal, saveMeal } from '../api/meal'
 import type { MealSource, MealType } from '../api/meal'
 import { resizeImage } from '../features/meal/imageResize'
+import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
+import { MealItemsEditor } from '../features/meal/MealItemsEditor'
+import { PhotoOverlay } from '../features/meal/PhotoOverlay'
 import {
-  MEAL_TYPE_LABELS,
-  defaultMealType,
-  validateNutrition,
-} from '../features/meal/mealDefaults'
-import type { NutritionErrors } from '../features/meal/mealDefaults'
-import { toNumber } from '../api/memberValidation'
-import { Button, Card, Field, Select, TextInput } from '../ui/form'
+  emptyItem,
+  fromAnalyzed,
+  shouldOverlay,
+  toSaveItems,
+  validateItems,
+} from '../features/meal/mealItems'
+import type { EditableItem, ItemErrors } from '../features/meal/mealItems'
+import { Button, Card, Field, Select } from '../ui/form'
 
 type Step = 'input' | 'analyzing' | 'confirm'
 
-/** 식사 기록: ① 사진 선택 or 직접 입력 → ② (사진이면) 분석 → ③ 확인·수정 → 저장 */
+/** 식사 기록: ① 사진 선택 or 직접 입력 → ② (사진이면) 음식별 분석 → ③ 오버레이/목록으로 확인·수정 → 저장 */
 export function MealRecordPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -24,33 +28,42 @@ export function MealRecordPage() {
   const [step, setStep] = useState<Step>('input')
   const [source, setSource] = useState<MealSource>('MANUAL')
   const [mealType, setMealType] = useState<MealType>(() => defaultMealType(new Date()))
-  const [kcal, setKcal] = useState('')
-  const [carb, setCarb] = useState('')
-  const [protein, setProtein] = useState('')
-  const [fat, setFat] = useState('')
-  const [errors, setErrors] = useState<NutritionErrors>({})
+  const [items, setItems] = useState<EditableItem[]>([])
+  const [confidence, setConfidence] = useState(0)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [itemErrors, setItemErrors] = useState<ItemErrors[]>([])
+  const [formError, setFormError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  // 미리보기 blob URL은 메모리에만 두고(사진 미저장), 교체·언마운트 시 해제한다
+  useEffect(() => {
+    if (!photoUrl) return
+    return () => URL.revokeObjectURL(photoUrl)
+  }, [photoUrl])
+
+  const overlay = shouldOverlay(items, confidence)
+
   async function onPickPhoto(file: File) {
     setNotice(null)
+    setPhotoUrl(URL.createObjectURL(file))
     setStep('analyzing')
     try {
       const resized = await resizeImage(file)
       const result = await analyzeMeal(resized)
-      if (result.foodFound) {
+      if (result.foodFound && result.items.length > 0) {
         setSource('AI')
-        setKcal(String(result.totalKcal))
-        setCarb(String(result.carbG))
-        setProtein(String(result.proteinG))
-        setFat(String(result.fatG))
+        setItems(result.items.map(fromAnalyzed))
+        setConfidence(result.overallConfidence)
       } else {
         setSource('MANUAL')
+        setItems([emptyItem()])
         setNotice(result.notes || '음식을 찾지 못했어요. 직접 입력해주세요.')
       }
     } catch (error) {
       // 분석 실패(502·429 등) → 수동 입력 폴백
       setSource('MANUAL')
+      setItems([emptyItem()])
       setNotice(
         error instanceof ApiError && error.status === 429
           ? '오늘 분석 횟수를 초과했어요. 직접 입력해주세요.'
@@ -62,20 +75,17 @@ export function MealRecordPage() {
 
   function startManual() {
     setSource('MANUAL')
+    setItems([emptyItem()])
+    setPhotoUrl(null)
     setNotice(null)
     setStep('confirm')
   }
 
   async function save() {
-    const values = {
-      totalKcal: toNumber(kcal),
-      carbG: toNumber(carb),
-      proteinG: toNumber(protein),
-      fatG: toNumber(fat),
-    }
-    const fieldErrors = validateNutrition(values)
-    setErrors(fieldErrors)
-    if (Object.keys(fieldErrors).length > 0) return
+    const result = validateItems(items)
+    setItemErrors(result.itemErrors)
+    setFormError(result.formError)
+    if (!result.valid) return
 
     setBusy(true)
     try {
@@ -83,10 +93,7 @@ export function MealRecordPage() {
         eatenAt: new Date().toISOString(),
         mealType,
         source,
-        totalKcal: values.totalKcal!,
-        carbG: values.carbG!,
-        proteinG: values.proteinG!,
-        fatG: values.fatG!,
+        items: toSaveItems(items),
       })
       await queryClient.invalidateQueries({ queryKey: ['meals'] })
       navigate('/')
@@ -102,7 +109,7 @@ export function MealRecordPage() {
 
       {step === 'input' && (
         <Card className="mt-4">
-          <p className="mb-4 text-muted">사진을 찍으면 AI가 칼로리를 추정해요.</p>
+          <p className="mb-4 text-muted">사진을 찍으면 AI가 음식별 칼로리를 추정해요.</p>
           <label className="mb-3 block w-full cursor-pointer rounded-md bg-brand py-3 text-center font-medium text-on-brand">
             사진 촬영·선택
             <input
@@ -139,6 +146,16 @@ export function MealRecordPage() {
             <p className="mb-3 text-sm text-brand">AI 추정값이에요. 확인하고 수정할 수 있어요.</p>
           )}
 
+          {photoUrl && (
+            <div className="mb-4">
+              {overlay ? (
+                <PhotoOverlay src={photoUrl} items={items} />
+              ) : (
+                <img src={photoUrl} alt="식사 사진" className="block w-full rounded-md" />
+              )}
+            </div>
+          )}
+
           <Field id="mealType" label="끼니">
             <Select id="mealType" value={mealType} onChange={(e) => setMealType(e.target.value as MealType)}>
               {Object.entries(MEAL_TYPE_LABELS).map(([value, label]) => (
@@ -149,20 +166,15 @@ export function MealRecordPage() {
             </Select>
           </Field>
 
-          <Field id="kcal" label="칼로리 (kcal)" error={errors.totalKcal}>
-            <TextInput id="kcal" inputMode="numeric" value={kcal} onChange={(e) => setKcal(e.target.value)} />
-          </Field>
-          <Field id="carb" label="탄수화물 (g)" error={errors.carbG}>
-            <TextInput id="carb" inputMode="decimal" value={carb} onChange={(e) => setCarb(e.target.value)} />
-          </Field>
-          <Field id="protein" label="단백질 (g)" error={errors.proteinG}>
-            <TextInput id="protein" inputMode="decimal" value={protein} onChange={(e) => setProtein(e.target.value)} />
-          </Field>
-          <Field id="fat" label="지방 (g)" error={errors.fatG}>
-            <TextInput id="fat" inputMode="decimal" value={fat} onChange={(e) => setFat(e.target.value)} />
-          </Field>
+          <MealItemsEditor
+            items={items}
+            errors={itemErrors}
+            formError={formError}
+            onChange={setItems}
+            idPrefix="rec"
+          />
 
-          <Button type="button" onClick={save} disabled={busy} className="w-full">
+          <Button type="button" onClick={save} disabled={busy} className="mt-4 w-full">
             저장
           </Button>
         </Card>

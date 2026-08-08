@@ -18,8 +18,18 @@ const updateMealMock = vi.mocked(updateMeal)
 const deleteMealMock = vi.mocked(deleteMeal)
 
 const lunch: Meal = {
-  id: 1, eatenAt: '2026-08-06T03:30:00Z', mealType: 'LUNCH', source: 'AI',
-  totalKcal: 650, carbG: 75, proteinG: 30, fatG: 22,
+  id: 1,
+  eatenAt: '2026-08-06T03:30:00Z',
+  mealType: 'LUNCH',
+  source: 'AI',
+  totalKcal: 650,
+  carbG: 75,
+  proteinG: 30,
+  fatG: 22,
+  items: [
+    { name: '김치찌개', kcal: 400, carbG: 30, proteinG: 20, fatG: 18 },
+    { name: '공기밥', kcal: 250, carbG: 45, proteinG: 10, fatG: 4 },
+  ],
 }
 
 function renderPage() {
@@ -38,12 +48,13 @@ beforeEach(() => {
 })
 
 describe('RecordsPage', () => {
-  it('날짜의 식사 목록을 표시한다', async () => {
+  it('날짜의 식사 목록을 음식별로 표시한다', async () => {
     getMealsMock.mockResolvedValue([lunch])
     renderPage()
 
     expect(await screen.findByText('점심')).toBeInTheDocument()
     expect(screen.getByText('650 kcal')).toBeInTheDocument()
+    expect(screen.getByText('김치찌개 · 공기밥')).toBeInTheDocument()
     expect(screen.getByText(/탄 75 · 단 30 · 지 22/)).toBeInTheDocument()
   })
 
@@ -63,20 +74,25 @@ describe('RecordsPage', () => {
     expect(deleteMealMock).toHaveBeenCalledWith(1)
   })
 
-  it('수정 — 값을 바꿔 updateMeal 호출', async () => {
+  it('수정 — 항목 값을 바꿔 items로 updateMeal 호출', async () => {
     const user = userEvent.setup()
     getMealsMock.mockResolvedValue([lunch])
-    updateMealMock.mockResolvedValue({ ...lunch, totalKcal: 700 })
+    updateMealMock.mockResolvedValue({ ...lunch, totalKcal: 750 })
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: '수정' }))
-    const kcalField = screen.getByLabelText('칼로리 (kcal)')
+    const kcalField = screen.getAllByLabelText('칼로리 (kcal)')[0] // 첫 항목(김치찌개)
     await user.clear(kcalField)
-    await user.type(kcalField, '700')
+    await user.type(kcalField, '500')
     await user.click(screen.getByRole('button', { name: '저장' }))
 
     await waitFor(() =>
-      expect(updateMealMock).toHaveBeenCalledWith(1, expect.objectContaining({ totalKcal: 700 })),
+      expect(updateMealMock).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          items: expect.arrayContaining([expect.objectContaining({ name: '김치찌개', kcal: 500 })]),
+        }),
+      ),
     )
   })
 
@@ -86,12 +102,12 @@ describe('RecordsPage', () => {
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: '수정' }))
-    const kcalField = screen.getByLabelText('칼로리 (kcal)')
+    const kcalField = screen.getAllByLabelText('칼로리 (kcal)')[0]
     await user.clear(kcalField)
     await user.type(kcalField, '99999')
     await user.click(screen.getByRole('button', { name: '저장' }))
 
-    expect(screen.getByText('0~10000 범위여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('0~10000 정수여야 합니다')).toBeInTheDocument()
     expect(updateMealMock).not.toHaveBeenCalled()
   })
 })
