@@ -170,7 +170,12 @@ export function MealRecordPage() {
             items={items}
             errors={itemErrors}
             formError={formError}
-            onChange={setItems}
+            onChange={(next) => {
+              // 편집(추가·삭제·수정) 시 오류 초기화 — 인덱스 어긋남 방지 + 입력하면 오류가 사라지는 UX
+              setItems(next)
+              setItemErrors([])
+              setFormError(null)
+            }}
             idPrefix="rec"
           />
 

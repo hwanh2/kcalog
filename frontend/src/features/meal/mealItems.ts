@@ -57,7 +57,7 @@ export function totals(items: EditableItem[]): { kcal: number; carbG: number; pr
     const n = Number(s)
     return Number.isFinite(n) ? n : 0
   }
-  return items.reduce(
+  const raw = items.reduce(
     (acc, it) => ({
       kcal: acc.kcal + num(it.kcal),
       carbG: acc.carbG + num(it.carbG),
@@ -66,6 +66,9 @@ export function totals(items: EditableItem[]): { kcal: number; carbG: number; pr
     }),
     { kcal: 0, carbG: 0, proteinG: 0, fatG: 0 },
   )
+  // 매크로 합산은 소수 1자리 반올림 — 0.1+0.2 같은 부동소수 잔차를 화면에 노출하지 않는다
+  const round1 = (x: number) => Math.round(x * 10) / 10
+  return { kcal: raw.kcal, carbG: round1(raw.carbG), proteinG: round1(raw.proteinG), fatG: round1(raw.fatG) }
 }
 
 /** box가 정규화 좌표(0~1)로 유효한지 — 오버레이를 그릴 수 있는 박스인지 판정 */
@@ -104,7 +107,10 @@ export function validateItem(item: EditableItem): ItemErrors {
 
   const macro = (v: string): string | undefined => {
     const n = toNumber(v)
-    return n === null || n < 0 || n > MACRO_MAX ? `0~${MACRO_MAX} 범위여야 합니다` : undefined
+    if (n === null || n < 0 || n > MACRO_MAX) return `0~${MACRO_MAX} 범위여야 합니다`
+    // 백엔드 @Digits(fraction=1)·NUMERIC(5,1) 거울 — 소수 둘째자리는 저장 시 400이므로 미리 막는다
+    if (Math.abs(n * 10 - Math.round(n * 10)) > 1e-9) return '소수 첫째 자리까지만 입력해주세요'
+    return undefined
   }
   const carbG = macro(item.carbG)
   const proteinG = macro(item.proteinG)

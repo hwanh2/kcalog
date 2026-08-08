@@ -115,7 +115,12 @@ function MealRow({ meal }: { meal: Meal }) {
         items={items}
         errors={itemErrors}
         formError={formError}
-        onChange={setItems}
+        onChange={(next) => {
+          // 편집 시 오류 초기화 — 인덱스 어긋남 방지 + 입력하면 오류가 사라지는 UX
+          setItems(next)
+          setItemErrors([])
+          setFormError(null)
+        }}
         idPrefix={`edit-${meal.id}`}
       />
       <div className="mt-4 flex gap-2">

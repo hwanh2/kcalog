@@ -95,6 +95,19 @@ describe('validateItems', () => {
     expect(r.itemErrors[0]).toHaveProperty('kcal')
     expect(r.itemErrors[0]).toHaveProperty('carbG')
   })
+
+  it('매크로 소수 둘째자리는 거부(백엔드 @Digits(fraction=1) 거울), 소수 1자리는 허용', () => {
+    expect(validateItems([editable({ carbG: '30.55' })]).valid).toBe(false)
+    expect(validateItems([editable({ carbG: '30.5' })]).valid).toBe(true)
+    expect(validateItems([editable({ proteinG: '20.0' })]).valid).toBe(true)
+  })
+})
+
+describe('totals', () => {
+  it('매크로 합계는 소수 1자리로 반올림해 부동소수 잔차를 감춘다', () => {
+    const t = totals([editable({ carbG: '0.1' }), editable({ carbG: '0.2' })])
+    expect(t.carbG).toBe(0.3) // 0.30000000000000004 아님
+  })
 })
 
 describe('fromAnalyzed / toSaveItems', () => {
