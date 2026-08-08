@@ -23,11 +23,11 @@ public record MealAnalysisResponse(
             BigDecimal carbG,
             BigDecimal proteinG,
             BigDecimal fatG,
-            Box box
+            BoundingBox box
     ) {
     }
 
     /** 이미지 정규화 좌표(0~1) — 좌상단 x,y와 폭·높이. 오버레이 전용, 부정확 시 프론트가 목록형으로 폴백 */
-    public record Box(double x, double y, double w, double h) {
+    public record BoundingBox(double x, double y, double w, double h) {
     }
 }
