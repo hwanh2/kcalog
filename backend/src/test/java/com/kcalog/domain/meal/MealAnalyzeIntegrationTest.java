@@ -54,17 +54,24 @@ class MealAnalyzeIntegrationTest {
     }
 
     @Test
-    @DisplayName("사진 분석 — 멀티파트 업로드 → 분석 결과 반환, 저장 없음")
+    @DisplayName("사진 분석 — 멀티파트 업로드 → 음식별 항목·박스 반환, 저장 없음")
     void analyze() throws Exception {
         when(openAiClient.complete(any())).thenReturn("""
-                {"foodFound":true,"totalKcal":650,"carbG":75.0,"proteinG":30.0,"fatG":22.0,"confidence":0.8,"notes":""}
+                {"foodFound":true,"items":[
+                  {"name":"김치찌개","kcal":400,"carbG":30.0,"proteinG":20.0,"fatG":18.0,"box":{"x":0.1,"y":0.2,"w":0.3,"h":0.3}},
+                  {"name":"공기밥","kcal":250,"carbG":55.0,"proteinG":5.0,"fatG":1.0,"box":{"x":0.5,"y":0.55,"w":0.25,"h":0.25}}
+                ],"overallConfidence":0.8,"notes":""}
                 """);
 
         mockMvc.perform(multipart("/api/meals/analyze").file(image()).header("Authorization", bearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.foodFound").value(true))
-                .andExpect(jsonPath("$.totalKcal").value(650))
-                .andExpect(jsonPath("$.proteinG").value(30.0));
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].name").value("김치찌개"))
+                .andExpect(jsonPath("$.items[0].kcal").value(400))
+                .andExpect(jsonPath("$.items[0].box.x").value(0.1))
+                .andExpect(jsonPath("$.items[1].name").value("공기밥"))
+                .andExpect(jsonPath("$.overallConfidence").value(0.8));
     }
 
     @Test
@@ -80,7 +87,9 @@ class MealAnalyzeIntegrationTest {
     @DisplayName("일일 상한 초과 — 21번째 호출은 429")
     void dailyLimit() throws Exception {
         when(openAiClient.complete(any())).thenReturn("""
-                {"foodFound":true,"totalKcal":100,"carbG":1,"proteinG":1,"fatG":1,"confidence":0.5,"notes":""}
+                {"foodFound":true,"items":[
+                  {"name":"사과","kcal":100,"carbG":25,"proteinG":1,"fatG":1,"box":{"x":0.3,"y":0.3,"w":0.2,"h":0.2}}
+                ],"overallConfidence":0.5,"notes":""}
                 """);
 
         for (int i = 0; i < 20; i++) {

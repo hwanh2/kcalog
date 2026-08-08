@@ -70,7 +70,8 @@ public class MealAnalysisService {
     private MealAnalysisResponse parse(String content) {
         try {
             MealAnalysisResponse result = objectMapper.readValue(content, MealAnalysisResponse.class);
-            if (!result.foodFound()) {
+            // foodFound=false거나 항목이 하나도 없으면 미검출로 통일 — 프론트가 수동 입력으로 유도한다
+            if (!result.foodFound() || result.items() == null || result.items().isEmpty()) {
                 log.info("음식 미검출: {}", result.notes());
                 return MealAnalysisResponse.notFound(
                         result.notes() == null || result.notes().isBlank() ? "음식을 찾지 못했어요" : result.notes());

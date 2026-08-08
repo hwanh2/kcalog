@@ -10,9 +10,9 @@
 
 ## 2. 백엔드: 음식별 분석 (meal-item-analysis)
 
-- [ ] 2.1 분석 스키마·프롬프트 재작성 — items[{name,kcal,carbG,proteinG,fatG,box}] + overallConfidence + notes (json_schema strict)
-- [ ] 2.2 `MealAnalysisService`/DTO를 항목 배열 응답으로 변경, 파싱·폴백(음식 미검출) 갱신
-- [ ] 2.3 분석 테스트 — 다항목 파싱, 음식 미검출(빈 배열), 파싱 실패 폴백 (OpenAiClient 목킹)
+- [x] 2.1 분석 스키마·프롬프트 재작성 — items[{name,kcal,carbG,proteinG,fatG,box}] + overallConfidence + notes (json_schema strict)
+- [x] 2.2 `MealAnalysisService`/DTO를 항목 배열 응답으로 변경, 파싱·폴백(음식 미검출) 갱신
+- [x] 2.3 분석 테스트 — 다항목 파싱, 음식 미검출(빈 배열), 파싱 실패 폴백 (OpenAiClient 목킹)
 
 ## 3. 프론트: 오버레이 확인 화면 (meal-item-analysis)
 

@@ -51,33 +51,56 @@ class MealAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("정상 분석 — 구조화 JSON을 파싱해 반환하고 호출을 카운트한다")
+    @DisplayName("정상 분석 — 다항목 구조화 JSON을 파싱해 항목·박스와 함께 반환하고 호출을 카운트한다")
     void analyzeSuccess() {
         when(analysisUsageRepository.incrementAndGet(1L, TODAY)).thenReturn(4);
         when(openAiClient.complete(any())).thenReturn("""
-                {"foodFound":true,"totalKcal":650,"carbG":75.0,"proteinG":30.0,"fatG":22.0,"confidence":0.8,"notes":""}
+                {"foodFound":true,"items":[
+                  {"name":"김치찌개","kcal":400,"carbG":30.0,"proteinG":20.0,"fatG":18.0,"box":{"x":0.1,"y":0.2,"w":0.3,"h":0.3}},
+                  {"name":"공기밥","kcal":250,"carbG":55.0,"proteinG":5.0,"fatG":1.0,"box":{"x":0.5,"y":0.55,"w":0.25,"h":0.25}}
+                ],"overallConfidence":0.8,"notes":""}
                 """);
 
         MealAnalysisResponse result = service.analyze(1L, IMAGE, "image/jpeg");
 
         assertThat(result.foodFound()).isTrue();
-        assertThat(result.totalKcal()).isEqualTo(650);
-        assertThat(result.carbG()).isEqualByComparingTo("75.0");
+        assertThat(result.items()).hasSize(2);
+        assertThat(result.items().get(0).name()).isEqualTo("김치찌개");
+        assertThat(result.items().get(0).kcal()).isEqualTo(400);
+        assertThat(result.items().get(0).carbG()).isEqualByComparingTo("30.0");
+        assertThat(result.items().get(0).box().x()).isEqualTo(0.1);
+        assertThat(result.items().get(1).name()).isEqualTo("공기밥");
+        assertThat(result.overallConfidence()).isEqualByComparingTo("0.8");
         verify(analysisUsageRepository).incrementAndGet(1L, TODAY);
     }
 
     @Test
-    @DisplayName("음식 미검출 — foodFound=false면 안내 문구와 함께 notFound로 반환")
+    @DisplayName("음식 미검출 — foodFound=false면 빈 items와 안내 문구로 notFound 반환")
     void foodNotFound() {
         when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any())).thenReturn("""
-                {"foodFound":false,"totalKcal":0,"carbG":0,"proteinG":0,"fatG":0,"confidence":0,"notes":"음식을 찾지 못했어요"}
+                {"foodFound":false,"items":[],"overallConfidence":0,"notes":"음식을 찾지 못했어요"}
                 """);
 
         MealAnalysisResponse result = service.analyze(1L, IMAGE, "image/jpeg");
 
         assertThat(result.foodFound()).isFalse();
+        assertThat(result.items()).isEmpty();
         assertThat(result.notes()).contains("음식을 찾지 못했");
+    }
+
+    @Test
+    @DisplayName("항목 없음 방어 — foodFound=true여도 items가 비면 미검출로 통일한다")
+    void foodFoundButEmptyItems() {
+        when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
+        when(openAiClient.complete(any())).thenReturn("""
+                {"foodFound":true,"items":[],"overallConfidence":0.3,"notes":"불확실"}
+                """);
+
+        MealAnalysisResponse result = service.analyze(1L, IMAGE, "image/jpeg");
+
+        assertThat(result.foodFound()).isFalse();
+        assertThat(result.items()).isEmpty();
     }
 
     @Test
@@ -96,12 +119,15 @@ class MealAnalysisServiceTest {
     void limitBoundaryAllowed() {
         when(analysisUsageRepository.incrementAndGet(1L, TODAY)).thenReturn(20); // 상한과 동일
         when(openAiClient.complete(any())).thenReturn("""
-                {"foodFound":true,"totalKcal":300,"carbG":30,"proteinG":10,"fatG":8,"confidence":0.6,"notes":""}
+                {"foodFound":true,"items":[
+                  {"name":"샐러드","kcal":300,"carbG":30,"proteinG":10,"fatG":8,"box":{"x":0.2,"y":0.2,"w":0.5,"h":0.5}}
+                ],"overallConfidence":0.6,"notes":""}
                 """);
 
         MealAnalysisResponse result = service.analyze(1L, IMAGE, "image/jpeg");
 
-        assertThat(result.totalKcal()).isEqualTo(300);
+        assertThat(result.items()).hasSize(1);
+        assertThat(result.items().get(0).kcal()).isEqualTo(300);
     }
 
     @Test
@@ -111,12 +137,14 @@ class MealAnalysisServiceTest {
         when(openAiClient.complete(any()))
                 .thenThrow(new RuntimeException("timeout"))
                 .thenReturn("""
-                        {"foodFound":true,"totalKcal":500,"carbG":60,"proteinG":20,"fatG":15,"confidence":0.7,"notes":""}
+                        {"foodFound":true,"items":[
+                          {"name":"파스타","kcal":500,"carbG":60,"proteinG":20,"fatG":15,"box":{"x":0.1,"y":0.1,"w":0.8,"h":0.8}}
+                        ],"overallConfidence":0.7,"notes":""}
                         """);
 
         MealAnalysisResponse result = service.analyze(1L, IMAGE, "image/jpeg");
 
-        assertThat(result.totalKcal()).isEqualTo(500);
+        assertThat(result.items().get(0).kcal()).isEqualTo(500);
         verify(openAiClient, times(2)).complete(any());
     }
 
@@ -146,7 +174,9 @@ class MealAnalysisServiceTest {
     void dataUrlFallback() {
         when(analysisUsageRepository.incrementAndGet(anyLong(), any())).thenReturn(1);
         when(openAiClient.complete(any())).thenReturn("""
-                {"foodFound":true,"totalKcal":100,"carbG":1,"proteinG":1,"fatG":1,"confidence":0.5,"notes":""}
+                {"foodFound":true,"items":[
+                  {"name":"사과","kcal":100,"carbG":25,"proteinG":1,"fatG":1,"box":{"x":0.3,"y":0.3,"w":0.2,"h":0.2}}
+                ],"overallConfidence":0.5,"notes":""}
                 """);
 
         service.analyze(1L, IMAGE, null);
