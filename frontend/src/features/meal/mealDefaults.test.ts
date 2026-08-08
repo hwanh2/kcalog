@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultMealType, validateNutrition } from './mealDefaults'
+import { defaultMealType } from './mealDefaults'
 
 describe('defaultMealType', () => {
   const at = (hour: number) => defaultMealType(new Date(2026, 7, 6, hour, 0))
@@ -15,20 +15,5 @@ describe('defaultMealType', () => {
     expect(at(11)).toBe('LUNCH')
     expect(at(15)).toBe('DINNER')
     expect(at(21)).toBe('SNACK')
-  })
-})
-
-describe('validateNutrition', () => {
-  const valid = { totalKcal: 650, carbG: 75, proteinG: 30, fatG: 22 }
-
-  it('정상 값은 오류 없음', () => {
-    expect(validateNutrition(valid)).toEqual({})
-  })
-
-  it('음수·null·상한 초과를 잡는다', () => {
-    expect(validateNutrition({ ...valid, totalKcal: -1 })).toHaveProperty('totalKcal')
-    expect(validateNutrition({ ...valid, carbG: null })).toHaveProperty('carbG')
-    expect(validateNutrition({ ...valid, totalKcal: 10_001 })).toHaveProperty('totalKcal')
-    expect(validateNutrition({ ...valid, fatG: 2001 })).toHaveProperty('fatG')
   })
 })

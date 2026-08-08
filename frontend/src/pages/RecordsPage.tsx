@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteMeal, getMeals, updateMeal } from '../api/meal'
 import type { Meal } from '../api/meal'
-import { MEAL_TYPE_LABELS, validateNutrition } from '../features/meal/mealDefaults'
-import type { NutritionErrors } from '../features/meal/mealDefaults'
-import { toNumber } from '../api/memberValidation'
-import { Button, Card, Field, TextInput } from '../ui/form'
+import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
+import { MealItemsEditor } from '../features/meal/MealItemsEditor'
+import { fromSaved, toSaveItems, validateItems } from '../features/meal/mealItems'
+import type { EditableItem, ItemErrors } from '../features/meal/mealItems'
+import { Button, Card } from '../ui/form'
 
 function todayLocalDate(): string {
   const now = new Date()
@@ -52,11 +53,9 @@ export function RecordsPage() {
 function MealRow({ meal }: { meal: Meal }) {
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
-  const [kcal, setKcal] = useState(String(meal.totalKcal))
-  const [carb, setCarb] = useState(String(meal.carbG))
-  const [protein, setProtein] = useState(String(meal.proteinG))
-  const [fat, setFat] = useState(String(meal.fatG))
-  const [errors, setErrors] = useState<NutritionErrors>({})
+  const [items, setItems] = useState<EditableItem[]>(() => meal.items.map(fromSaved))
+  const [itemErrors, setItemErrors] = useState<ItemErrors[]>([])
+  const [formError, setFormError] = useState<string | null>(null)
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['meals'] })
   const removeMutation = useMutation({ mutationFn: () => deleteMeal(meal.id), onSuccess: invalidate })
@@ -68,37 +67,36 @@ function MealRow({ meal }: { meal: Meal }) {
     },
   })
 
+  function startEdit() {
+    setItems(meal.items.map(fromSaved))
+    setItemErrors([])
+    setFormError(null)
+    setEditing(true)
+  }
+
   function save() {
-    const values = {
-      totalKcal: toNumber(kcal),
-      carbG: toNumber(carb),
-      proteinG: toNumber(protein),
-      fatG: toNumber(fat),
-    }
-    const fieldErrors = validateNutrition(values)
-    setErrors(fieldErrors)
-    if (Object.keys(fieldErrors).length > 0) return
-    updateMutation.mutate({
-      totalKcal: values.totalKcal!,
-      carbG: values.carbG!,
-      proteinG: values.proteinG!,
-      fatG: values.fatG!,
-    })
+    const result = validateItems(items)
+    setItemErrors(result.itemErrors)
+    setFormError(result.formError)
+    if (!result.valid) return
+    updateMutation.mutate({ items: toSaveItems(items) })
   }
 
   if (!editing) {
+    const names = meal.items.map((it) => it.name).join(' · ')
     return (
       <Card>
         <div className="flex items-center justify-between">
           <div>
             <span className="font-medium">{MEAL_TYPE_LABELS[meal.mealType]}</span>
             <span className="ml-2 text-brand">{meal.totalKcal} kcal</span>
+            {names && <p className="mt-1 text-sm text-ink">{names}</p>}
             <p className="mt-1 text-sm text-muted">
               탄 {meal.carbG} · 단 {meal.proteinG} · 지 {meal.fatG}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setEditing(true)}>
+            <Button type="button" variant="ghost" onClick={startEdit}>
               수정
             </Button>
             <Button type="button" variant="ghost" onClick={() => removeMutation.mutate()}>
@@ -113,19 +111,19 @@ function MealRow({ meal }: { meal: Meal }) {
   return (
     <Card>
       <p className="mb-3 font-medium">{MEAL_TYPE_LABELS[meal.mealType]} 수정</p>
-      <Field id={`kcal-${meal.id}`} label="칼로리 (kcal)" error={errors.totalKcal}>
-        <TextInput id={`kcal-${meal.id}`} inputMode="numeric" value={kcal} onChange={(e) => setKcal(e.target.value)} />
-      </Field>
-      <Field id={`carb-${meal.id}`} label="탄수화물 (g)" error={errors.carbG}>
-        <TextInput id={`carb-${meal.id}`} inputMode="decimal" value={carb} onChange={(e) => setCarb(e.target.value)} />
-      </Field>
-      <Field id={`protein-${meal.id}`} label="단백질 (g)" error={errors.proteinG}>
-        <TextInput id={`protein-${meal.id}`} inputMode="decimal" value={protein} onChange={(e) => setProtein(e.target.value)} />
-      </Field>
-      <Field id={`fat-${meal.id}`} label="지방 (g)" error={errors.fatG}>
-        <TextInput id={`fat-${meal.id}`} inputMode="decimal" value={fat} onChange={(e) => setFat(e.target.value)} />
-      </Field>
-      <div className="flex gap-2">
+      <MealItemsEditor
+        items={items}
+        errors={itemErrors}
+        formError={formError}
+        onChange={(next) => {
+          // 편집 시 오류 초기화 — 인덱스 어긋남 방지 + 입력하면 오류가 사라지는 UX
+          setItems(next)
+          setItemErrors([])
+          setFormError(null)
+        }}
+        idPrefix={`edit-${meal.id}`}
+      />
+      <div className="mt-4 flex gap-2">
         <Button type="button" variant="secondary" onClick={() => setEditing(false)} className="flex-1">
           취소
         </Button>

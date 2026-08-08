@@ -3,21 +3,51 @@ import { API_BASE, ApiError, api, getAccessToken, refreshAccessToken } from './c
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK'
 export type MealSource = 'AI' | 'MANUAL'
 
-export interface MealAnalysis {
-  foodFound: boolean
-  totalKcal: number
+/** 이미지 정규화 좌표(0~1) — 오버레이 렌더링 전용, 저장하지 않는다 */
+export interface BoundingBox {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** 분석이 돌려준 음식 한 항목 — box는 오버레이용(미저장) */
+export interface AnalyzedItem {
+  name: string
+  kcal: number
   carbG: number
   proteinG: number
   fatG: number
-  confidence: number
+  box: BoundingBox
+}
+
+export interface MealAnalysis {
+  foodFound: boolean
+  items: AnalyzedItem[]
+  overallConfidence: number
   notes: string
+}
+
+/** 저장·수정 요청의 음식 항목 (box 없음 — 서버에 위치는 보내지 않는다) */
+export interface MealItemInput {
+  name: string
+  kcal: number
+  carbG: number
+  proteinG: number
+  fatG: number
 }
 
 export interface SaveMealRequest {
   eatenAt: string // ISO instant
   mealType: MealType
   source: MealSource
-  totalKcal: number
+  items: MealItemInput[]
+}
+
+/** 저장된 음식 항목 (조회 응답) */
+export interface MealItem {
+  name: string
+  kcal: number
   carbG: number
   proteinG: number
   fatG: number
@@ -28,13 +58,19 @@ export interface Meal {
   eatenAt: string
   mealType: MealType
   source: MealSource
-  totalKcal: number
+  totalKcal: number // 서버가 items 합으로 계산한 비정규화 합계
   carbG: number
   proteinG: number
   fatG: number
+  items: MealItem[]
 }
 
-export type UpdateMealRequest = Partial<Pick<Meal, 'eatenAt' | 'mealType' | 'totalKcal' | 'carbG' | 'proteinG' | 'fatG'>>
+/** 부분 수정 — 값이 있으면 교체, 없으면 유지. items는 전체 교체(빈 배열 금지) */
+export interface UpdateMealRequest {
+  mealType?: MealType
+  eatenAt?: string
+  items?: MealItemInput[]
+}
 
 /**
  * 사진 분석 — 멀티파트 업로드. api()는 JSON 재시도 로직이 FormData를 재사용 못하므로
