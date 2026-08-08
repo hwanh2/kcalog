@@ -1,27 +1,19 @@
 package com.kcalog.domain.meal.dto;
 
 import com.kcalog.domain.meal.entity.MealType;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 
-import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
-import static com.kcalog.domain.meal.dto.MealValidation.KCAL_MAX;
-import static com.kcalog.domain.meal.dto.MealValidation.KCAL_MIN;
-import static com.kcalog.domain.meal.dto.MealValidation.MACRO_MAX;
-import static com.kcalog.domain.meal.dto.MealValidation.MACRO_MIN;
+import static com.kcalog.domain.meal.dto.MealValidation.MAX_ITEMS;
 
-/** 부분 수정 — null 필드는 변경하지 않는다. 검증은 값이 있을 때만 적용 (source는 수정 불가) */
+/** 부분 수정 — mealType·eatenAt은 null이면 유지. items는 null이면 유지, 있으면 전체 교체.
+ *  @Size(min=1)은 null을 통과시키므로(유지), 빈 배열([])만 400으로 거부한다 */
 public record UpdateMealRequest(
         MealType mealType,
         Instant eatenAt,
-        @Min(KCAL_MIN) @Max(KCAL_MAX) Integer totalKcal,
-        @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal carbG,
-        @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal proteinG,
-        @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal fatG
+        @Size(min = 1, max = MAX_ITEMS) @Valid List<MealItemRequest> items
 ) {
 }

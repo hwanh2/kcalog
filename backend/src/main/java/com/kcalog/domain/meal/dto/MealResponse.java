@@ -6,6 +6,7 @@ import com.kcalog.domain.meal.entity.MealType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 public record MealResponse(
         Long id,
@@ -15,7 +16,8 @@ public record MealResponse(
         int totalKcal,
         BigDecimal carbG,
         BigDecimal proteinG,
-        BigDecimal fatG
+        BigDecimal fatG,
+        List<MealItemResponse> items
 ) {
     public static MealResponse of(Meal meal) {
         return new MealResponse(
@@ -26,6 +28,7 @@ public record MealResponse(
                 meal.getTotalKcal(),
                 meal.getCarbG(),
                 meal.getProteinG(),
-                meal.getFatG());
+                meal.getFatG(),
+                meal.getItems().stream().map(MealItemResponse::of).toList());
     }
 }

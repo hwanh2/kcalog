@@ -1,9 +1,11 @@
 package com.kcalog.domain.meal.service;
 
+import com.kcalog.domain.meal.dto.MealItemRequest;
 import com.kcalog.domain.meal.dto.MealResponse;
 import com.kcalog.domain.meal.dto.SaveMealRequest;
 import com.kcalog.domain.meal.dto.UpdateMealRequest;
 import com.kcalog.domain.meal.entity.Meal;
+import com.kcalog.domain.meal.entity.MealItem;
 import com.kcalog.domain.meal.repository.MealRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,7 @@ public class MealService {
     public MealResponse save(Long memberId, SaveMealRequest request) {
         Meal meal = mealRepository.save(Meal.record(
                 memberId, request.eatenAt(), request.mealType(), request.source(),
-                request.totalKcal(), request.carbG(), request.proteinG(), request.fatG()));
+                toItems(request.items())));
         return MealResponse.of(meal);
     }
 
@@ -43,9 +45,17 @@ public class MealService {
     @Transactional
     public MealResponse update(Long memberId, Long mealId, UpdateMealRequest request) {
         Meal meal = ownedMeal(memberId, mealId);
-        meal.update(request.mealType(), request.eatenAt(),
-                request.totalKcal(), request.carbG(), request.proteinG(), request.fatG());
+        meal.updateMeta(request.mealType(), request.eatenAt());
+        if (request.items() != null) {
+            meal.replaceItems(toItems(request.items())); // 항목 전체 교체 + 합계 재계산
+        }
         return MealResponse.of(meal);
+    }
+
+    private List<MealItem> toItems(List<MealItemRequest> items) {
+        return items.stream()
+                .map(i -> MealItem.of(i.name(), i.kcal(), i.carbG(), i.proteinG(), i.fatG()))
+                .toList();
     }
 
     @Transactional

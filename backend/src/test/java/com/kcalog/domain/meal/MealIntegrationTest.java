@@ -41,16 +41,16 @@ class MealIntegrationTest {
     Member member;
     String bearer;
 
-    // 2026-08-06 12:30 KST = 03:30Z (KST 기준 2026-08-06에 속함)
+    // 김치찌개 400 + 공기밥 250 → 합계 kcal 650, 탄 85, 단 25, 지 19
     static final String LUNCH = """
             {
               "eatenAt": "2026-08-06T03:30:00Z",
               "mealType": "LUNCH",
               "source": "AI",
-              "totalKcal": 650,
-              "carbG": 75.0,
-              "proteinG": 30.0,
-              "fatG": 22.0
+              "items": [
+                {"name": "김치찌개", "kcal": 400, "carbG": 30.0, "proteinG": 20.0, "fatG": 18.0},
+                {"name": "공기밥", "kcal": 250, "carbG": 55.0, "proteinG": 5.0, "fatG": 1.0}
+              ]
             }
             """;
 
@@ -69,35 +69,96 @@ class MealIntegrationTest {
     }
 
     @Test
-    @DisplayName("식사 저장 — AI 확인 결과가 저장되고 응답에 반영된다")
+    @DisplayName("식사 저장 — 항목 저장 + 합계는 항목 합으로 계산된다")
     void save() throws Exception {
         mockMvc.perform(post("/api/meals").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON).content(LUNCH))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.mealType").value("LUNCH"))
-                .andExpect(jsonPath("$.source").value("AI"))
-                .andExpect(jsonPath("$.totalKcal").value(650));
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].name").value("김치찌개"))
+                .andExpect(jsonPath("$.totalKcal").value(650))
+                .andExpect(jsonPath("$.carbG").value(85.0))
+                .andExpect(jsonPath("$.proteinG").value(25.0))
+                .andExpect(jsonPath("$.fatG").value(19.0));
 
         assertThat(mealRepository.findAll()).hasSize(1);
     }
 
     @Test
-    @DisplayName("범위 밖 영양값 — 400, 저장되지 않음")
-    void saveValidation() throws Exception {
+    @DisplayName("빈 항목 — 400 (최소 1개 필요)")
+    void emptyItems() throws Exception {
         mockMvc.perform(post("/api/meals").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(LUNCH.replace("\"totalKcal\": 650", "\"totalKcal\": -5")))
+                        .content(LUNCH.replaceAll("(?s)\"items\":.*\\]", "\"items\": []")))
                 .andExpect(status().isBadRequest());
-
         assertThat(mealRepository.findAll()).isEmpty();
     }
 
     @Test
-    @DisplayName("날짜별 조회 — 해당 날짜(KST) 기록만 시각 순으로 반환한다")
+    @DisplayName("범위 밖 항목 영양값 — 400, 저장되지 않음")
+    void itemValidation() throws Exception {
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LUNCH.replace("\"kcal\": 400", "\"kcal\": -5")))
+                .andExpect(status().isBadRequest());
+        assertThat(mealRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("PATCH 빈 items — 400 (모든 항목 삭제 방지)")
+    void updateEmptyItemsRejected() throws Exception {
+        Long id = saveLunch();
+        mockMvc.perform(patch("/api/meals/" + id).header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"items\": []}"))
+                .andExpect(status().isBadRequest());
+        // 기존 항목 유지
+        mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
+                .andExpect(jsonPath("$[0].items.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("항목 개수 상한 초과 — 400 (자원 소진 방지)")
+    void tooManyItemsRejected() throws Exception {
+        String item = "{\"name\": \"밥\", \"kcal\": 100, \"carbG\": 20.0, \"proteinG\": 2.0, \"fatG\": 1.0}";
+        String items = java.util.Collections.nCopies(31, item).stream().collect(java.util.stream.Collectors.joining(","));
+        String body = "{\"eatenAt\": \"2026-08-06T03:30:00Z\", \"mealType\": \"LUNCH\", \"source\": \"MANUAL\", \"items\": [" + items + "]}";
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        assertThat(mealRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("항목 이름 길이 초과 — 400 (컬럼 VARCHAR(100))")
+    void itemNameTooLong() throws Exception {
+        String longName = "가".repeat(101);
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LUNCH.replace("\"김치찌개\"", "\"" + longName + "\"")))
+                .andExpect(status().isBadRequest());
+        assertThat(mealRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("합계가 옛 컬럼 한계(9999.9)를 넘는 유효 식사 — 저장 성공 (합계 컬럼 확장 검증)")
+    void largeTotalWithinWidenedColumn() throws Exception {
+        // 항목 2000 × 6 = 12000 > 9999.9(옛 NUMERIC(5,1)) 이지만 < 99999.9(NUMERIC(6,1))
+        String item = "{\"name\": \"밥\", \"kcal\": 1000, \"carbG\": 2000.0, \"proteinG\": 100.0, \"fatG\": 50.0}";
+        String items = java.util.Collections.nCopies(6, item).stream().collect(java.util.stream.Collectors.joining(","));
+        String body = "{\"eatenAt\": \"2026-08-06T03:30:00Z\", \"mealType\": \"LUNCH\", \"source\": \"MANUAL\", \"items\": [" + items + "]}";
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.carbG").value(12000.0))
+                .andExpect(jsonPath("$.totalKcal").value(6000));
+    }
+
+    @Test
+    @DisplayName("날짜별 조회 — 해당 날짜(KST) 기록만 항목과 함께 반환한다")
     void byDate() throws Exception {
         saveLunch(); // 2026-08-06 KST
-        // 전날 저녁(2026-08-05 KST 22:00 = 13:00Z)
         mockMvc.perform(post("/api/meals").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LUNCH.replace("2026-08-06T03:30:00Z", "2026-08-05T13:00:00Z")))
@@ -106,13 +167,12 @@ class MealIntegrationTest {
         mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].mealType").value("LUNCH"));
+                .andExpect(jsonPath("$[0].items.length()").value(2));
     }
 
     @Test
-    @DisplayName("자정 경계 — 다음날 00:00 KST 식사는 오늘 조회에 잡히지 않는다 (반개구간)")
+    @DisplayName("자정 경계 — 다음날 00:00 KST 식사는 오늘 조회에 잡히지 않는다")
     void midnightBoundary() throws Exception {
-        // 2026-08-07 00:00 KST == 2026-08-06T15:00:00Z
         mockMvc.perform(post("/api/meals").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(LUNCH.replace("2026-08-06T03:30:00Z", "2026-08-06T15:00:00Z")))
@@ -125,22 +185,43 @@ class MealIntegrationTest {
     }
 
     @Test
-    @DisplayName("식사 수정 — 보낸 필드만 반영, source는 불변")
-    void update() throws Exception {
+    @DisplayName("항목 수정 — items 교체 시 기존 항목이 사라지고 합계가 재계산된다")
+    void updateReplacesItems() throws Exception {
         Long id = saveLunch();
 
         mockMvc.perform(patch("/api/meals/" + id).header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"totalKcal\": 700, \"mealType\": \"DINNER\"}"))
+                        .content("""
+                                {"mealType": "DINNER",
+                                 "items": [{"name": "샐러드", "kcal": 200, "carbG": 15.0, "proteinG": 8.0, "fatG": 12.0}]}
+                                """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalKcal").value(700))
                 .andExpect(jsonPath("$.mealType").value("DINNER"))
-                .andExpect(jsonPath("$.carbG").value(75.0))
-                .andExpect(jsonPath("$.source").value("AI"));
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].name").value("샐러드"))
+                .andExpect(jsonPath("$.totalKcal").value(200))
+                .andExpect(jsonPath("$.carbG").value(15.0));
+
+        // 교체된 항목만 남는다 (김치찌개·공기밥 제거)
+        mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
+                .andExpect(jsonPath("$[0].items.length()").value(1));
     }
 
     @Test
-    @DisplayName("식사 삭제 — 제거된다")
+    @DisplayName("항목 없는 부분 수정 — 끼니만 바꾸고 항목·합계는 유지된다")
+    void updateMetaOnly() throws Exception {
+        Long id = saveLunch();
+
+        mockMvc.perform(patch("/api/meals/" + id).header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"mealType\": \"SNACK\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealType").value("SNACK"))
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.totalKcal").value(650));
+    }
+
+    @Test
+    @DisplayName("식사 삭제 — 항목도 함께 제거된다")
     void deleteMeal() throws Exception {
         Long id = saveLunch();
 
@@ -158,15 +239,12 @@ class MealIntegrationTest {
         String otherBearer = "Bearer " + jwtService.issueAccessToken(other.getId());
 
         mockMvc.perform(patch("/api/meals/" + id).header("Authorization", otherBearer)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"totalKcal\": 700}"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"mealType\": \"DINNER\"}"))
                 .andExpect(status().isNotFound());
         mockMvc.perform(delete("/api/meals/" + id).header("Authorization", otherBearer))
                 .andExpect(status().isNotFound());
-
-        // 타인의 날짜별 조회에는 잡히지 않는다
         mockMvc.perform(get("/api/meals").header("Authorization", otherBearer).param("date", "2026-08-06"))
                 .andExpect(jsonPath("$.length()").value(0));
-        // 원 소유자 것은 그대로
         assertThat(mealRepository.findById(id)).isPresent();
     }
 
