@@ -2,11 +2,11 @@
 
 ## 1. 백엔드: meal_item 저장 (meal-item-storage)
 
-- [ ] 1.1 Flyway `V6__meal_item.sql` — meal_item(meal_id FK CASCADE, name, kcal, carb_g, protein_g, fat_g)
-- [ ] 1.2 MealItem 엔티티 + Meal에 `@OneToMany`(cascade, orphanRemoval) 연관, 항목 교체·합계 재계산 도메인 메서드
-- [ ] 1.3 `POST /api/meals` items 수용 — 합계 재계산 저장, 항목별 검증. `SaveMealRequest`에 items[]
-- [ ] 1.4 `GET /api/meals?date=` 응답에 items 포함, `PATCH /api/meals/{id}` items 전체 교체+합계 재계산, `DELETE` 유지
-- [ ] 1.5 저장·조회·수정·삭제 통합 테스트 — 합계=항목합, 항목 교체, 항목 검증 실패, 타인 접근 404
+- [x] 1.1 Flyway `V6__meal_item.sql` — meal_item(meal_id FK CASCADE, name, kcal, carb_g, protein_g, fat_g)
+- [x] 1.2 MealItem 엔티티 + Meal에 `@OneToMany`(cascade, orphanRemoval) 연관, 항목 교체·합계 재계산 도메인 메서드
+- [x] 1.3 `POST /api/meals` items 수용 — 합계 재계산 저장, 항목별 검증. `SaveMealRequest`에 items[]
+- [x] 1.4 `GET /api/meals?date=` 응답에 items 포함, `PATCH /api/meals/{id}` items 전체 교체+합계 재계산, `DELETE` 유지
+- [x] 1.5 저장·조회·수정·삭제 통합 테스트 — 합계=항목합, 항목 교체, 항목 검증 실패, 타인 접근 404
 
 ## 2. 백엔드: 음식별 분석 (meal-item-analysis)
 
