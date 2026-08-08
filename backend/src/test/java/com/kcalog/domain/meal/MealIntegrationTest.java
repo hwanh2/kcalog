@@ -107,6 +107,55 @@ class MealIntegrationTest {
     }
 
     @Test
+    @DisplayName("PATCH 빈 items — 400 (모든 항목 삭제 방지)")
+    void updateEmptyItemsRejected() throws Exception {
+        Long id = saveLunch();
+        mockMvc.perform(patch("/api/meals/" + id).header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"items\": []}"))
+                .andExpect(status().isBadRequest());
+        // 기존 항목 유지
+        mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
+                .andExpect(jsonPath("$[0].items.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("항목 개수 상한 초과 — 400 (자원 소진 방지)")
+    void tooManyItemsRejected() throws Exception {
+        String item = "{\"name\": \"밥\", \"kcal\": 100, \"carbG\": 20.0, \"proteinG\": 2.0, \"fatG\": 1.0}";
+        String items = java.util.Collections.nCopies(31, item).stream().collect(java.util.stream.Collectors.joining(","));
+        String body = "{\"eatenAt\": \"2026-08-06T03:30:00Z\", \"mealType\": \"LUNCH\", \"source\": \"MANUAL\", \"items\": [" + items + "]}";
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        assertThat(mealRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("항목 이름 길이 초과 — 400 (컬럼 VARCHAR(100))")
+    void itemNameTooLong() throws Exception {
+        String longName = "가".repeat(101);
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LUNCH.replace("\"김치찌개\"", "\"" + longName + "\"")))
+                .andExpect(status().isBadRequest());
+        assertThat(mealRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("합계가 옛 컬럼 한계(9999.9)를 넘는 유효 식사 — 저장 성공 (합계 컬럼 확장 검증)")
+    void largeTotalWithinWidenedColumn() throws Exception {
+        // 항목 2000 × 6 = 12000 > 9999.9(옛 NUMERIC(5,1)) 이지만 < 99999.9(NUMERIC(6,1))
+        String item = "{\"name\": \"밥\", \"kcal\": 1000, \"carbG\": 2000.0, \"proteinG\": 100.0, \"fatG\": 50.0}";
+        String items = java.util.Collections.nCopies(6, item).stream().collect(java.util.stream.Collectors.joining(","));
+        String body = "{\"eatenAt\": \"2026-08-06T03:30:00Z\", \"mealType\": \"LUNCH\", \"source\": \"MANUAL\", \"items\": [" + items + "]}";
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.carbG").value(12000.0))
+                .andExpect(jsonPath("$.totalKcal").value(6000));
+    }
+
+    @Test
     @DisplayName("날짜별 조회 — 해당 날짜(KST) 기록만 항목과 함께 반환한다")
     void byDate() throws Exception {
         saveLunch(); // 2026-08-06 KST

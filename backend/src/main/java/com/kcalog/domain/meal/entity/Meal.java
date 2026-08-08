@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /** 한 끼 식사 — 음식별 항목(meal_item)의 애그리거트 루트. 합계(total_*)는 항목 합으로 비정규화 */
 @Entity
@@ -97,7 +98,7 @@ public class Meal extends BaseEntity {
         this.fatG = sum(MealItem::getFatG);
     }
 
-    private BigDecimal sum(java.util.function.Function<MealItem, BigDecimal> field) {
+    private BigDecimal sum(Function<MealItem, BigDecimal> field) {
         return items.stream().map(field).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

@@ -7,6 +7,8 @@ public final class MealValidation {
     public static final long KCAL_MAX = 10_000;
     public static final String MACRO_MIN = "0";
     public static final String MACRO_MAX = "2000";
+    public static final int NAME_MAX = 100;      // meal_item.name VARCHAR(100)
+    public static final int MAX_ITEMS = 30;       // 한 끼 항목 개수 상한 (자원 소진·합계 오버플로 방지)
 
     private MealValidation() {
     }
