@@ -1,7 +1,8 @@
+import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { Card } from '../ui/form'
 
-/** 오늘 탭 자리표시자 — 대시보드(잔여 칼로리·타임라인)와 카메라 진입점은 후속 태스크에서 구현 */
+/** 오늘 탭 — 일일 목표 + 식사 기록 진입점. 대시보드(잔여 칼로리·타임라인)는 그룹 6에서 확장 */
 export function HomePage() {
   const { state } = useAuth()
   if (state.status !== 'authed') return null
@@ -16,6 +17,13 @@ export function HomePage() {
           <span className="ml-1 text-base font-normal text-muted">kcal</span>
         </p>
       </Card>
+
+      <Link
+        to="/meals/new"
+        className="mt-4 block rounded-md bg-brand py-3 text-center font-medium text-on-brand"
+      >
+        + 식사 기록
+      </Link>
     </section>
   )
 }

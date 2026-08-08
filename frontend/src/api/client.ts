@@ -76,7 +76,8 @@ function request(path: string, init: RequestInit) {
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
   }
-  if (init.body != null) {
+  // JSON 본문에만 Content-Type 지정 — FormData는 브라우저가 multipart boundary를 자동 설정하도록 둔다
+  if (typeof init.body === 'string') {
     headers.set('Content-Type', 'application/json')
   }
   return fetch(`${API_BASE}${path}`, { ...init, headers })
