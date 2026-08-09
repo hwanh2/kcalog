@@ -30,6 +30,14 @@ const item = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
   ...over,
 })
 
+// 오버레이 대상 — 유효 박스 2개 + 높은 신뢰도
+const overlayResult = {
+  foodFound: true,
+  items: [item(), item({ name: '공기밥', kcal: 250, carbG: 55, proteinG: 5, fatG: 1, box: { x: 0.5, y: 0.55, w: 0.25, h: 0.25 } })],
+  overallConfidence: 0.8,
+  notes: '',
+}
+
 function renderPage() {
   const client = new QueryClient()
   render(
@@ -57,48 +65,91 @@ beforeEach(() => {
   globalThis.URL.revokeObjectURL = vi.fn()
 })
 
-describe('MealRecordPage', () => {
-  it('분석 성공 + 유효 박스·높은 신뢰도 — 오버레이 모드로 항목 라벨을 사진 위에 보여준다', async () => {
-    analyzeMealMock.mockResolvedValue({
-      foodFound: true,
-      items: [item(), item({ name: '공기밥', kcal: 250, box: { x: 0.5, y: 0.55, w: 0.25, h: 0.25 } })],
-      overallConfidence: 0.8,
-      notes: '',
+describe('MealRecordPage — 오버레이-편집 모드', () => {
+  it('유효 박스+높은 신뢰도 — 사진 위 박스로 렌더하고 하단에 총량을 보여준다', async () => {
+    analyzeMealMock.mockResolvedValue(overlayResult)
+    renderPage()
+    await pickPhoto()
+
+    // 박스는 탭 가능한 버튼(aria-label)로 렌더
+    expect(await screen.findByRole('button', { name: '김치찌개 편집' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '공기밥 편집' })).toBeInTheDocument()
+    // 합계 = 400 + 250
+    expect(screen.getByText('650 kcal')).toBeInTheDocument()
+    // 편집 필드는 시트를 열기 전까진 인라인에 없음
+    expect(screen.queryByLabelText('이름')).not.toBeInTheDocument()
+  })
+
+  it('박스 탭 → 편집 시트에서 값을 바꾸면 합계가 재계산된다', async () => {
+    const user = userEvent.setup()
+    analyzeMealMock.mockResolvedValue(overlayResult)
+    renderPage()
+    await pickPhoto()
+
+    await user.click(await screen.findByRole('button', { name: '김치찌개 편집' }))
+    expect(screen.getByRole('dialog', { name: '음식 편집' })).toBeInTheDocument()
+
+    const kcal = screen.getByLabelText('칼로리 (kcal)')
+    await user.clear(kcal)
+    await user.type(kcal, '500')
+    expect(screen.getByText('750 kcal')).toBeInTheDocument() // 500 + 250
+
+    await user.click(screen.getByRole('button', { name: '완료' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('오버레이에서 "+ 음식 추가" → 위치 없는 항목 칩으로 편집·추가된다', async () => {
+    const user = userEvent.setup()
+    analyzeMealMock.mockResolvedValue(overlayResult)
+    renderPage()
+    await pickPhoto()
+
+    await user.click(await screen.findByRole('button', { name: '+ 음식 추가' }))
+    // 새 항목 편집 시트가 열림
+    await user.type(screen.getByLabelText('이름'), '된장국')
+    await user.type(screen.getByLabelText('칼로리 (kcal)'), '100')
+    await user.click(screen.getByRole('button', { name: '완료' }))
+
+    // 위치 없는 항목 칩 영역에 추가되고 합계 반영(650 + 100)
+    expect(screen.getByText('위치 없는 항목')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '된장국 편집' })).toBeInTheDocument()
+    expect(screen.getByText('750 kcal')).toBeInTheDocument()
+  })
+
+  it('오버레이 모드에서 저장 — items로 saveMeal 호출 후 홈으로', async () => {
+    const user = userEvent.setup()
+    analyzeMealMock.mockResolvedValue(overlayResult)
+    saveMealMock.mockResolvedValue({
+      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'AI', totalKcal: 650, carbG: 85, proteinG: 25, fatG: 19, items: [],
     })
     renderPage()
     await pickPhoto()
 
-    expect(await screen.findByText('AI 추정값이에요. 확인하고 수정할 수 있어요.')).toBeInTheDocument()
-    // 오버레이 라벨(이름+kcal 붙은 형태)은 오버레이 모드에서만 렌더
-    expect(screen.getByText(/김치찌개\s*400kcal/)).toBeInTheDocument()
-    // 항목 편집 필드도 채워진다
-    expect(screen.getAllByLabelText('이름')[0]).toHaveValue('김치찌개')
-    // 합계 = 400 + 250
-    expect(screen.getByText('650 kcal')).toBeInTheDocument()
-  })
+    await user.click(await screen.findByRole('button', { name: '저장' }))
 
-  it('낮은 신뢰도 — 오버레이 없이 목록형으로 폴백한다', async () => {
-    analyzeMealMock.mockResolvedValue({
-      foodFound: true,
-      items: [item()],
-      overallConfidence: 0.3, // 임계 미만
-      notes: '',
-    })
+    await waitFor(() => expect(screen.getByText('홈 화면')).toBeInTheDocument())
+    expect(saveMealMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: 'AI',
+        items: expect.arrayContaining([expect.objectContaining({ name: '김치찌개', kcal: 400 })]),
+      }),
+    )
+  })
+})
+
+describe('MealRecordPage — 리스트 폴백/수동', () => {
+  it('낮은 신뢰도 — 오버레이 없이 리스트 인라인 편집으로 폴백', async () => {
+    analyzeMealMock.mockResolvedValue({ ...overlayResult, overallConfidence: 0.3 })
     renderPage()
     await pickPhoto()
 
     await screen.findByText('AI 추정값이에요. 확인하고 수정할 수 있어요.')
-    expect(screen.queryByText(/김치찌개\s*400kcal/)).not.toBeInTheDocument() // 오버레이 라벨 없음
-    expect(screen.getAllByLabelText('이름')[0]).toHaveValue('김치찌개') // 목록 편집은 그대로
+    expect(screen.queryByRole('button', { name: '김치찌개 편집' })).not.toBeInTheDocument() // 박스 없음
+    expect(screen.getAllByLabelText('이름')[0]).toHaveValue('김치찌개') // 인라인 리스트 편집
   })
 
-  it('음식 미검출 — 안내와 함께 빈 수동 항목으로 넘어간다', async () => {
-    analyzeMealMock.mockResolvedValue({
-      foodFound: false,
-      items: [],
-      overallConfidence: 0,
-      notes: '음식을 찾지 못했어요',
-    })
+  it('음식 미검출 — 안내와 함께 빈 수동 항목(리스트)으로', async () => {
+    analyzeMealMock.mockResolvedValue({ foodFound: false, items: [], overallConfidence: 0, notes: '음식을 찾지 못했어요' })
     renderPage()
     await pickPhoto()
 
@@ -114,7 +165,7 @@ describe('MealRecordPage', () => {
     expect(await screen.findByText(/오늘 분석 횟수를 초과/)).toBeInTheDocument()
   })
 
-  it('항목 추가·삭제 — 합계가 재계산된다', async () => {
+  it('항목 추가·삭제 — 합계가 재계산된다(리스트)', async () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(screen.getByRole('button', { name: '직접 입력' }))
@@ -124,23 +175,16 @@ describe('MealRecordPage', () => {
 
     await user.click(screen.getByRole('button', { name: '+ 음식 추가' }))
     await user.type(screen.getAllByLabelText('칼로리 (kcal)')[1], '250')
-    expect(screen.getByText('650 kcal')).toBeInTheDocument() // 합계 재계산
+    expect(screen.getByText('650 kcal')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '음식 2 삭제' }))
-    expect(screen.getByText('400 kcal')).toBeInTheDocument() // 삭제 후 재계산
+    expect(screen.getByText('400 kcal')).toBeInTheDocument()
   })
 
-  it('직접 입력 → 저장 — items로 saveMeal 호출 후 홈으로 이동', async () => {
+  it('직접 입력 → 저장 — items로 saveMeal 호출 후 홈으로', async () => {
     const user = userEvent.setup()
     saveMealMock.mockResolvedValue({
-      id: 1,
-      eatenAt: '',
-      mealType: 'LUNCH',
-      source: 'MANUAL',
-      totalKcal: 500,
-      carbG: 60,
-      proteinG: 20,
-      fatG: 15,
+      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'MANUAL', totalKcal: 500, carbG: 60, proteinG: 20, fatG: 15,
       items: [{ name: '비빔밥', kcal: 500, carbG: 60, proteinG: 20, fatG: 15 }],
     })
     renderPage()
@@ -162,7 +206,7 @@ describe('MealRecordPage', () => {
     )
   })
 
-  it('범위 밖 값은 저장하지 않고 오류 표시', async () => {
+  it('범위 밖 값은 저장하지 않고 오류 표시(리스트)', async () => {
     const user = userEvent.setup()
     renderPage()
 
