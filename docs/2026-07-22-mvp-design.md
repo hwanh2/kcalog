@@ -6,6 +6,17 @@
 
 ## 개정 이력
 
+### 2026-08-09: 음식별 분석·오버레이 편집으로 확장 (총량 단위 철회)
+
+`add-meal-item-analysis` change로 식단 기록을 **사진 단위 총량**에서 **음식별 항목 분석 + 저장**으로 확장한다. 2026-07-28 개정의 "meal_item 1차 제외·총량 4개 값만" 결정을 뒤집는다. 상세 설계는 `openspec/changes/add-meal-item-analysis/design.md` 참조.
+
+- **음식별 분석**: 분석 응답이 총량 4개 값 → **항목 배열** `items[{name, kcal, carbG, proteinG, fatG, box}]` + `overallConfidence`. 합계는 항목 합으로 파생. `foodFound=false`거나 항목이 없으면 미검출로 수동 입력 유도.
+- **meal_item 저장(도입)**: `meal`(애그리거트 루트) 1:N `meal_item`(`@OneToMany`, cascade·orphanRemoval). `meal.total_*`는 항목 합으로 비정규화. 본문 §5의 `meal_item`은 이제 **구현됨** — 단 `portion_desc`·`ai_confidence` 컬럼은 두지 않고 `id, meal_id, name, kcal, carb_g, protein_g, fat_g`만. Flyway `V6`(테이블)·`V7`(합계 컬럼 `NUMERIC(6,1)` 확장).
+- **box 좌표(오버레이 전용, 미저장)**: 항목 `box`는 이미지 정규화 좌표(0~1). 사진 위 오버레이 렌더링에만 쓰고 **저장하지 않는다**(저장 요청·`meal_item`에 box 없음). 비전 모델의 위치 정밀도가 낮아 유효성·신뢰도로 오버레이 여부를 판정.
+- **확인 화면 = 오버레이-편집 하이브리드**: 박스 품질이 좋으면(모든 박스 유효 + 신뢰도 임계 이상) **사진 위 박스 탭→바텀시트 편집** + 하단 총량 + "위치 없는 항목" 칩, 나쁘면 **리스트 폴백**(사진 썸네일 + 항목 카드). 오버레이 여부는 분석 시점에 확정. 기록 탭은 사진이 없어 항상 리스트 편집. 본문 §6의 "총량 확인 화면"·"presigned 업로드"는 폐기(아래).
+- **사진 미저장 재확인**: 멀티파트 전송 → 분석 → 폐기. `photo_key` 컬럼·S3/R2·presigned URL 없음(본문 §4·§5·§6의 스토리지·업로드 서술은 폐기). 07-28 개정의 방침을 스키마·API로 확정.
+- **경쟁 서비스 조사·ML 백로그**: 리더(SnapCalorie·Cal AI·Foodvisor)는 대부분 "사진+리스트+총량"이고 depth(부피)가 정확도 핵심(오차 ~15% vs 비전 LLM ~35%). 인식 고도화는 **① 상용 SDK(Passio 등) → ② AI Hub 한식 데이터셋 파인튜닝(YOLOv8) → ③ depth** 순서로 백로그(design.md D7). MVP는 비전 LLM 유지, eval 실측 후 판단.
+
 ### 2026-08-07: 한식 특화 → 범용 식단 관리 앱으로 방향 전환
 
 제품을 한식 특화가 아니라 **모든 음식을 다루는 범용 식단 관리 앱**으로 정한다.
