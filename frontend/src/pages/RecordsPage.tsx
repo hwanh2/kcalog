@@ -6,13 +6,8 @@ import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
 import { MealItemsEditor } from '../features/meal/MealItemsEditor'
 import { fromSaved, toSaveItems, validateItems } from '../features/meal/mealItems'
 import type { EditableItem, ItemErrors } from '../features/meal/mealItems'
+import { todayLocalDate } from '../lib/date'
 import { Button, Card } from '../ui/form'
-
-function todayLocalDate(): string {
-  const now = new Date()
-  const offset = now.getTimezoneOffset() * 60_000
-  return new Date(now.getTime() - offset).toISOString().slice(0, 10)
-}
 
 export function RecordsPage() {
   const [date, setDate] = useState(todayLocalDate)
@@ -57,7 +52,10 @@ function MealRow({ meal }: { meal: Meal }) {
   const [itemErrors, setItemErrors] = useState<ItemErrors[]>([])
   const [formError, setFormError] = useState<string | null>(null)
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['meals'] })
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['meals'] })
+    void queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // 오늘 탭 집계도 갱신
+  }
   const removeMutation = useMutation({ mutationFn: () => deleteMeal(meal.id), onSuccess: invalidate })
   const updateMutation = useMutation({
     mutationFn: (body: Parameters<typeof updateMeal>[1]) => updateMeal(meal.id, body),
