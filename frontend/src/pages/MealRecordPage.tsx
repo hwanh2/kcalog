@@ -135,6 +135,7 @@ export function MealRecordPage() {
         items: toSaveItems(items),
       })
       await queryClient.invalidateQueries({ queryKey: ['meals'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // 오늘 탭 집계 갱신
       navigate('/')
     } catch {
       setNotice('저장에 실패했어요. 잠시 후 다시 시도해주세요.')
