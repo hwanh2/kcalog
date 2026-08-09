@@ -20,7 +20,7 @@ const base: Dashboard = {
 }
 
 function renderPage() {
-  const client = new QueryClient()
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
@@ -61,6 +61,13 @@ describe('HomePage 대시보드', () => {
     renderPage()
 
     expect(await screen.findByText('오늘 기록한 식사가 없어요.')).toBeInTheDocument()
+  })
+
+  it('조회 실패 — 에러 안내를 표시한다', async () => {
+    getDashboardMock.mockRejectedValue(new Error('down'))
+    renderPage()
+
+    expect(await screen.findByText(/대시보드를 불러오지 못했어요/)).toBeInTheDocument()
   })
 
   it('식사 기록 진입 링크', async () => {

@@ -51,7 +51,9 @@ OpenAI Chat Completions(vision) 호출. `response_format`의 json_schema(strict)
 `weight_log`는 이미 존재. `POST /api/weights`(오늘 또는 지정일 upsert), `GET /api/weights?from=&to=`(기간별 추이). 온보딩의 upsert 네이티브 쿼리를 재사용.
 
 ### D6. 하루 대시보드: 온디맨드 집계 (캐시·비정규화 없음)
-`GET /api/dashboard?date=`가 해당일 meal 합계 + member.daily_kcal_target로 잔여·탄단지 비율·타임라인을 계산해 반환. meal의 total_* 합산은 쿼리로 집계(1차엔 별도 일일 요약 테이블 없음 — 하루 식사 수가 적어 집계 비용 무시 가능).
+`GET /api/dashboard?date=`가 해당일 meal 합계 + member.daily_kcal_target로 잔여·탄단지 gram 합계·타임라인을 반환. meal의 total_* 합산은 쿼리로 집계(1차엔 별도 일일 요약 테이블 없음 — 하루 식사 수가 적어 집계 비용 무시 가능).
+
+**이탈 (2026-08-09, 구현 시 결정)**: 탄단지 **구성 비율(%)은 서버가 계산하지 않고** gram 합계(carbG/proteinG/fatG)만 authoritative로 반환한다. 비율은 gram으로부터 자명하게 파생되는 표현 계층 관심사라 프론트(`MacroBar`)가 계산한다 — 서버에 비율 표현·반올림 규칙을 두지 않아 단순하고, 합계만 단일 출처로 유지된다. spec의 "탄단지 비율 제공"은 이 gram 합계 제공으로 충족한다.
 
 ### D7. 프론트 3탭 셸 + Tailwind
 Tailwind CSS(Vite 플러그인)로 스타일 시스템 도입. 하단 탭 3개: 오늘(홈)/기록/프로필. `오늘` 중앙에 카메라 진입점. 기존 온보딩·프로필·홈 화면을 셸·스타일에 편입. 라우팅은 인증 가드 하위에 탭 라우트 구성.

@@ -9,7 +9,7 @@ import { Card } from '../ui/form'
 /** 오늘 탭 — 잔여 칼로리·탄단지·식사 타임라인 대시보드 + 식사 기록 진입 */
 export function HomePage() {
   const date = todayLocalDate()
-  const { data, isPending } = useQuery({
+  const { data, isPending, isError } = useQuery({
     queryKey: ['dashboard', date],
     queryFn: () => getDashboard(date),
   })
@@ -19,6 +19,7 @@ export function HomePage() {
       <h1 className="text-xl font-semibold">오늘</h1>
 
       {isPending && <p className="mt-4 text-muted">불러오는 중…</p>}
+      {isError && <p className="mt-4 text-danger">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>}
       {data && <Summary data={data} />}
 
       <Link
