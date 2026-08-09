@@ -2,6 +2,19 @@ import { Button, Field, TextInput } from '../../ui/form'
 import { MAX_ITEMS, emptyItem, totals } from './mealItems'
 import type { EditableItem, ItemErrors } from './mealItems'
 
+/** 합계 한 줄 — 리스트 편집기와 오버레이 모드가 공유 */
+export function TotalsLine({ items }: { items: EditableItem[] }) {
+  const t = totals(items)
+  return (
+    <p className="text-sm font-medium text-ink">
+      합계 <span className="text-brand">{t.kcal} kcal</span>
+      <span className="ml-2 text-muted">
+        탄 {t.carbG} · 단 {t.proteinG} · 지 {t.fatG}
+      </span>
+    </p>
+  )
+}
+
 /** 음식 항목 편집기 — 항목별 이름·영양값 수정, 추가·삭제, 합계 실시간 표시.
  *  식사 기록(확인 화면)과 기록 탭(수정)이 공유한다. box는 오버레이 전용이라 여기서 다루지 않는다 */
 export function MealItemsEditor({
@@ -21,8 +34,6 @@ export function MealItemsEditor({
     onChange(items.map((it, idx) => (idx === i ? { ...it, ...part } : it)))
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i))
   const add = () => onChange([...items, emptyItem()])
-
-  const t = totals(items)
 
   return (
     <div>
@@ -98,12 +109,9 @@ export function MealItemsEditor({
         + 음식 추가
       </Button>
 
-      <p className="mt-3 text-sm font-medium text-ink">
-        합계 <span className="text-brand">{t.kcal} kcal</span>
-        <span className="ml-2 text-muted">
-          탄 {t.carbG} · 단 {t.proteinG} · 지 {t.fatG}
-        </span>
-      </p>
+      <div className="mt-3">
+        <TotalsLine items={items} />
+      </div>
     </div>
   )
 }
