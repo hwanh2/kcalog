@@ -11,3 +11,12 @@ app:
     secret: ${JWT_SECRET}
   openai:
     api-key: ${OPENAI_API_KEY}
+  storage:
+    # 운영 사진 스토리지 — S3/R2 접근 정보 필수(미주입 시 기동 실패)
+    bucket: ${STORAGE_BUCKET}
+    endpoint: ${STORAGE_ENDPOINT}
+    region: ${STORAGE_REGION}
+    access-key: ${STORAGE_ACCESS_KEY}
+    secret-key: ${STORAGE_SECRET_KEY}
+    path-style: ${STORAGE_PATH_STYLE:false}
+    retention-hours: ${STORAGE_RETENTION_HOURS:24}

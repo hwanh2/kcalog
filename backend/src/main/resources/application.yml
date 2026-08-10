@@ -50,3 +50,12 @@ app:
     model: ${OPENAI_MODEL:gpt-5.4-mini}
     timeout: 20s
     daily-analysis-limit: 20
+  storage:
+    # 사진 Object Storage — 로컬은 docker-compose MinIO 기본값으로 동작. 운영은 S3/R2 주입(application-prod.yml)
+    bucket: ${STORAGE_BUCKET:kcalog-photos}
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    region: ${STORAGE_REGION:us-east-1}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+    path-style: ${STORAGE_PATH_STYLE:true}
+    retention-hours: ${STORAGE_RETENTION_HOURS:24}
