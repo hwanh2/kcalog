@@ -16,15 +16,21 @@ public record MealAnalysisResponse(
         return new MealAnalysisResponse(false, List.of(), BigDecimal.ZERO, notes);
     }
 
-    /** 음식 한 항목 — 이름·영양값 + 사진 위 위치 박스(오버레이용, 미저장) */
+    /** 음식 한 항목 — 이름·영양값 + 사진 위 위치 박스(오버레이용, 미저장).
+     *  corrected는 개인 보정치로 값이 대체됐는지(AI 스키마 밖 후처리 플래그, 기본 false). */
     public record AnalyzedItem(
             String name,
             int kcal,
             BigDecimal carbG,
             BigDecimal proteinG,
             BigDecimal fatG,
-            BoundingBox box
+            BoundingBox box,
+            boolean corrected
     ) {
+        /** 개인 보정값으로 대체한 새 항목 — 이름·위치는 유지, 영양값만 교체하고 corrected 표시 */
+        public AnalyzedItem overriddenWith(int kcal, BigDecimal carbG, BigDecimal proteinG, BigDecimal fatG) {
+            return new AnalyzedItem(name, kcal, carbG, proteinG, fatG, box, true);
+        }
     }
 
     /** 이미지 정규화 좌표(0~1) — 좌상단 x,y와 폭·높이. 오버레이 전용, 부정확 시 프론트가 목록형으로 폴백 */

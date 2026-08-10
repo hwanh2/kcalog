@@ -1,6 +1,7 @@
 package com.kcalog.domain.meal.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kcalog.domain.correction.dto.PersonalCorrection;
 import com.kcalog.domain.meal.dto.MealAnalysisResponse;
 import com.kcalog.domain.meal.exception.DailyAnalysisLimitException;
 import com.kcalog.domain.meal.exception.MealAnalysisException;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 /** 사진 → OpenAI 영양 분석. 저장하지 않고 결과만 반환한다. 일일 호출 제한·재시도·폴백 포함 */
@@ -34,10 +36,10 @@ public class MealAnalysisService {
         this.clock = clock;
     }
 
-    /** 동기 분석(기존 엔드포인트) — 일일 제한 판정 후 이미지 분석. 비동기 흐름은 두 단계를 나눠 쓴다 */
+    /** 동기 분석(레거시 엔드포인트) — 일일 제한 판정 후 이미지 분석. 개인 보정 주입 없음(빈 이력) */
     public MealAnalysisResponse analyze(Long memberId, byte[] image, String contentType) {
         enforceDailyLimit(memberId);
-        return analyzeImage(image, contentType);
+        return analyzeImage(image, contentType, List.of());
     }
 
     /**
@@ -53,11 +55,14 @@ public class MealAnalysisService {
         }
     }
 
-    /** 이미지만 분석(제한 판정 없음) — 비동기 워커가 호출. 재시도·NO_FOOD·파싱 실패 처리 포함 */
-    public MealAnalysisResponse analyzeImage(byte[] image, String contentType) {
+    /**
+     * 이미지만 분석(제한 판정 없음) — 비동기 워커가 호출. 재시도·NO_FOOD·파싱 실패 처리 포함.
+     * corrections가 있으면 개인 보정 이력을 프롬프트에 주입(B) — 이력이 비면 프롬프트는 기존과 동일(eval 유효).
+     */
+    public MealAnalysisResponse analyzeImage(byte[] image, String contentType, List<PersonalCorrection> corrections) {
         AppProperties.Openai openai = props.openai();
         String dataUrl = toDataUrl(image, contentType);
-        Map<String, Object> body = MealAnalysisPrompt.requestBody(openai.model(), dataUrl);
+        Map<String, Object> body = MealAnalysisPrompt.requestBody(openai.model(), dataUrl, corrections);
         return parse(callWithRetry(body));
     }
 

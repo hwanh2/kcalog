@@ -1,5 +1,8 @@
 package com.kcalog.domain.meal.service;
 
+import com.kcalog.domain.correction.dto.PersonalCorrection;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,16 +58,38 @@ final class MealAnalysisPrompt {
                                         "notes", Map.of("type", "string", "description", "사용자 안내(음식 미검출 사유 등)")))));
     }
 
-    static Map<String, Object> requestBody(String model, String imageDataUrl) {
-        var userContent = List.of(
-                Map.of("type", "text", "text", "이 사진 속 음식을 항목별로 나누어 각각의 영양과 위치를 추정해 주세요."),
-                Map.of("type", "image_url", "image_url", Map.of("url", imageDataUrl)));
+    static Map<String, Object> requestBody(String model, String imageDataUrl, List<PersonalCorrection> corrections) {
+        var userContent = new ArrayList<Map<String, Object>>();
+        userContent.add(Map.of("type", "text", "text",
+                "이 사진 속 음식을 항목별로 나누어 각각의 영양과 위치를 추정해 주세요."));
+        String history = personalHistory(corrections);
+        if (!history.isEmpty()) {
+            userContent.add(Map.of("type", "text", "text", history));
+        }
+        userContent.add(Map.of("type", "image_url", "image_url", Map.of("url", imageDataUrl)));
         return Map.of(
                 "model", model,
                 "messages", List.of(
                         Map.of("role", "system", "content", SYSTEM),
                         Map.of("role", "user", "content", userContent)),
                 "response_format", responseFormat());
+    }
+
+    /**
+     * 개인 보정 이력 주입(B) — 사용자가 과거에 정정한 음식·영양값을 참고 자료로 제공한다.
+     * 이력이 비면 빈 문자열(프롬프트가 기존과 동일해져 eval 세트가 그대로 유효). 정확 재현은 코드 덮어쓰기(A)가 보장.
+     */
+    private static String personalHistory(List<PersonalCorrection> corrections) {
+        if (corrections == null || corrections.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(
+                "참고: 이 사용자가 직접 정정한 음식별 영양값입니다. 같은/유사한 음식이 보이면 이 값을 우선 반영해 추정하세요.\n");
+        for (PersonalCorrection c : corrections) {
+            sb.append("- %s: %dkcal, 탄 %sg, 단 %sg, 지 %sg%n"
+                    .formatted(c.displayName(), c.kcal(), c.carbG(), c.proteinG(), c.fatG()));
+        }
+        return sb.toString();
     }
 
     private MealAnalysisPrompt() {

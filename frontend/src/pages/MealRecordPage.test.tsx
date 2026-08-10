@@ -33,6 +33,7 @@ const item = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
   proteinG: 20,
   fatG: 18,
   box: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
+  corrected: false,
   ...over,
 })
 

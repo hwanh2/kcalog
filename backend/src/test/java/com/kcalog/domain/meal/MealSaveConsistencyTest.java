@@ -73,7 +73,7 @@ class MealSaveConsistencyTest {
         SaveMealRequest request = new SaveMealRequest(
                 Instant.parse("2026-08-06T03:30:00Z"), MealType.LUNCH, MealSource.AI,
                 List.of(new MealItemRequest("김치찌개", 400,
-                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"))),
+                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"), false)),
                 job.getId());
 
         assertThatThrownBy(() -> mealService.save(member.getId(), request))

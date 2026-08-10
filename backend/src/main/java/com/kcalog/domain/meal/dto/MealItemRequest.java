@@ -17,12 +17,18 @@ import static com.kcalog.domain.meal.dto.MealValidation.MACRO_MAX;
 import static com.kcalog.domain.meal.dto.MealValidation.MACRO_MIN;
 import static com.kcalog.domain.meal.dto.MealValidation.NAME_MAX;
 
-/** 음식별 항목 입력 — 저장·수정 요청의 items 원소 */
+/** 음식별 항목 입력 — 저장·수정 요청의 items 원소.
+ *  remember=true면 저장 시 이 항목의 확정 영양값을 개인 보정치로 학습(upsert)한다(차별점 #1). 기본 false. */
 public record MealItemRequest(
         @NotBlank @Size(max = NAME_MAX) String name,
         @NotNull @Min(KCAL_MIN) @Max(KCAL_MAX) Integer kcal,
         @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal carbG,
         @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal proteinG,
-        @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal fatG
+        @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal fatG,
+        Boolean remember
 ) {
+    /** 미지정(null)은 기억하지 않음으로 취급 */
+    public boolean shouldRemember() {
+        return Boolean.TRUE.equals(remember);
+    }
 }

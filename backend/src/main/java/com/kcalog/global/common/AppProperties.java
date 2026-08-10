@@ -5,7 +5,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 @ConfigurationProperties(prefix = "app")
-public record AppProperties(String frontendBaseUrl, Jwt jwt, RefreshToken refreshToken, Openai openai, Storage storage) {
+public record AppProperties(String frontendBaseUrl, Jwt jwt, RefreshToken refreshToken, Openai openai,
+                            Storage storage, Analysis analysis) {
+
+    /** 분석 개인화 설정 — correctionInjectLimit: 프롬프트에 주입할 최근 보정치 상한(토큰·지연 방어). */
+    public record Analysis(int correctionInjectLimit) {
+    }
 
     public record Jwt(String secret, Duration accessTokenTtl) {
     }
