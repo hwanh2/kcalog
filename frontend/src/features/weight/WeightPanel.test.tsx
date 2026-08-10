@@ -56,6 +56,7 @@ describe('WeightPanel', () => {
     expect(screen.getByRole('button', { name: '체중 수정' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: '체중 추이 그래프' })).toBeInTheDocument()
     expect(screen.getByText('-0.5kg')).toBeInTheDocument() // 어제보다 (71 → 70.5)
+    expect(screen.getByText('🔥 2일 연속')).toBeInTheDocument() // streak 배지
     expect(screen.getByText(/목표 체중 65 kg까지/)).toBeInTheDocument()
   })
 

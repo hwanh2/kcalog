@@ -1,5 +1,5 @@
 import type { WeightPoint } from '../../api/weight'
-import { formatKoreanDate } from './estimator'
+import { koreanWeekday } from './estimator'
 
 /** 체중 추세선 — 원시 점(옅게) + EMA 추세선(진하게) + 축 라벨·범례. 경량 인라인 SVG. points 오름차순 가정 */
 export function WeightTrend({ points }: { points: WeightPoint[] }) {
@@ -75,5 +75,5 @@ export function WeightTrend({ points }: { points: WeightPoint[] }) {
 /** YYYY-MM-DD → "M/D (요일)" */
 function shortDate(iso: string): string {
   const [, m, d] = iso.split('-')
-  return `${Number(m)}/${Number(d)}${formatKoreanDate(iso).slice(-4)}`
+  return `${Number(m)}/${Number(d)} (${koreanWeekday(iso)})`
 }

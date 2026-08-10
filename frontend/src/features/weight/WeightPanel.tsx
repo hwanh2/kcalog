@@ -5,7 +5,7 @@ import { addDays } from '../../lib/date'
 import { Card } from '../../ui/form'
 import { WeightTrend } from './WeightTrend'
 import { GoalEstimator } from './GoalEstimator'
-import { prevDelta, sliceByRange } from './estimator'
+import { prevChange, round1, sliceByRange } from './estimator'
 import type { TrendRange } from './estimator'
 import { validateWeight } from './weightValidation'
 
@@ -42,7 +42,7 @@ export function WeightPanel({ date }: { date: string }) {
   function step(delta: number) {
     const cur = Number(input)
     const base = input !== '' && Number.isFinite(cur) ? cur : (existingKg ?? summary?.latestKg ?? 70)
-    setInput(String(Math.round((base + delta) * 10) / 10))
+    setInput(String(round1(base + delta)))
     setError(null)
   }
 
@@ -57,7 +57,8 @@ export function WeightPanel({ date }: { date: string }) {
   }
 
   const [, m, d] = date.split('-')
-  const delta = summary ? prevDelta(summary.points) : null
+  const change = summary ? prevChange(summary.points) : null
+  const streak = summary?.streakDays ?? 0
   const chartPoints = summary ? sliceByRange(summary.points, range) : []
 
   return (
@@ -68,13 +69,9 @@ export function WeightPanel({ date }: { date: string }) {
           <p className="text-sm text-white/80">
             오늘 · {Number(m)}월 {Number(d)}일
           </p>
-          {delta != null && (
-            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs text-white/90">
-              어제보다{' '}
-              <span className="font-semibold text-white">
-                {delta > 0 ? '+' : ''}
-                {delta}kg
-              </span>
+          {streak > 0 && (
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
+              🔥 {streak}일 연속
             </span>
           )}
         </div>
@@ -91,6 +88,15 @@ export function WeightPanel({ date }: { date: string }) {
           />
           <span className="mb-0.5 text-lg font-semibold text-white/75">kg</span>
         </div>
+        {change != null && (
+          <p className="mt-1 text-sm text-white/80">
+            {change.label}{' '}
+            <span className="font-semibold text-white">
+              {change.delta > 0 ? '+' : ''}
+              {change.delta}kg
+            </span>
+          </p>
+        )}
         {error && (
           <p role="alert" className="mt-1 text-sm text-white">
             {error}

@@ -1,12 +1,10 @@
 import type { ProjectionInfo } from '../../api/weight'
 import { Card } from '../../ui/form'
-import { daysUntil, formatKoreanDate, progressFraction } from './estimator'
+import { daysUntil, formatKoreanDate, progressFraction, round1 } from './estimator'
 import { todayLocalDate } from '../../lib/date'
 
-const round1 = (v: number) => Math.round(v * 10) / 10
-
 /** 목표 달성 예상 — 밝은 카드. 목표가 있을 때만 렌더(부모가 판단).
- *  진행바(시작·현재·목표) + status별 안내. ON_TRACK이면 D-day·페이스·예상일 표시 */
+ *  진행바(시작·현재·목표) + status별 안내. ON_TRACK이면 D-day·페이스·예상일 표시. 도달 상태는 별도 문구 */
 export function GoalEstimator({
   startKg,
   currentKg,
@@ -21,25 +19,34 @@ export function GoalEstimator({
 
   const remaining = round1(target - currentKg) // 목표까지 (음수=감량 필요)
   const fraction = progressFraction(startKg, currentKg, target)
-  const onTrack = projection.status === 'ON_TRACK' && projection.projectedDate != null
-  const dday = onTrack ? daysUntil(todayLocalDate(), projection.projectedDate as string) : null
+  // 도달: weeks 0 또는 잔여 거의 0 (백엔드가 projectedDate=최신기록일로 주는 케이스)
+  const reached = projection.status === 'ON_TRACK' && (projection.weeks === 0 || Math.abs(remaining) < 0.1)
+  const onTrackFuture = projection.status === 'ON_TRACK' && !reached && projection.projectedDate != null
+  // 최신 기록이 과거면 예상일이 과거가 될 수 있어 D-day는 양수일 때만 노출
+  const dday = onTrackFuture ? daysUntil(todayLocalDate(), projection.projectedDate as string) : null
 
   return (
     <Card className="mt-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-ink">목표 달성 예상</p>
-        {dday != null && (
+        {dday != null && dday > 0 && (
           <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
             예상 D-{dday}일
           </span>
         )}
       </div>
       <h2 className="mt-1 text-lg font-bold text-ink">
-        목표 체중 {target} kg까지{' '}
-        <span className="text-brand">
-          {remaining > 0 ? '+' : ''}
-          {remaining} kg
-        </span>
+        {reached ? (
+          <>목표 체중 {target} kg 도달 🎉</>
+        ) : (
+          <>
+            목표 체중 {target} kg까지{' '}
+            <span className="text-brand">
+              {remaining > 0 ? '+' : ''}
+              {remaining} kg
+            </span>
+          </>
+        )}
       </h2>
 
       {/* 진행바 — 시작→목표 중 현재 위치 */}
@@ -62,7 +69,9 @@ export function GoalEstimator({
       </div>
 
       <p className="mt-4 text-sm text-muted">
-        {onTrack ? (
+        {reached ? (
+          '🎉 목표 체중에 도달했어요!'
+        ) : onTrackFuture ? (
           <>
             💡 현재 페이스(주당 평균 {projection.weeklyRateKg}kg) 지속 시,{' '}
             <span className="font-medium text-brand">{formatKoreanDate(projection.projectedDate as string)}</span>

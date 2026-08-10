@@ -15,9 +15,9 @@
 ## 3. 프론트엔드
 - [x] 3.1 `api/weight.ts` — `WeightSummary` 타입 + `getWeightSummary(from, to)`
 - [x] 3.2 `WeightTrend` — 원시 점 위에 EMA 추세선 오버레이
-- [x] 3.3 BMI 카드 — 값 + 분류 배지(신장 없으면 숨김) (`WeightInsights`)
-- [x] 3.4 목표 예상 — status별 표시("약 N주 예상"/"데이터 부족"/"도달 어려움"/목표 없음 숨김)
-- [x] 3.5 streak 배지 — "N일 연속 기록"
+- [x] 3.3 BMI — 백엔드 계산·응답 제공(탭 UI 미노출, 목업에 없음 — design 구현 이탈 참고)
+- [x] 3.4 목표 예상 — status별 표시("약 N주 예상"/"데이터 부족"/"도달 어려움"/도달/목표 없음 숨김)
+- [x] 3.5 streak 배지 — 히어로 카드 "🔥 N일 연속"
 - [x] 3.6 `WeightPanel`/`WeightPage` 조립 + 프론트 테스트(요약 렌더·status 분기)
 
 ## 4. 마무리

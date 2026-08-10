@@ -1,7 +1,7 @@
 # nutrition-correction Specification
 
 ## Purpose
-TBD - created by archiving change add-nutrition-correction. Update Purpose after archive.
+사용자가 사진 분석 결과를 정정하고 "이 값 기억하기"를 켜면 그 확정 영양값을 회원별 개인 보정치로 저장(최신값 덮어쓰기)하고, 이후 분석 시 프롬프트 주입(일반화)과 코드 덮어쓰기(정확 재현)로 자동 반영하는 학습형 수정(차별점 #1) 능력을 규정한다.
 ## Requirements
 ### Requirement: 정정값 학습 저장
 사용자가 분석 결과를 정정하고 "기억하기"를 선택해 저장하면, 시스템은 그 항목의 확정 영양값(kcal·탄·단·지)을 회원별 개인 보정치로 저장해야 한다(SHALL). 매칭 키는 정규화된 음식명이어야 하며(MUST), 같은 음식으로 재정정하면 최신값으로 덮어써야 한다(MUST — last-write-wins). "기억하기"를 선택하지 않은 항목은 보정치로 저장하지 않아야 한다(MUST NOT). 보정치 저장은 식사 저장과 하나의 트랜잭션이어야 한다(MUST) — 식사 저장이 실패하면 보정치 저장도 롤백된다.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   daysUntil,
   formatKoreanDate,
-  prevDelta,
+  prevChange,
   progressFraction,
   sliceByRange,
 } from './estimator'
@@ -23,12 +23,15 @@ describe('sliceByRange', () => {
   })
 })
 
-describe('prevDelta', () => {
-  it('최신 − 직전 기록', () => {
-    expect(prevDelta([p('2026-08-07', 71), p('2026-08-08', 70.6)])).toBe(-0.4)
+describe('prevChange', () => {
+  it('연속일이면 "어제보다" 라벨', () => {
+    expect(prevChange([p('2026-08-07', 71), p('2026-08-08', 70.6)])).toEqual({ delta: -0.4, label: '어제보다' })
+  })
+  it('갭이 있으면 "직전 대비" 라벨', () => {
+    expect(prevChange([p('2026-08-01', 71), p('2026-08-08', 70.6)])).toEqual({ delta: -0.4, label: '직전 대비' })
   })
   it('점 1개면 null', () => {
-    expect(prevDelta([p('2026-08-08', 70)])).toBeNull()
+    expect(prevChange([p('2026-08-08', 70)])).toBeNull()
   })
 })
 
