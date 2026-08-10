@@ -12,12 +12,6 @@ vi.mock('../api/meal', () => ({
   updateMeal: vi.fn(),
   deleteMeal: vi.fn(),
 }))
-// RecordsPage가 WeightPanel을 렌더하므로 체중 API도 목킹(실제 fetch 방지)
-vi.mock('../api/weight', () => ({
-  getWeights: vi.fn().mockResolvedValue([]),
-  recordWeight: vi.fn(),
-}))
-
 const getMealsMock = vi.mocked(getMeals)
 const updateMealMock = vi.mocked(updateMeal)
 const deleteMealMock = vi.mocked(deleteMeal)

@@ -3,12 +3,14 @@ import { BrowserRouter, Route, Routes } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import { CallbackPage } from './pages/CallbackPage'
+import { ComingSoonPage } from './pages/ComingSoonPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MealRecordPage } from './pages/MealRecordPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RecordsPage } from './pages/RecordsPage'
+import { WeightPage } from './pages/WeightPage'
 import { AppShell } from './shell/AppShell'
 
 const queryClient = new QueryClient()
@@ -24,11 +26,14 @@ function App() {
             <Route element={<RequireAuth />}>
               {/* 온보딩은 셸 밖 — 가드가 미완료 회원을 여기로 강제한다 */}
               <Route path="/onboarding" element={<OnboardingPage />} />
-              {/* 완료 회원용 3탭 셸 */}
+              {/* 완료 회원용 5탭 셸 (리포트·AI PT는 준비 중 — 각 기능 change에서 구현) */}
               <Route element={<AppShell />}>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/meals/new" element={<MealRecordPage />} />
                 <Route path="/records" element={<RecordsPage />} />
+                <Route path="/weight" element={<WeightPage />} />
+                <Route path="/report" element={<ComingSoonPage title="리포트" />} />
+                <Route path="/ai-pt" element={<ComingSoonPage title="AI PT" />} />
+                <Route path="/meals/new" element={<MealRecordPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>
