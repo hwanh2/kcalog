@@ -18,6 +18,7 @@ const analyzed = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
   proteinG: 20,
   fatG: 18,
   box: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
+  corrected: false,
   ...over,
 })
 
@@ -28,6 +29,8 @@ const editable = (over: Partial<EditableItem> = {}): EditableItem => ({
   proteinG: '20',
   fatG: '18',
   box: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
+  remember: false,
+  corrected: false,
   ...over,
 })
 
@@ -119,9 +122,29 @@ describe('fromAnalyzed / toSaveItems', () => {
     const saved = toSaveItems([e])
     expect(saved[0]).toEqual({ name: '김치찌개', kcal: 400, carbG: 30, proteinG: 20, fatG: 18 })
     expect(saved[0]).not.toHaveProperty('box')
+    expect(saved[0]).not.toHaveProperty('remember') // 기본은 기억 안 함 → 필드 생략
+  })
+
+  it('corrected는 분석 항목에서 이어받는다', () => {
+    expect(fromAnalyzed(analyzed({ corrected: true })).corrected).toBe(true)
+    expect(fromAnalyzed(analyzed()).remember).toBe(false)
+  })
+
+  it('remember=true면 저장 항목에 remember를 담는다', () => {
+    const saved = toSaveItems([editable({ remember: true })])
+    expect(saved[0].remember).toBe(true)
   })
 
   it('emptyItem은 빈 편집 항목', () => {
-    expect(emptyItem()).toEqual({ name: '', kcal: '', carbG: '', proteinG: '', fatG: '', box: null })
+    expect(emptyItem()).toEqual({
+      name: '',
+      kcal: '',
+      carbG: '',
+      proteinG: '',
+      fatG: '',
+      box: null,
+      remember: false,
+      corrected: false,
+    })
   })
 })

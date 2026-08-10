@@ -1,6 +1,7 @@
 package com.kcalog.domain.meal.service;
 
 import com.kcalog.domain.analysis.service.AnalysisService;
+import com.kcalog.domain.correction.service.FoodCorrectionService;
 import com.kcalog.domain.meal.dto.MealItemRequest;
 import com.kcalog.domain.meal.dto.MealResponse;
 import com.kcalog.domain.meal.dto.SaveMealRequest;
@@ -25,6 +26,7 @@ public class MealService {
     private final MealRepository mealRepository;
     private final StorageService storageService;
     private final AnalysisService analysisService;
+    private final FoodCorrectionService foodCorrectionService;
     private final Clock clock;
 
     /**
@@ -42,7 +44,17 @@ public class MealService {
         if (imageKey != null) {
             meal.attachImage(imageKey);
         }
-        return MealResponse.of(mealRepository.save(meal));
+        MealResponse response = MealResponse.of(mealRepository.save(meal));
+        rememberCorrections(memberId, request.items()); // remember=true 항목을 개인 보정치로 학습(같은 트랜잭션)
+        return response;
+    }
+
+    /** "기억하기"로 표시된 항목의 확정 영양값을 개인 보정치로 upsert (차별점 #1) */
+    private void rememberCorrections(Long memberId, List<MealItemRequest> items) {
+        items.stream()
+                .filter(MealItemRequest::shouldRemember)
+                .forEach(i -> foodCorrectionService.upsert(
+                        memberId, i.name(), i.kcal(), i.carbG(), i.proteinG(), i.fatG()));
     }
 
     /** 날짜별 조회 — 해당 날짜의 현지 시간대 하루 구간 [00:00, 다음날 00:00)의 식사를 시각 순으로 */

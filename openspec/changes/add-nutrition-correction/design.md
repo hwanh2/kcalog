@@ -20,7 +20,7 @@
 쓰기 트리거는 *사용자가 값을 고치고 "기억하기"를 켠 저장*뿐(매 저장 자동 반영 아님). 재정정 시 upsert로 최신값 덮어쓰기(last-write-wins). 평균 누적은 (1)예측 불가("480이라 했는데 왜 500"), (2)합계·횟수 저장 복잡, (3)양 노이즈 오염으로 기각. 평균은 grams 도입 후 "평소 제공량 평균"으로 재검토.
 
 ### D3. 매칭 — 정규화된 음식명 완전일치
-매칭 키 = 정규화 이름: 앞뒤 공백 제거 → 연속 공백 1칸 축소 → 영문 소문자화(한글은 대소문자 없음). 표시용 원 이름(`food_name_display`)은 별도 보존. 유사도(임베딩) 매칭은 후속. 참고로 B(프롬프트 주입)의 유사 매칭은 AI가 담당하므로, 정규화 완전일치는 A(코드 덮어쓰기)와 upsert 키에만 쓰인다.
+매칭 키 = 정규화 이름: **모든 공백 제거** → 영문 소문자화(한글은 대소문자 없음). 한국어 음식명은 띄어쓰기 불일치가 흔해("김치 찌개" vs "김치찌개") 공백을 통째로 제거해 흡수한다. 표시용 원 이름(`food_name_display`)은 별도 보존. 유사도(임베딩) 매칭은 후속. 참고로 B(프롬프트 주입)의 유사 매칭은 AI가 담당하므로, 정규화 완전일치는 A(코드 덮어쓰기)와 upsert 키에만 쓰인다.
 
 ### D4. 데이터 모델 — `food_correction`
 ```
@@ -67,11 +67,17 @@ UNIQUE (member_id, food_name_normalized)
 
 ## Migration Plan
 
-- `V10__food_correction.sql`: 신규 테이블 + `UNIQUE (member_id, food_name_normalized)` + `member_id` 인덱스. additive.
+- `V10__food_correction.sql`: 신규 테이블 + `UNIQUE (member_id, food_name_normalized)`. additive. member_id 단독 인덱스는 두지 않는다 — UNIQUE 복합 인덱스의 선두 컬럼(member_id)이 member_id 단독 조회(recentFor)도 leftmost-prefix로 커버하므로 중복이다.
 - `AppProperties`에 `analysis.correction-inject-limit`(기본 50), `analysis.low-confidence-threshold`(기본 0.7) 추가. `application.yml`·`application-prod.yml` 기본값.
 
 ## Open Questions (구현으로 확정)
 
-- 정규화 유틸 위치 — `FoodCorrection` 도메인 내 static(`FoodNames.normalize`) 후보. 구현에서 확정.
-- 이력 주입 형식(프롬프트 텍스트 표 vs JSON) — 구현·간이 실측으로 확정. 기본은 간결한 텍스트 목록.
-- `analyzeImage` 파라미터 타입 — 엔티티 직접 vs 경량 뷰 record. 도메인 결합 낮추려면 경량 뷰. 구현에서 확정.
+- ~~정규화 유틸 위치~~ → `correction.entity.FoodNames.normalize` static.
+- ~~이력 주입 형식~~ → 간결한 텍스트 목록(`- 음식명: NkcaL, 탄 Ng, 단 Ng, 지 Ng`)을 user 메시지의 텍스트 파트로 추가.
+- ~~`analyzeImage` 파라미터 타입~~ → 경량 뷰 `correction.dto.PersonalCorrection`(엔티티 미노출).
+
+## 구현 이탈 (design 대비)
+
+- **정규화 규칙 강화**: 최초 "연속 공백 축소"에서 **모든 공백 제거**로 변경(D3). 한국어 음식명 띄어쓰기 불일치("김치 찌개" vs "김치찌개")가 가장 흔한 변형이라, 매칭 키에서 공백을 통째로 제거해 흡수한다(표시명은 별도 보존). TDD 중 실패 테스트로 드러나 결정.
+- **`remember`는 `Boolean`(박스 타입)**: Spring MVC의 Jackson(Boot 4)이 record의 primitive 필드 누락 시 400을 내, JSON에 `remember`가 없는 기존 저장 요청이 깨졌다. 코드베이스 관례(요청 record는 `Integer kcal` 등 박스 타입)에 맞춰 `Boolean remember` + `shouldRemember()`로 해결. (반면 `AnalyzedItem.corrected`는 내부 `new ObjectMapper()`로만 파싱돼 primitive 유지 무방.)
+- **"확인 필요" 임계값은 프론트 상수**: 백엔드가 플래그를 계산하지 않고 `overallConfidence`만 응답하므로, 임계값(0.7)은 프론트 `LOW_CONFIDENCE_THRESHOLD`에 둔다(불필요한 백엔드 설정 회피). `correction-inject-limit`만 백엔드 설정.

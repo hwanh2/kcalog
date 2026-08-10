@@ -10,8 +10,12 @@ export const MAX_ITEMS = 30
 /** 오버레이 모드로 볼 최소 신뢰도 — eval 실측 후 조정할 수 있는 플래그(design D2) */
 export const OVERLAY_CONFIDENCE_THRESHOLD = 0.5
 
+/** 이 값 미만이면 "확인 필요" 표시로 정정을 유도한다(백엔드 design D8과 동일 기준) */
+export const LOW_CONFIDENCE_THRESHOLD = 0.7
+
 /** 편집 중 항목 — 입력은 문자열로 보관(부분 입력 허용), 저장 시 숫자 변환·검증한다.
- *  box는 오버레이 렌더링 전용이며 저장 요청엔 포함하지 않는다(없을 수 있음) */
+ *  box는 오버레이 렌더링 전용이며 저장 요청엔 포함하지 않는다(없을 수 있음).
+ *  remember=사용자가 "이 값 기억하기"를 켰는지(저장 시 전송), corrected=개인 보정값으로 대체된 항목(읽기 전용 배지) */
 export interface EditableItem {
   name: string
   kcal: string
@@ -19,15 +23,17 @@ export interface EditableItem {
   proteinG: string
   fatG: string
   box: BoundingBox | null
+  remember: boolean
+  corrected: boolean
 }
 
 export type ItemErrors = Partial<Record<'name' | 'kcal' | 'carbG' | 'proteinG' | 'fatG', string>>
 
 export function emptyItem(): EditableItem {
-  return { name: '', kcal: '', carbG: '', proteinG: '', fatG: '', box: null }
+  return { name: '', kcal: '', carbG: '', proteinG: '', fatG: '', box: null, remember: false, corrected: false }
 }
 
-/** 분석 결과 항목 → 편집 항목 (숫자를 문자열로) */
+/** 분석 결과 항목 → 편집 항목 (숫자를 문자열로). corrected는 개인 보정 적용 여부를 이어받는다 */
 export function fromAnalyzed(item: AnalyzedItem): EditableItem {
   return {
     name: item.name,
@@ -36,6 +42,8 @@ export function fromAnalyzed(item: AnalyzedItem): EditableItem {
     proteinG: String(item.proteinG),
     fatG: String(item.fatG),
     box: item.box,
+    remember: false,
+    corrected: item.corrected,
   }
 }
 
@@ -48,6 +56,8 @@ export function fromSaved(item: MealItem): EditableItem {
     proteinG: String(item.proteinG),
     fatG: String(item.fatG),
     box: null,
+    remember: false,
+    corrected: false,
   }
 }
 
@@ -138,7 +148,7 @@ export function validateItems(items: EditableItem[]): {
   return { valid, itemErrors, formError }
 }
 
-/** 편집 항목 → 저장 요청 항목 (검증 통과 가정, box 제외) */
+/** 편집 항목 → 저장 요청 항목 (검증 통과 가정, box 제외). remember=true면 개인 보정 학습을 요청 */
 export function toSaveItems(items: EditableItem[]): MealItemInput[] {
   return items.map((it) => ({
     name: it.name.trim(),
@@ -146,5 +156,6 @@ export function toSaveItems(items: EditableItem[]): MealItemInput[] {
     carbG: toNumber(it.carbG)!,
     proteinG: toNumber(it.proteinG)!,
     fatG: toNumber(it.fatG)!,
+    ...(it.remember ? { remember: true } : {}),
   }))
 }

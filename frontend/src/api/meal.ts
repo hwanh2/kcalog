@@ -11,7 +11,7 @@ export interface BoundingBox {
   h: number
 }
 
-/** 분석이 돌려준 음식 한 항목 — box는 오버레이용(미저장) */
+/** 분석이 돌려준 음식 한 항목 — box는 오버레이용(미저장). corrected=true면 개인 보정값으로 대체된 항목 */
 export interface AnalyzedItem {
   name: string
   kcal: number
@@ -19,6 +19,7 @@ export interface AnalyzedItem {
   proteinG: number
   fatG: number
   box: BoundingBox
+  corrected: boolean
 }
 
 export interface MealAnalysis {
@@ -28,13 +29,15 @@ export interface MealAnalysis {
   notes: string
 }
 
-/** 저장·수정 요청의 음식 항목 (box 없음 — 서버에 위치는 보내지 않는다) */
+/** 저장·수정 요청의 음식 항목 (box 없음 — 서버에 위치는 보내지 않는다).
+ *  remember=true면 이 항목의 확정 영양값을 개인 보정치로 학습(차별점 #1) */
 export interface MealItemInput {
   name: string
   kcal: number
   carbG: number
   proteinG: number
   fatG: number
+  remember?: boolean
 }
 
 export interface SaveMealRequest {

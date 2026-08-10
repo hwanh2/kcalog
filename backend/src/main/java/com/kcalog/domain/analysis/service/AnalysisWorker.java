@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kcalog.domain.analysis.entity.AnalysisJob;
 import com.kcalog.domain.analysis.entity.AnalysisStatus;
 import com.kcalog.domain.analysis.repository.AnalysisJobRepository;
+import com.kcalog.domain.correction.dto.PersonalCorrection;
+import com.kcalog.domain.correction.service.FoodCorrectionService;
 import com.kcalog.domain.meal.dto.MealAnalysisResponse;
 import com.kcalog.domain.meal.exception.MealAnalysisException;
 import com.kcalog.domain.meal.service.MealAnalysisService;
@@ -13,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 비동기 분석 워커 — 저장된 사진을 읽어 OpenAI 분석 후 작업 상태를 전이한다 (design D8: MealAnalysisService 재사용).
@@ -26,6 +30,7 @@ public class AnalysisWorker {
     private final AnalysisJobRepository jobRepository;
     private final StorageService storageService;
     private final MealAnalysisService mealAnalysisService;
+    private final FoodCorrectionService foodCorrectionService;
     // 프레임워크 ObjectMapper 빈에 의존하지 않는다(프로젝트 관례)
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -38,7 +43,11 @@ public class AnalysisWorker {
         }
         try {
             StorageService.StoredImage image = storageService.get(job.getImageKey());
-            MealAnalysisResponse result = mealAnalysisService.analyzeImage(image.bytes(), image.contentType());
+            // 개인 보정: 이력을 프롬프트에 주입(B)해 분석하고, 정규화 이름 일치 항목은 저장값으로 덮어쓰기(A)
+            List<PersonalCorrection> corrections = foodCorrectionService.recentFor(job.getMemberId());
+            MealAnalysisResponse result = mealAnalysisService.analyzeImage(
+                    image.bytes(), image.contentType(), corrections);
+            result = foodCorrectionService.applyOverride(result, corrections);
             String json = objectMapper.writeValueAsString(result);
             if (result.foodFound()) {
                 job.complete(json);

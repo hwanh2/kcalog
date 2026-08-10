@@ -12,6 +12,7 @@ import { MealItemsEditor, TotalsLine } from '../features/meal/MealItemsEditor'
 import { PhotoOverlay } from '../features/meal/PhotoOverlay'
 import { ItemEditSheet } from '../features/meal/ItemEditSheet'
 import {
+  LOW_CONFIDENCE_THRESHOLD,
   MAX_ITEMS,
   emptyItem,
   fromAnalyzed,
@@ -36,6 +37,7 @@ export function MealRecordPage() {
   const [mealType, setMealType] = useState<MealType>(() => defaultMealType(new Date()))
   const [items, setItems] = useState<EditableItem[]>([])
   const [overlayMode, setOverlayMode] = useState(false)
+  const [needsReview, setNeedsReview] = useState(false) // AI 신뢰도 낮음 → "확인 필요"
   const [analysisJobId, setAnalysisJobId] = useState<number | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
@@ -78,9 +80,12 @@ export function MealRecordPage() {
     setSource('MANUAL')
     setItems([emptyItem()])
     setOverlayMode(false)
+    setNeedsReview(false)
     setAnalysisJobId(null)
     setNotice(msg)
   }
+
+  const correctedCount = items.filter((it) => it.corrected).length
 
   async function onPickPhoto(file: File) {
     setNotice(null)
@@ -98,6 +103,7 @@ export function MealRecordPage() {
         setAnalysisJobId(analysis.id) // 저장 시 사진 연결
         // 박스 품질·신뢰도로 오버레이 여부를 이 시점에 확정
         setOverlayMode(shouldOverlay(analyzed, analysis.result.overallConfidence))
+        setNeedsReview(analysis.result.overallConfidence < LOW_CONFIDENCE_THRESHOLD)
       } else if (analysis.status === 'NO_FOOD') {
         manualFallback(analysis.result?.notes || '음식을 찾지 못했어요. 직접 입력해주세요.')
       } else {
@@ -118,6 +124,7 @@ export function MealRecordPage() {
     setSource('MANUAL')
     setItems([emptyItem()])
     setOverlayMode(false)
+    setNeedsReview(false)
     setAnalysisJobId(null)
     setPhotoUrl(null)
     setNotice(null)
@@ -198,6 +205,16 @@ export function MealRecordPage() {
           {source === 'AI' && (
             <p className="mb-3 text-sm text-brand">
               AI 추정값이에요. {overlayMode ? '사진 속 음식을 눌러 수정할 수 있어요.' : '확인하고 수정할 수 있어요.'}
+            </p>
+          )}
+          {needsReview && (
+            <p role="status" className="mb-3 inline-block rounded-full bg-carb-soft px-2 py-0.5 text-xs text-carb">
+              확인 필요 — 인식 신뢰도가 낮아요. 값을 확인·수정해주세요.
+            </p>
+          )}
+          {correctedCount > 0 && (
+            <p className="mb-3 inline-block rounded-full bg-success-soft px-2 py-0.5 text-xs text-success">
+              ✓ 내 보정값이 적용된 항목 {correctedCount}개
             </p>
           )}
 
