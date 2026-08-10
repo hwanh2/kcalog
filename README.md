@@ -22,7 +22,7 @@ kcalog/
 
 ## 핵심 기능 (로드맵)
 
-1. 식사 기록 — 사진 촬영 → AI 분석 → 사진 위 음식별 탄단지 배지 → 탭하여 확인·수정 → 저장 ✅ (동기 분석·사진 무저장, 비동기·사진 저장으로 개편 예정)
+1. 식사 기록 — 사진 촬영 → **비동기 AI 분석**(작업 생성·폴링) → 사진 위 음식별 탄단지 배지 → 탭하여 확인·수정 → 저장 ✅ (사진은 Object Storage 저장, 목록 썸네일)
 2. 온보딩·목표 — 카카오 로그인, 프로필 기반 일일 칼로리 목표 자동 계산 ✅
 3. 대시보드 — 남은 칼로리·탄단지·타임라인 ✅ / 체중 기록·추이 ✅
 4. 학습하는 수정 — 사용자가 고친 값을 개인 보정치로 기억해 다음 인식에 자동 반영 (예정)
@@ -32,14 +32,15 @@ kcalog/
 ## 로컬 실행
 
 ```bash
-docker compose up -d                 # Postgres 16 (127.0.0.1:5432, kcalog/kcalog)
+docker compose up -d                 # Postgres 16 (:5432) + MinIO(사진 스토리지, :9000 API / :9001 콘솔)
 cd backend && ./gradlew bootRun      # API 서버 :8080
 cd frontend && npm run dev           # dev 서버 :5173 (/api → :8080 proxy)
 ```
 
-- DB까지는 환경변수 없이 기본값으로 동작한다.
+- DB·사진 스토리지(MinIO)까지 환경변수 없이 docker-compose 기본값으로 동작한다. 버킷은 최초 저장 시 자동 생성된다.
 - **AI 식사 분석**을 쓰려면 OpenAI API 키가 필요하다 — `.env.example`을 `.env`로 복사해 `OPENAI_API_KEY`를 채운다. 키가 없으면 분석 기능만 에러이고 나머지는 정상 동작한다.
 - 카카오 로그인 테스트에는 `KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`이 필요하다 (`.env.example` 참고).
+- 운영은 사진 스토리지로 S3/R2를 쓴다 — `STORAGE_*` 환경변수 필수(`application-prod.yml`, `.env.example` 참고).
 
 ## 테스트
 
