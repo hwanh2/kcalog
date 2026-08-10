@@ -4,20 +4,26 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../api/client'
-import { analyzeMeal, saveMeal } from '../api/meal'
-import type { AnalyzedItem } from '../api/meal'
+import { createAnalysis, getAnalysis } from '../api/analysis'
+import type { Analysis, AnalysisStatus } from '../api/analysis'
+import { saveMeal } from '../api/meal'
+import type { AnalyzedItem, MealAnalysis } from '../api/meal'
 import { MealRecordPage } from './MealRecordPage'
 
 vi.mock('../api/meal', () => ({
-  analyzeMeal: vi.fn(),
   saveMeal: vi.fn(),
+}))
+vi.mock('../api/analysis', () => ({
+  createAnalysis: vi.fn(),
+  getAnalysis: vi.fn(),
 }))
 // 리사이즈는 jsdom에서 createImageBitmap 미지원 → 목킹으로 우회
 vi.mock('../features/meal/imageResize', () => ({
   resizeImage: vi.fn((b) => Promise.resolve(b)),
 }))
 
-const analyzeMealMock = vi.mocked(analyzeMeal)
+const createAnalysisMock = vi.mocked(createAnalysis)
+const getAnalysisMock = vi.mocked(getAnalysis)
 const saveMealMock = vi.mocked(saveMeal)
 
 const item = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
@@ -31,11 +37,18 @@ const item = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
 })
 
 // 오버레이 대상 — 유효 박스 2개 + 높은 신뢰도
-const overlayResult = {
+const overlayResult: MealAnalysis = {
   foodFound: true,
   items: [item(), item({ name: '공기밥', kcal: 250, carbG: 55, proteinG: 5, fatG: 1, box: { x: 0.5, y: 0.55, w: 0.25, h: 0.25 } })],
   overallConfidence: 0.8,
   notes: '',
+}
+
+/** 분석 흐름 목 설정 — 생성은 ANALYZING, 폴링(getAnalysis)은 주어진 종료 상태·결과를 반환 */
+function mockAnalysis(status: AnalysisStatus, result: MealAnalysis | null) {
+  createAnalysisMock.mockResolvedValue({ id: 1, status: 'ANALYZING', imageUrl: '', result: null, errorCode: null })
+  const terminal: Analysis = { id: 1, status, imageUrl: '/api/photos/1/x', result, errorCode: null }
+  getAnalysisMock.mockResolvedValue(terminal)
 }
 
 function renderPage() {
@@ -67,7 +80,7 @@ beforeEach(() => {
 
 describe('MealRecordPage — 오버레이-편집 모드', () => {
   it('유효 박스+높은 신뢰도 — 사진 위 박스로 렌더하고 하단에 총량을 보여준다', async () => {
-    analyzeMealMock.mockResolvedValue(overlayResult)
+    mockAnalysis('COMPLETED', overlayResult)
     renderPage()
     await pickPhoto()
 
@@ -82,7 +95,7 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
 
   it('박스 탭 → 편집 시트에서 값을 바꾸면 합계가 재계산된다', async () => {
     const user = userEvent.setup()
-    analyzeMealMock.mockResolvedValue(overlayResult)
+    mockAnalysis('COMPLETED', overlayResult)
     renderPage()
     await pickPhoto()
 
@@ -100,7 +113,7 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
 
   it('오버레이에서 "+ 음식 추가" → 위치 없는 항목 칩으로 편집·추가된다', async () => {
     const user = userEvent.setup()
-    analyzeMealMock.mockResolvedValue(overlayResult)
+    mockAnalysis('COMPLETED', overlayResult)
     renderPage()
     await pickPhoto()
 
@@ -118,9 +131,9 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
 
   it('오버레이 모드에서 저장 — items로 saveMeal 호출 후 홈으로', async () => {
     const user = userEvent.setup()
-    analyzeMealMock.mockResolvedValue(overlayResult)
+    mockAnalysis('COMPLETED', overlayResult)
     saveMealMock.mockResolvedValue({
-      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'AI', totalKcal: 650, carbG: 85, proteinG: 25, fatG: 19, items: [],
+      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'AI', totalKcal: 650, carbG: 85, proteinG: 25, fatG: 19, imageUrl: null, items: [],
     })
     renderPage()
     await pickPhoto()
@@ -131,6 +144,7 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
     expect(saveMealMock).toHaveBeenCalledWith(
       expect.objectContaining({
         source: 'AI',
+        analysisJobId: 1, // 분석 작업의 사진을 연결
         items: expect.arrayContaining([expect.objectContaining({ name: '김치찌개', kcal: 400 })]),
       }),
     )
@@ -139,7 +153,7 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
 
 describe('MealRecordPage — 리스트 폴백/수동', () => {
   it('낮은 신뢰도 — 오버레이 없이 리스트 인라인 편집으로 폴백', async () => {
-    analyzeMealMock.mockResolvedValue({ ...overlayResult, overallConfidence: 0.3 })
+    mockAnalysis('COMPLETED', { ...overlayResult, overallConfidence: 0.3 })
     renderPage()
     await pickPhoto()
 
@@ -149,7 +163,7 @@ describe('MealRecordPage — 리스트 폴백/수동', () => {
   })
 
   it('음식 미검출 — 안내와 함께 빈 수동 항목(리스트)으로', async () => {
-    analyzeMealMock.mockResolvedValue({ foodFound: false, items: [], overallConfidence: 0, notes: '음식을 찾지 못했어요' })
+    mockAnalysis('NO_FOOD', { foodFound: false, items: [], overallConfidence: 0, notes: '음식을 찾지 못했어요' })
     renderPage()
     await pickPhoto()
 
@@ -158,7 +172,7 @@ describe('MealRecordPage — 리스트 폴백/수동', () => {
   })
 
   it('분석 429 — 횟수 초과 안내와 함께 수동 입력 폴백', async () => {
-    analyzeMealMock.mockRejectedValue(new ApiError(429, null))
+    createAnalysisMock.mockRejectedValue(new ApiError(429, null))
     renderPage()
     await pickPhoto()
 
@@ -184,7 +198,7 @@ describe('MealRecordPage — 리스트 폴백/수동', () => {
   it('직접 입력 → 저장 — items로 saveMeal 호출 후 홈으로', async () => {
     const user = userEvent.setup()
     saveMealMock.mockResolvedValue({
-      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'MANUAL', totalKcal: 500, carbG: 60, proteinG: 20, fatG: 15,
+      id: 1, eatenAt: '', mealType: 'LUNCH', source: 'MANUAL', totalKcal: 500, carbG: 60, proteinG: 20, fatG: 15, imageUrl: null,
       items: [{ name: '비빔밥', kcal: 500, carbG: 60, proteinG: 20, fatG: 15 }],
     })
     renderPage()

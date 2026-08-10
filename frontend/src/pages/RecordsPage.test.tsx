@@ -25,6 +25,7 @@ const lunch: Meal = {
   carbG: 75,
   proteinG: 30,
   fatG: 22,
+  imageUrl: null,
   items: [
     { name: '김치찌개', kcal: 400, carbG: 30, proteinG: 20, fatG: 18 },
     { name: '공기밥', kcal: 250, carbG: 45, proteinG: 10, fatG: 4 },
