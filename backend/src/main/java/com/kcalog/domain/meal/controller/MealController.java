@@ -1,5 +1,6 @@
 package com.kcalog.domain.meal.controller;
 
+import com.kcalog.domain.analysis.service.AnalysisService;
 import com.kcalog.domain.meal.dto.MealAnalysisResponse;
 import com.kcalog.domain.meal.dto.MealResponse;
 import com.kcalog.domain.meal.dto.SaveMealRequest;
@@ -34,8 +35,9 @@ public class MealController {
 
     private final MealService mealService;
     private final MealAnalysisService mealAnalysisService;
+    private final AnalysisService analysisService;
 
-    /** 사진 분석 — 결과만 반환하고 저장하지 않는다. 프론트가 확인·수정 후 POST /api/meals로 저장 */
+    /** (레거시) 동기 사진 분석 — 비동기 `POST /api/analyses`로 대체됨. 프론트 미사용, 미배포라 후속 제거 예정 */
     @PostMapping("/analyze")
     public MealAnalysisResponse analyze(@LoginMemberId Long memberId,
                                         @RequestParam("image") MultipartFile image) throws IOException {
@@ -51,7 +53,11 @@ public class MealController {
 
     @PostMapping
     public MealResponse save(@LoginMemberId Long memberId, @Valid @RequestBody SaveMealRequest request) {
-        return mealService.save(memberId, request);
+        // AI 저장이면 분석 작업의 사진을 넘겨받아 연결(작업 행은 삭제), 수동 입력이면 사진 없음
+        String imageKey = request.analysisJobId() != null
+                ? analysisService.consumeJobImage(memberId, request.analysisJobId())
+                : null;
+        return mealService.save(memberId, request, imageKey);
     }
 
     @GetMapping

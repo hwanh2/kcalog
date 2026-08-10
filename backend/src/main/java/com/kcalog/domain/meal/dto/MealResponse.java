@@ -17,6 +17,7 @@ public record MealResponse(
         BigDecimal carbG,
         BigDecimal proteinG,
         BigDecimal fatG,
+        String imageUrl,
         List<MealItemResponse> items
 ) {
     public static MealResponse of(Meal meal) {
@@ -29,6 +30,7 @@ public record MealResponse(
                 meal.getCarbG(),
                 meal.getProteinG(),
                 meal.getFatG(),
+                meal.getImageKey() != null ? "/api/photos/" + meal.getImageKey() : null,
                 meal.getItems().stream().map(MealItemResponse::of).toList());
     }
 }

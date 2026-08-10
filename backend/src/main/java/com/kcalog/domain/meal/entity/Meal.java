@@ -59,6 +59,10 @@ public class Meal extends BaseEntity {
     @Column(name = "fat_g", nullable = false)
     private BigDecimal fatG;
 
+    // 연결된 사진 스토리지 key(`{memberId}/{uuid}`). 수동 입력·구 기록은 null
+    @Column(name = "image_key")
+    private String imageKey;
+
     // 애그리거트 내부 — 단방향 @OneToMany + join column, cascade·orphanRemoval로 생명주기를 meal이 관리
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "meal_id", nullable = false)
@@ -83,6 +87,11 @@ public class Meal extends BaseEntity {
         items.clear();
         items.addAll(newItems);
         recalculateTotals();
+    }
+
+    /** 분석 작업의 사진을 이 식사에 연결 (확인 저장 시) */
+    public void attachImage(String imageKey) {
+        this.imageKey = imageKey;
     }
 
     /** 끼니·시각 부분 수정 (null이면 유지). 항목은 replaceItems로 별도 교체 */
