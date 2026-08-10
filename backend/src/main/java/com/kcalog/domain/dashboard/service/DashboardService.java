@@ -37,12 +37,15 @@ public class DashboardService {
         Integer target = member.getDailyKcalTarget();
         // 목표 초과면 음수 잔여. 목표 미설정(온보딩 미완)이면 잔여도 null
         Integer remaining = target != null ? target - totalKcal : null;
+        // 탄단지 목표는 칼로리 목표에서 50/30/20으로 파생 (목표 없으면 세 값 모두 null)
+        MacroTargetG macroTarget = MacroTargetG.from(target);
 
         List<TimelineEntry> timeline = meals.stream()
                 .map(m -> new TimelineEntry(m.id(), m.eatenAt(), m.mealType(), m.totalKcal()))
                 .toList();
 
-        return new DashboardResponse(totalKcal, carbG, proteinG, fatG, target, remaining, timeline);
+        return new DashboardResponse(totalKcal, carbG, proteinG, fatG, target, remaining,
+                macroTarget.carbG(), macroTarget.proteinG(), macroTarget.fatG(), timeline);
     }
 
     private BigDecimal sum(List<MealResponse> meals, java.util.function.Function<MealResponse, BigDecimal> field) {
