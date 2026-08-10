@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
-import { analyzeMeal, saveMeal } from '../api/meal'
+import { createAnalysis } from '../api/analysis'
+import { saveMeal } from '../api/meal'
 import type { MealSource, MealType } from '../api/meal'
+import { pollAnalysis } from '../features/meal/pollAnalysis'
 import { resizeImage } from '../features/meal/imageResize'
 import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
 import { MealItemsEditor, TotalsLine } from '../features/meal/MealItemsEditor'
@@ -34,6 +36,7 @@ export function MealRecordPage() {
   const [mealType, setMealType] = useState<MealType>(() => defaultMealType(new Date()))
   const [items, setItems] = useState<EditableItem[]>([])
   const [overlayMode, setOverlayMode] = useState(false)
+  const [analysisJobId, setAnalysisJobId] = useState<number | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [itemErrors, setItemErrors] = useState<ItemErrors[]>([])
@@ -71,31 +74,38 @@ export function MealRecordPage() {
   const errorIndices = items.map((_, i) => i).filter(hasError)
   const boxless = items.map((it, i) => ({ it, i })).filter(({ it }) => !isValidBox(it.box))
 
+  function manualFallback(msg: string) {
+    setSource('MANUAL')
+    setItems([emptyItem()])
+    setOverlayMode(false)
+    setAnalysisJobId(null)
+    setNotice(msg)
+  }
+
   async function onPickPhoto(file: File) {
     setNotice(null)
     setPhotoUrl(URL.createObjectURL(file))
     setStep('analyzing')
     try {
       const resized = await resizeImage(file)
-      const result = await analyzeMeal(resized)
-      if (result.foodFound && result.items.length > 0) {
-        const analyzed = result.items.map(fromAnalyzed)
+      // 업로드 → 작업 생성(즉시 반환) → 완료까지 폴링
+      const created = await createAnalysis(resized)
+      const analysis = await pollAnalysis(created.id)
+      if (analysis.status === 'COMPLETED' && analysis.result && analysis.result.items.length > 0) {
+        const analyzed = analysis.result.items.map(fromAnalyzed)
         setSource('AI')
         setItems(analyzed)
+        setAnalysisJobId(analysis.id) // 저장 시 사진 연결
         // 박스 품질·신뢰도로 오버레이 여부를 이 시점에 확정
-        setOverlayMode(shouldOverlay(analyzed, result.overallConfidence))
+        setOverlayMode(shouldOverlay(analyzed, analysis.result.overallConfidence))
+      } else if (analysis.status === 'NO_FOOD') {
+        manualFallback(analysis.result?.notes || '음식을 찾지 못했어요. 직접 입력해주세요.')
       } else {
-        setSource('MANUAL')
-        setItems([emptyItem()])
-        setOverlayMode(false)
-        setNotice(result.notes || '음식을 찾지 못했어요. 직접 입력해주세요.')
+        manualFallback('사진 분석에 실패했어요. 직접 입력해주세요.')
       }
     } catch (error) {
-      // 분석 실패(502·429 등) → 수동 입력 폴백
-      setSource('MANUAL')
-      setItems([emptyItem()])
-      setOverlayMode(false)
-      setNotice(
+      // 업로드 실패·제한(429)·타임아웃 → 수동 입력 폴백
+      manualFallback(
         error instanceof ApiError && error.status === 429
           ? '오늘 분석 횟수를 초과했어요. 직접 입력해주세요.'
           : '사진 분석에 실패했어요. 직접 입력해주세요.',
@@ -108,6 +118,7 @@ export function MealRecordPage() {
     setSource('MANUAL')
     setItems([emptyItem()])
     setOverlayMode(false)
+    setAnalysisJobId(null)
     setPhotoUrl(null)
     setNotice(null)
     setStep('confirm')
@@ -133,6 +144,8 @@ export function MealRecordPage() {
         mealType,
         source,
         items: toSaveItems(items),
+        // AI 확인 저장이면 분석 작업의 사진을 연결
+        ...(source === 'AI' && analysisJobId ? { analysisJobId } : {}),
       })
       await queryClient.invalidateQueries({ queryKey: ['meals'] })
       void queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // 오늘 탭 집계 갱신

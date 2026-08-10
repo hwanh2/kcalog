@@ -11,6 +11,7 @@ import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
 import { suggestNextMealType } from '../features/dashboard/mealSuggest'
 import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
 import { addDays, todayLocalDate } from '../lib/date'
+import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
 
 /** 홈(오늘) — 날짜 이동 + 칼로리 링·탄단지 달성도·체중 미니카드·오늘 식사 목록·촬영 유도 (v2 목업 기준) */
@@ -135,7 +136,10 @@ function MealSection({ meals }: { meals: Meal[] }) {
 function MealCard({ meal }: { meal: Meal }) {
   const names = meal.items.map((it) => it.name).join(' · ')
   return (
-    <Card className="flex items-center justify-between gap-3">
+    <Card className="flex items-center gap-3">
+      {meal.imageUrl && (
+        <AuthImage src={meal.imageUrl} alt="식사 사진" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase text-muted">

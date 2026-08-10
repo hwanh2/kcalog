@@ -35,7 +35,7 @@ public class MealController {
     private final MealService mealService;
     private final MealAnalysisService mealAnalysisService;
 
-    /** 사진 분석 — 결과만 반환하고 저장하지 않는다. 프론트가 확인·수정 후 POST /api/meals로 저장 */
+    /** (레거시) 동기 사진 분석 — 비동기 `POST /api/analyses`로 대체됨. 프론트 미사용, 미배포라 후속 제거 예정 */
     @PostMapping("/analyze")
     public MealAnalysisResponse analyze(@LoginMemberId Long memberId,
                                         @RequestParam("image") MultipartFile image) throws IOException {

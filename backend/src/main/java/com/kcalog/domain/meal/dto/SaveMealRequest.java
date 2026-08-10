@@ -12,11 +12,13 @@ import java.util.List;
 
 import static com.kcalog.domain.meal.dto.MealValidation.MAX_ITEMS;
 
-/** 확인·수정된 음식 항목들을 저장 — 합계는 서버가 항목 합으로 계산한다. 수동 입력은 항목 하나로 전달 */
+/** 확인·수정된 음식 항목들을 저장 — 합계는 서버가 항목 합으로 계산한다. 수동 입력은 항목 하나로 전달.
+ *  analysisJobId가 있으면 그 분석 작업의 사진을 이 식사에 연결한다(AI 저장). 수동 입력은 null. */
 public record SaveMealRequest(
         @NotNull Instant eatenAt,
         @NotNull MealType mealType,
         @NotNull MealSource source,
-        @NotEmpty @Size(max = MAX_ITEMS) @Valid List<MealItemRequest> items
+        @NotEmpty @Size(max = MAX_ITEMS) @Valid List<MealItemRequest> items,
+        Long analysisJobId
 ) {
 }

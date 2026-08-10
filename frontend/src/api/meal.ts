@@ -1,4 +1,4 @@
-import { API_BASE, ApiError, api, getAccessToken, refreshAccessToken } from './client'
+import { api } from './client'
 
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK'
 export type MealSource = 'AI' | 'MANUAL'
@@ -42,6 +42,7 @@ export interface SaveMealRequest {
   mealType: MealType
   source: MealSource
   items: MealItemInput[]
+  analysisJobId?: number // AI 저장 시 분석 작업의 사진을 연결 (수동 입력은 생략)
 }
 
 /** 저장된 음식 항목 (조회 응답) */
@@ -62,6 +63,7 @@ export interface Meal {
   carbG: number
   proteinG: number
   fatG: number
+  imageUrl: string | null // 연결된 사진 프록시 경로(없으면 null) — AuthImage로 로드
   items: MealItem[]
 }
 
@@ -70,35 +72,6 @@ export interface UpdateMealRequest {
   mealType?: MealType
   eatenAt?: string
   items?: MealItemInput[]
-}
-
-/**
- * 사진 분석 — 멀티파트 업로드. api()는 JSON 재시도 로직이 FormData를 재사용 못하므로
- * 여기서 직접 401→refresh→재시도를 한 번 수행한다 (FormData는 매 시도마다 새로 만들 필요 없음, 동일 참조 재전송 가능).
- */
-export async function analyzeMeal(image: Blob): Promise<MealAnalysis> {
-  const send = () => {
-    const form = new FormData()
-    form.append('image', image, 'meal.jpg')
-    const headers = new Headers()
-    const token = getAccessToken()
-    if (token) headers.set('Authorization', `Bearer ${token}`)
-    return fetch(`${API_BASE}/api/meals/analyze`, { method: 'POST', body: form, headers })
-  }
-
-  let res = await send()
-  if (res.status === 401) {
-    const token = await refreshAccessToken()
-    if (!token) {
-      window.location.assign('/login')
-      throw new ApiError(401, null)
-    }
-    res = await send()
-  }
-  if (!res.ok) {
-    throw new ApiError(res.status, await res.json().catch(() => null))
-  }
-  return (await res.json()) as MealAnalysis
 }
 
 export function saveMeal(request: SaveMealRequest): Promise<Meal> {

@@ -7,6 +7,7 @@ import { MealItemsEditor } from '../features/meal/MealItemsEditor'
 import { fromSaved, toSaveItems, validateItems } from '../features/meal/mealItems'
 import type { EditableItem, ItemErrors } from '../features/meal/mealItems'
 import { todayLocalDate } from '../lib/date'
+import { AuthImage } from '../ui/AuthImage'
 import { Button, Card } from '../ui/form'
 
 export function RecordsPage() {
@@ -84,8 +85,11 @@ function MealRow({ meal }: { meal: Meal }) {
     const names = meal.items.map((it) => it.name).join(' · ')
     return (
       <Card>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          {meal.imageUrl && (
+            <AuthImage src={meal.imageUrl} alt="식사 사진" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+          )}
+          <div className="min-w-0 flex-1">
             <span className="font-medium">{MEAL_TYPE_LABELS[meal.mealType]}</span>
             <span className="ml-2 text-brand">{meal.totalKcal} kcal</span>
             {names && <p className="mt-1 text-sm text-ink">{names}</p>}
