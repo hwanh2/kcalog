@@ -76,6 +76,10 @@ class DashboardIntegrationTest {
                 .andExpect(jsonPath("$.carbG").value(115.0))
                 .andExpect(jsonPath("$.dailyKcalTarget").value(2000))
                 .andExpect(jsonPath("$.remainingKcal").value(1000))
+                // 탄단지 목표 = 2000kcal의 50/30/20 → 탄 250 / 단 150 / 지 44 (design D3)
+                .andExpect(jsonPath("$.carbTargetG").value(250))
+                .andExpect(jsonPath("$.proteinTargetG").value(150))
+                .andExpect(jsonPath("$.fatTargetG").value(44))
                 .andExpect(jsonPath("$.timeline.length()").value(2))
                 .andExpect(jsonPath("$.timeline[0].mealType").value("BREAKFAST")) // 시각 오름차순
                 .andExpect(jsonPath("$.timeline[1].mealType").value("LUNCH"))
@@ -116,6 +120,22 @@ class DashboardIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalKcal").value(650))
                 .andExpect(jsonPath("$.timeline.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("목표 미설정 회원 — 잔여·탄단지 목표가 모두 null")
+    void noTargetMember() throws Exception {
+        // 온보딩 전(dailyKcalTarget=null) 회원
+        Member fresh = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-fresh", "f@kakao.com", "신규"));
+        String freshBearer = "Bearer " + jwtService.issueAccessToken(fresh.getId());
+
+        mockMvc.perform(get("/api/dashboard").param("date", DATE).header("Authorization", freshBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dailyKcalTarget").doesNotExist())
+                .andExpect(jsonPath("$.remainingKcal").doesNotExist())
+                .andExpect(jsonPath("$.carbTargetG").doesNotExist())
+                .andExpect(jsonPath("$.proteinTargetG").doesNotExist())
+                .andExpect(jsonPath("$.fatTargetG").doesNotExist());
     }
 
     @Test

@@ -6,7 +6,6 @@ import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
 import { MealItemsEditor } from '../features/meal/MealItemsEditor'
 import { fromSaved, toSaveItems, validateItems } from '../features/meal/mealItems'
 import type { EditableItem, ItemErrors } from '../features/meal/mealItems'
-import { WeightPanel } from '../features/weight/WeightPanel'
 import { todayLocalDate } from '../lib/date'
 import { Button, Card } from '../ui/form'
 
@@ -19,7 +18,7 @@ export function RecordsPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">기록</h1>
+      <h1 className="text-xl font-semibold">음식기록</h1>
 
       <label htmlFor="date" className="mt-3 block text-sm text-muted">
         날짜
@@ -32,9 +31,6 @@ export function RecordsPage() {
         className="mt-1 rounded-md border border-border bg-surface px-3 py-2"
       />
 
-      <WeightPanel date={date} />
-
-      <h2 className="mt-6 text-sm font-medium text-muted">식사</h2>
       {isPending && <p className="mt-4 text-muted">불러오는 중…</p>}
       {meals && meals.length === 0 && <p className="mt-4 text-muted">이 날의 식사 기록이 없어요.</p>}
 

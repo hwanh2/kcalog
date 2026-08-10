@@ -1,20 +1,33 @@
 @import 'tailwindcss';
 
-/* 디자인 토큰 — Tailwind v4 CSS-first(@theme). 유틸리티(bg-brand, text-muted 등)로 노출된다 */
+/* 디자인 토큰 — Tailwind v4 CSS-first(@theme). 유틸리티(bg-brand, text-muted 등)로 노출된다.
+   v2 디자인 목업(docs/design-mockup-v2.html, 로컬 전용)의 색 정의를 그대로 사용 —
+   slate 캔버스·비비드 오렌지 primary·매크로 3색(앰버/로즈/시안) + 각 soft 배경 */
 @theme {
-  --color-brand: #16a34a;
-  --color-brand-dark: #15803d;
-  --color-ink: #1f2937;
-  --color-muted: #6b7280;
+  --color-brand: #ff6b00;
+  --color-brand-dark: #e55a00;
+  --color-brand-soft: #fff5ed;
+  --color-ink: #0f172a;
+  --color-muted: #94a3b8;
   --color-surface: #ffffff;
-  --color-canvas: #f9fafb;
-  --color-danger: #dc2626;
-  --color-border: #d1d5db;
+  --color-canvas: #f8fafc;
+  --color-danger: #ef4444;
+  --color-border: #e2e8f0;
   --color-on-brand: #ffffff;
+
+  /* 매크로 색 — 탄(앰버)·단(로즈)·지(시안) + 칩/카드용 soft 배경, 상태 배지용 그린 */
+  --color-carb: #f59e0b;
+  --color-carb-soft: #fef3c7;
+  --color-protein: #ef4444;
+  --color-protein-soft: #fee2e2;
+  --color-fat: #06b6d4;
+  --color-fat-soft: #cffafe;
+  --color-success: #059669;
+  --color-success-soft: #ecfdf5;
 
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  --radius-card: 0.75rem;
+  --radius-card: 1.5rem;
 }
 
 html,
