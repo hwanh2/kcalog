@@ -65,3 +65,9 @@
 - **TDEE 시리즈의 공식 폴백 현재 체중**: 과거 주의 폴백 시드가 전체 최신 체중을 참조할 수 있음(사소). 적응형이 되는 주에는 무관. 필요 시 asOf 이하 최신 체중 조회로 정밀화.
 - **기간 확장(사용자 요청)**: 주간 전용에서 **주간/월간/총 버킷 리포트**로 확장. 엔드포인트 `/reports/weekly` → `/reports?period=`. TDEE 시리즈는 버킷별 대표일(월별=월말)로 계산 — MONTH(일별 ~30점)는 계산량이 있으나 개인 규모라 허용, TOTAL은 월별이라 소수 점.
 - **매크로 분포 색**: 앱 공통 토큰(carb/protein/fat) 사용 — 목업의 초록/주황 대신 홈 MacroProgress와 일관.
+- **인사이트 기간 스케일(리뷰 대응)**: `ReportCalc.insights(signals, period)`가 문구 스코프("이번 주/이번 달/전체 기간")와 임계값(부정 트리거는 기록일 비례 `max(3, ceil(days×0.4))`, 긍정은 달성 비율 ≥70%, 성실도는 rangeDays×0.5)을 기간에 맞춰 스케일. 클래스명 `WeeklyReportCalc → ReportCalc`.
+- **일별 집계 공용화(리뷰 대응)**: 자정 경계·그룹핑을 `meal.service.MealDailyIntake`로 모아 Report/Tdee가 공유. kcal 계수(4/4/9)는 `meal.dto.MacroKcal` 공용 상수로.
+- **연속 초과는 달력일 기준(리뷰 대응)**: 미기록일을 false로 채운 시퀀스에 `maxStreak` 적용(간극 무시 방지).
+- **percent 음수 방지(리뷰 대응)**: largest-remainder 배분으로 합 100·음수 없음.
+- **TdeePoint에 date 추가(리뷰 대응)**: spec D4의 "각 점은 날짜 포함"에 맞춰 `{label, date, maintenanceKcal, source}`.
+- **TOTAL 첫 기록일**: 전체 로드 대신 `MealDailyIntake.earliestDate`(`findFirstByMemberIdOrderByEatenAtAsc`)로.

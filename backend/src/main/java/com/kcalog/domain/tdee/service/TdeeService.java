@@ -1,7 +1,7 @@
 package com.kcalog.domain.tdee.service;
 
-import com.kcalog.domain.meal.entity.Meal;
-import com.kcalog.domain.meal.repository.MealRepository;
+import com.kcalog.domain.meal.service.MealDailyIntake;
+import com.kcalog.domain.meal.service.MealDailyIntake.DailyNutrition;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.repository.MemberRepository;
 import com.kcalog.domain.member.service.DailyKcalCalculator;
@@ -14,11 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -34,7 +32,7 @@ public class TdeeService {
     private static final int SEED_BUFFER_DAYS = 30; // 추세 EMA 워밍업
 
     private final MemberRepository memberRepository;
-    private final MealRepository mealRepository;
+    private final MealDailyIntake mealDailyIntake;
     private final WeightLogRepository weightLogRepository;
     private final DailyKcalCalculator calculator;
     private final Clock clock;
@@ -55,7 +53,10 @@ public class TdeeService {
         LocalDate from = today.minusDays(TdeeCalc.WINDOW_DAYS - 1L);
         ZoneId zone = clock.getZone();
 
-        int loggedDays = loggedIntakeDays(memberId, from, today, zone);
+        Map<LocalDate, DailyNutrition> daily = mealDailyIntake.byDate(memberId, from, today, zone);
+        int loggedDays = daily.size();
+        double meanIntake = daily.isEmpty() ? 0
+                : daily.values().stream().mapToInt(DailyNutrition::kcal).average().orElse(0);
         TrendDelta trend = windowTrendDelta(memberId, from, today);
         double coverage = (double) loggedDays / TdeeCalc.WINDOW_DAYS;
 
@@ -64,7 +65,7 @@ public class TdeeService {
         String status = null;
         String source = null;
         if (trend != null && TdeeCalc.enoughData(loggedDays, TdeeCalc.WINDOW_DAYS, trend.spanDays())) {
-            maintenance = TdeeCalc.reverse(meanDailyIntake(memberId, from, today, zone), trend.deltaKg(), trend.spanDays());
+            maintenance = TdeeCalc.reverse(meanIntake, trend.deltaKg(), trend.spanDays());
             status = "OK";
             source = "ADAPTIVE";
         }
@@ -91,30 +92,6 @@ public class TdeeService {
 
         return new TdeeResponse(status, roundTo10(maintenance), source, currentTarget, recommended,
                 TdeeCalc.WINDOW_DAYS, round2(coverage));
-    }
-
-    /** 창 내 섭취 기록이 있는 날의 일일 총섭취 평균(KST 날짜 기준). 기록 없으면 0 */
-    private double meanDailyIntake(Long memberId, LocalDate from, LocalDate to, ZoneId zone) {
-        Map<LocalDate, Integer> daily = dailyKcal(memberId, from, to, zone);
-        return daily.isEmpty() ? 0 : daily.values().stream().mapToInt(Integer::intValue).average().orElse(0);
-    }
-
-    private int loggedIntakeDays(Long memberId, LocalDate from, LocalDate to, ZoneId zone) {
-        return dailyKcal(memberId, from, to, zone).size();
-    }
-
-    /** 창 [from,to] 식사를 KST 날짜별 총섭취로 집계 */
-    private Map<LocalDate, Integer> dailyKcal(Long memberId, LocalDate from, LocalDate to, ZoneId zone) {
-        Instant start = from.atStartOfDay(zone).toInstant();
-        Instant end = to.plusDays(1).atStartOfDay(zone).toInstant();
-        List<Meal> meals = mealRepository
-                .findByMemberIdAndEatenAtGreaterThanEqualAndEatenAtLessThanOrderByEatenAtAsc(memberId, start, end);
-        Map<LocalDate, Integer> daily = new HashMap<>();
-        for (Meal m : meals) {
-            LocalDate d = m.getEatenAt().atZone(zone).toLocalDate();
-            daily.merge(d, m.getTotalKcal(), Integer::sum);
-        }
-        return daily;
     }
 
     /** 창 내 EMA 추세값의 (마지막 − 처음)과 두 기준일 간 일수. 창 내 기록이 2개 미만이면 null */

@@ -30,8 +30,8 @@ const report: Report = {
   fatTargetG: 40,
   buckets: ['월', '화', '수', '목', '금', '토', '일'].map(bucket),
   tdeeSeries: [
-    { label: '월', maintenanceKcal: 2200, source: 'ADAPTIVE' },
-    { label: '화', maintenanceKcal: 2210, source: 'ADAPTIVE' },
+    { label: '월', date: '2026-08-03', maintenanceKcal: 2200, source: 'ADAPTIVE' },
+    { label: '화', date: '2026-08-04', maintenanceKcal: 2210, source: 'ADAPTIVE' },
   ],
   insights: [{ code: 'over-target', message: '칼로리 목표를 4일 초과했어요.' }],
 }

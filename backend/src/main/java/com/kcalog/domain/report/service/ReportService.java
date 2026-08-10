@@ -1,8 +1,8 @@
 package com.kcalog.domain.report.service;
 
 import com.kcalog.domain.dashboard.service.MacroTargetG;
-import com.kcalog.domain.meal.entity.Meal;
-import com.kcalog.domain.meal.repository.MealRepository;
+import com.kcalog.domain.meal.service.MealDailyIntake;
+import com.kcalog.domain.meal.service.MealDailyIntake.DailyNutrition;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.repository.MemberRepository;
 import com.kcalog.domain.report.dto.Period;
@@ -10,7 +10,7 @@ import com.kcalog.domain.report.dto.ReportResponse;
 import com.kcalog.domain.report.dto.ReportResponse.Bucket;
 import com.kcalog.domain.report.dto.ReportResponse.Insight;
 import com.kcalog.domain.report.dto.ReportResponse.TdeePoint;
-import com.kcalog.domain.report.service.WeeklyReportCalc.Signals;
+import com.kcalog.domain.report.service.ReportCalc.Signals;
 import com.kcalog.domain.tdee.dto.TdeeResponse;
 import com.kcalog.domain.tdee.service.TdeeService;
 import com.kcalog.domain.weight.entity.WeightLog;
@@ -23,18 +23,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.TreeMap;
 
-/** 기간 리포트 — 주간/월간/총을 버킷으로 엮어 달성·분포·TDEE·인사이트를 조립(design + 사용자 요청). 조회 시 계산. */
+/** 기간 리포트 — 주간/월간/총을 버킷으로 엮어 달성·분포·TDEE·인사이트를 조립. 조회 시 계산. */
 @Service
 @RequiredArgsConstructor
 public class ReportService {
@@ -42,7 +41,7 @@ public class ReportService {
     private static final String[] WEEKDAY = {"월", "화", "수", "목", "금", "토", "일"};
 
     private final MemberRepository memberRepository;
-    private final MealRepository mealRepository;
+    private final MealDailyIntake mealDailyIntake;
     private final WeightLogRepository weightLogRepository;
     private final TdeeService tdeeService;
     private final Clock clock;
@@ -56,25 +55,26 @@ public class ReportService {
         LocalDate a = anchor != null ? anchor : today;
 
         Range range = resolveRange(period, a, memberId, zone);
+        int rangeDays = (int) ChronoUnit.DAYS.between(range.start(), range.end()) + 1;
         Integer target = member.getDailyKcalTarget();
         MacroTargetG macro = MacroTargetG.from(target);
 
-        Map<LocalDate, DayTotals> byDate = dailyTotals(memberId, range.start(), range.end(), zone);
-        List<DayTotals> days = new ArrayList<>(byDate.values());
+        Map<LocalDate, DailyNutrition> byDate = mealDailyIntake.byDate(memberId, range.start(), range.end(), zone);
+        List<DailyNutrition> days = new ArrayList<>(byDate.values());
         int daysLogged = days.size();
 
         Integer avgKcal = daysLogged == 0 ? null
-                : (int) Math.round(days.stream().mapToInt(DayTotals::kcal).average().orElse(0));
-        BigDecimal avgCarb = mean(days, DayTotals::carb, daysLogged);
-        BigDecimal avgProtein = mean(days, DayTotals::protein, daysLogged);
-        BigDecimal avgFat = mean(days, DayTotals::fat, daysLogged);
-        int[] pct = WeeklyReportCalc.percent(avgCarb.doubleValue(), avgProtein.doubleValue(), avgFat.doubleValue());
+                : (int) Math.round(days.stream().mapToInt(DailyNutrition::kcal).average().orElse(0));
+        BigDecimal avgCarb = mean(days, DailyNutrition::carbG, daysLogged);
+        BigDecimal avgProtein = mean(days, DailyNutrition::proteinG, daysLogged);
+        BigDecimal avgFat = mean(days, DailyNutrition::fatG, daysLogged);
+        int[] pct = ReportCalc.percent(avgCarb.doubleValue(), avgProtein.doubleValue(), avgFat.doubleValue());
 
         WeightLog latest = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).orElse(null);
         boolean cut = latest != null && member.getTargetWeightKg() != null
                 && member.getTargetWeightKg().compareTo(latest.getWeightKg()) < 0;
         Integer onTargetDays = (target != null && daysLogged > 0)
-                ? WeeklyReportCalc.onTargetDays(days.stream().map(DayTotals::kcal).toList(), target, cut) : null;
+                ? ReportCalc.onTargetDays(days.stream().map(DailyNutrition::kcal).toList(), target, cut) : null;
 
         List<Bucket> buckets = buildBuckets(period, range, byDate);
         List<TdeePoint> series = tdeeSeries(memberId, period, buckets, today);
@@ -82,7 +82,9 @@ public class ReportService {
                 .filter(Objects::nonNull).reduce((x, y) -> y).orElse(null);
 
         List<Insight> insights = daysLogged == 0 ? List.of()
-                : WeeklyReportCalc.insights(signals(days, macro, target, avgKcal, lastMaintenance, cut, onTargetDays));
+                : ReportCalc.insights(
+                        signals(range, rangeDays, byDate, macro, target, avgKcal, lastMaintenance, cut, onTargetDays),
+                        period);
 
         return new ReportResponse(period, range.start(), range.end(), daysLogged, avgKcal, target, onTargetDays,
                 avgCarb, avgProtein, avgFat, pct[0], pct[1], pct[2],
@@ -102,7 +104,7 @@ public class ReportService {
                 yield new Range(ms, ms.with(TemporalAdjusters.lastDayOfMonth()));
             }
             case TOTAL -> {
-                LocalDate first = earliestLogDate(memberId, zone);
+                LocalDate first = mealDailyIntake.earliestDate(memberId, zone);
                 LocalDate today = LocalDate.now(clock);
                 yield new Range(first != null ? first.withDayOfMonth(1) : today.withDayOfMonth(1), today);
             }
@@ -110,13 +112,12 @@ public class ReportService {
     }
 
     /** 버킷: 주간=요일별(7), 월간=일별, 총=월별. 각 버킷 값은 그 구간 기록일의 일 평균 */
-    private List<Bucket> buildBuckets(Period period, Range range, Map<LocalDate, DayTotals> byDate) {
+    private List<Bucket> buildBuckets(Period period, Range range, Map<LocalDate, DailyNutrition> byDate) {
         List<Bucket> buckets = new ArrayList<>();
         if (period == Period.TOTAL) {
             LocalDate m = range.start().withDayOfMonth(1);
             while (!m.isAfter(range.end())) {
-                LocalDate monthEnd = m.with(TemporalAdjusters.lastDayOfMonth());
-                buckets.add(bucketOf(m.getMonthValue() + "월", m, byDate, m, monthEnd));
+                buckets.add(bucketOf(m.getMonthValue() + "월", m, byDate, m, m.with(TemporalAdjusters.lastDayOfMonth())));
                 m = m.plusMonths(1);
             }
         } else {
@@ -130,75 +131,68 @@ public class ReportService {
         return buckets;
     }
 
-    /** [from,to] 구간 기록일의 일 평균 탄단지·kcal로 버킷 하나 */
-    private Bucket bucketOf(String label, LocalDate start, Map<LocalDate, DayTotals> byDate,
+    private Bucket bucketOf(String label, LocalDate start, Map<LocalDate, DailyNutrition> byDate,
                             LocalDate from, LocalDate to) {
-        List<DayTotals> in = byDate.entrySet().stream()
+        List<DailyNutrition> in = byDate.entrySet().stream()
                 .filter(e -> !e.getKey().isBefore(from) && !e.getKey().isAfter(to))
                 .map(Map.Entry::getValue).toList();
         int n = in.size();
         if (n == 0) {
             return new Bucket(label, start, 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
         }
-        int kcal = (int) Math.round(in.stream().mapToInt(DayTotals::kcal).average().orElse(0));
+        int kcal = (int) Math.round(in.stream().mapToInt(DailyNutrition::kcal).average().orElse(0));
         return new Bucket(label, start, kcal,
-                mean(in, DayTotals::carb, n), mean(in, DayTotals::protein, n), mean(in, DayTotals::fat, n));
+                mean(in, DailyNutrition::carbG, n), mean(in, DailyNutrition::proteinG, n), mean(in, DailyNutrition::fatG, n));
     }
 
     /** TDEE 시리즈 — 버킷별 대표일(오늘 이하) 기준 */
     private List<TdeePoint> tdeeSeries(Long memberId, Period period, List<Bucket> buckets, LocalDate today) {
         List<TdeePoint> series = new ArrayList<>();
         for (Bucket b : buckets) {
-            // 월별 버킷은 월말(오늘 이하), 일별은 그 날. 미래는 제외
+            if (b.startDate().isAfter(today)) {
+                continue;
+            }
             LocalDate asOf = period == Period.TOTAL
                     ? b.startDate().with(TemporalAdjusters.lastDayOfMonth()) : b.startDate();
             if (asOf.isAfter(today)) {
                 asOf = today;
             }
-            if (b.startDate().isAfter(today)) {
-                continue;
-            }
             TdeeResponse t = tdeeService.get(memberId, asOf);
-            series.add(new TdeePoint(b.label(), t.maintenanceKcal(), t.source()));
+            series.add(new TdeePoint(b.label(), b.startDate(), t.maintenanceKcal(), t.source()));
         }
         return series;
     }
 
-    private LocalDate earliestLogDate(Long memberId, ZoneId zone) {
-        List<Meal> meals = mealRepository.findByMemberIdAndEatenAtGreaterThanEqualAndEatenAtLessThanOrderByEatenAtAsc(
-                memberId, Instant.EPOCH, LocalDate.now(clock).plusDays(1).atStartOfDay(zone).toInstant());
-        return meals.isEmpty() ? null : meals.get(0).getEatenAt().atZone(zone).toLocalDate();
-    }
+    // --- 신호 (달력일 기준 연속) ---
 
-    // --- 집계·신호 ---
-
-    private Signals signals(List<DayTotals> days, MacroTargetG macro, Integer target,
-                            Integer avgKcal, Integer maintenance, boolean cut, Integer onTargetDays) {
-        int overTargetDays = target != null ? (int) days.stream().filter(d -> d.kcal() > target).count() : 0;
+    private Signals signals(Range range, int rangeDays, Map<LocalDate, DailyNutrition> byDate, MacroTargetG macro,
+                            Integer target, Integer avgKcal, Integer maintenance, boolean cut, Integer onTargetDays) {
+        int daysLogged = byDate.size();
+        int overTargetDays = target != null
+                ? (int) byDate.values().stream().filter(d -> d.kcal() > target).count() : 0;
         int proteinDeficitDays = macro.proteinG() != null
-                ? (int) days.stream().filter(d -> d.protein().doubleValue() < macro.proteinG()).count() : 0;
-        int fatStreak = macro.fatG() != null ? WeeklyReportCalc.maxStreak(
-                days.stream().map(d -> d.fat().doubleValue() > macro.fatG()).toList()) : 0;
-        int carbStreak = macro.carbG() != null ? WeeklyReportCalc.maxStreak(
-                days.stream().map(d -> d.carb().doubleValue() > macro.carbG()).toList()) : 0;
-        return new Signals(days.size(), onTargetDays, overTargetDays, proteinDeficitDays,
+                ? (int) byDate.values().stream().filter(d -> d.proteinG().doubleValue() < macro.proteinG()).count() : 0;
+        // 연속 초과는 미기록일을 false로 채운 달력일 시퀀스로 판정(간극 무시 방지)
+        int fatStreak = macro.fatG() != null
+                ? ReportCalc.maxStreak(calendarFlags(range, byDate, d -> d.fatG().doubleValue() > macro.fatG())) : 0;
+        int carbStreak = macro.carbG() != null
+                ? ReportCalc.maxStreak(calendarFlags(range, byDate, d -> d.carbG().doubleValue() > macro.carbG())) : 0;
+        return new Signals(daysLogged, rangeDays, onTargetDays, overTargetDays, proteinDeficitDays,
                 fatStreak, carbStreak, avgKcal, maintenance, cut);
     }
 
-    private Map<LocalDate, DayTotals> dailyTotals(Long memberId, LocalDate from, LocalDate to, ZoneId zone) {
-        Instant start = from.atStartOfDay(zone).toInstant();
-        Instant end = to.plusDays(1).atStartOfDay(zone).toInstant();
-        List<Meal> meals = mealRepository
-                .findByMemberIdAndEatenAtGreaterThanEqualAndEatenAtLessThanOrderByEatenAtAsc(memberId, start, end);
-        Map<LocalDate, DayTotals> byDate = new TreeMap<>();
-        for (Meal m : meals) {
-            LocalDate d = m.getEatenAt().atZone(zone).toLocalDate();
-            byDate.merge(d, DayTotals.of(m), DayTotals::plus);
+    /** range의 각 달력일에 대해 조건 플래그(미기록일=false) */
+    private List<Boolean> calendarFlags(Range range, Map<LocalDate, DailyNutrition> byDate,
+                                        java.util.function.Predicate<DailyNutrition> over) {
+        List<Boolean> flags = new ArrayList<>();
+        for (LocalDate d = range.start(); !d.isAfter(range.end()); d = d.plusDays(1)) {
+            DailyNutrition n = byDate.get(d);
+            flags.add(n != null && over.test(n));
         }
-        return byDate;
+        return flags;
     }
 
-    private BigDecimal mean(List<DayTotals> days, java.util.function.Function<DayTotals, BigDecimal> field, int n) {
+    private BigDecimal mean(List<DailyNutrition> days, java.util.function.Function<DailyNutrition, BigDecimal> field, int n) {
         if (n == 0) {
             return BigDecimal.ZERO;
         }
@@ -207,15 +201,5 @@ public class ReportService {
     }
 
     private record Range(LocalDate start, LocalDate end) {
-    }
-
-    private record DayTotals(int kcal, BigDecimal carb, BigDecimal protein, BigDecimal fat) {
-        static DayTotals of(Meal m) {
-            return new DayTotals(m.getTotalKcal(), m.getCarbG(), m.getProteinG(), m.getFatG());
-        }
-
-        DayTotals plus(DayTotals o) {
-            return new DayTotals(kcal + o.kcal, carb.add(o.carb), protein.add(o.protein), fat.add(o.fat));
-        }
     }
 }

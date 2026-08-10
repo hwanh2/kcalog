@@ -1,7 +1,7 @@
 # adaptive-tdee Specification
 
 ## Purpose
-TBD - created by archiving change add-adaptive-tdee. Update Purpose after archive.
+실제 섭취량과 체중 추세로 에너지수지식을 역산해 개인의 실측 유지칼로리(TDEE)를 계산하고, 데이터가 부족하면 공식(Mifflin-St Jeor)으로 폴백하며, 유지칼로리 기반 추천 목표를 자동 적용 없이 제시하는 적응형 유지칼로리(차별점 #2) 능력을 규정한다.
 ## Requirements
 ### Requirement: 실측 유지칼로리 역산
 시스템은 최근 트레일링 창의 실제 섭취량과 체중 추세로 유지칼로리(TDEE)를 역산해야 한다(SHALL). 계산은 에너지수지식(`평균 일일섭취 − 일일 추세체중변화 × 체지방 에너지상수`)을 사용해야 하며(MUST), 체중 변화는 원시값이 아니라 추세(EMA)를 써야 한다(MUST). 값은 조회 시 계산하며 별도 영속화하지 않아야 한다(MUST — 입력이 저장돼 있어 재계산 가능).

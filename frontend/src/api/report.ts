@@ -13,6 +13,7 @@ export interface ReportBucket {
 
 export interface TdeePoint {
   label: string
+  date: string
   maintenanceKcal: number | null
   source: 'ADAPTIVE' | 'FORMULA'
 }

@@ -34,8 +34,8 @@ public record ReportResponse(
                          BigDecimal carbG, BigDecimal proteinG, BigDecimal fatG) {
     }
 
-    /** TDEE 시리즈 점 — 버킷 라벨과 정렬 */
-    public record TdeePoint(String label, Integer maintenanceKcal, String source) {
+    /** TDEE 시리즈 점 — 버킷 라벨·대표 날짜와 정렬 */
+    public record TdeePoint(String label, LocalDate date, Integer maintenanceKcal, String source) {
     }
 
     /** 규칙 기반 인사이트 */

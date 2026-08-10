@@ -100,8 +100,9 @@ class ReportIntegrationTest {
         mockMvc.perform(get("/api/reports").param("period", "MONTH").header("Authorization", bearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.period").value("MONTH"))
-                .andExpect(jsonPath("$.buckets.length()")
-                        .value(today.lengthOfMonth()));
+                .andExpect(jsonPath("$.buckets.length()").value(today.lengthOfMonth()))
+                // 인사이트 문구가 '이번 주'가 아니라 기간에 맞춰 '이번 달'로 스케일됨 (🔴 회귀)
+                .andExpect(jsonPath("$.insights[0].message", org.hamcrest.Matchers.containsString("이번 달")));
     }
 
     @Test
