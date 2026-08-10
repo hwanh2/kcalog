@@ -35,7 +35,11 @@ public class PhotoController {
             StorageService.StoredImage image = storageService.get(ownerId + "/" + name);
             MediaType contentType = image.contentType() != null
                     ? MediaType.parseMediaType(image.contentType()) : MediaType.IMAGE_JPEG;
-            return ResponseEntity.ok().contentType(contentType).body(image.bytes());
+            // 브라우저 콘텐츠 스니핑 차단 — 저장된 content-type으로 svg 등이 스크립트로 해석되지 않게(방어)
+            return ResponseEntity.ok()
+                    .header("X-Content-Type-Options", "nosniff")
+                    .contentType(contentType)
+                    .body(image.bytes());
         } catch (NoSuchKeyException e) {
             throw new ResponseStatusException(NOT_FOUND, "사진을 찾을 수 없습니다");
         }

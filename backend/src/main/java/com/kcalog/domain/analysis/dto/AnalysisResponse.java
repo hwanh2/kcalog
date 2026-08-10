@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kcalog.domain.analysis.entity.AnalysisJob;
 import com.kcalog.domain.analysis.entity.AnalysisStatus;
 import com.kcalog.domain.meal.dto.MealAnalysisResponse;
+import com.kcalog.global.storage.PhotoUrls;
 
 /**
  * 분석 작업 응답 — 상태 + 사진 URL + (완료/미검출 시) 분석 결과 + (실패 시) 사유.
@@ -32,7 +33,7 @@ public record AnalysisResponse(
         return new AnalysisResponse(
                 job.getId(),
                 job.getStatus().name(),
-                "/api/photos/" + job.getImageKey(),
+                PhotoUrls.of(job.getImageKey()),
                 result,
                 job.getErrorCode());
     }

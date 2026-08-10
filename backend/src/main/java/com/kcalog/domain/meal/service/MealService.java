@@ -1,5 +1,6 @@
 package com.kcalog.domain.meal.service;
 
+import com.kcalog.domain.analysis.service.AnalysisService;
 import com.kcalog.domain.meal.dto.MealItemRequest;
 import com.kcalog.domain.meal.dto.MealResponse;
 import com.kcalog.domain.meal.dto.SaveMealRequest;
@@ -23,11 +24,18 @@ public class MealService {
 
     private final MealRepository mealRepository;
     private final StorageService storageService;
+    private final AnalysisService analysisService;
     private final Clock clock;
 
-    /** 저장 — imageKey가 있으면(AI 확인 저장) 사진을 연결한다. 수동 입력은 imageKey=null */
+    /**
+     * 저장 — AI 확인 저장(analysisJobId)이면 분석 작업의 사진을 인수해 연결한다. 수동 입력은 사진 없음.
+     * 작업 인수(행 삭제)와 meal 저장을 한 트랜잭션으로 묶어, save 실패 시 작업 삭제도 함께 롤백한다.
+     */
     @Transactional
-    public MealResponse save(Long memberId, SaveMealRequest request, String imageKey) {
+    public MealResponse save(Long memberId, SaveMealRequest request) {
+        String imageKey = request.analysisJobId() != null
+                ? analysisService.consumeJobImage(memberId, request.analysisJobId())
+                : null;
         Meal meal = Meal.record(
                 memberId, request.eatenAt(), request.mealType(), request.source(),
                 toItems(request.items()));

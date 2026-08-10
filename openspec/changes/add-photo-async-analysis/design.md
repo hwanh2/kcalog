@@ -50,7 +50,7 @@ LLM(`OpenAiClient`)처럼 스토리지도 인터페이스로 경계를 둔다. �
 
 ## Migration Plan
 
-- `V8__analysis_job.sql`: analysis_job 테이블(member_id FK, status, image_key, result_json JSONB, error_code, timestamps).
+- `V8__analysis_job.sql`: analysis_job 테이블(member_id FK, status, image_key, result_json TEXT, error_code, timestamps).
 - `V9__meal_image.sql`: meal에 `image_key VARCHAR NULL` 추가(additive).
 - `docker-compose`에 MinIO 서비스 추가. `application.yml`에 `app.storage.*`(provider, bucket, endpoint, keys), `application-prod.yml`은 S3·R2 필수(fail-closed).
 - `.env.example`·README에 스토리지 설정 추가.

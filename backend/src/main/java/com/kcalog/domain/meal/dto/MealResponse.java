@@ -3,6 +3,7 @@ package com.kcalog.domain.meal.dto;
 import com.kcalog.domain.meal.entity.Meal;
 import com.kcalog.domain.meal.entity.MealSource;
 import com.kcalog.domain.meal.entity.MealType;
+import com.kcalog.global.storage.PhotoUrls;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -30,7 +31,7 @@ public record MealResponse(
                 meal.getCarbG(),
                 meal.getProteinG(),
                 meal.getFatG(),
-                meal.getImageKey() != null ? "/api/photos/" + meal.getImageKey() : null,
+                PhotoUrls.of(meal.getImageKey()),
                 meal.getItems().stream().map(MealItemResponse::of).toList());
     }
 }
