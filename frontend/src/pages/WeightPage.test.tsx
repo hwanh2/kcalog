@@ -10,6 +10,8 @@ vi.mock('../api/weight', () => ({
   getWeightSummary: vi.fn(),
   recordWeight: vi.fn(),
 }))
+// 체중 탭에 유지칼로리 카드가 붙어 있어 tdee 조회를 목킹(카드는 데이터 없으면 렌더 안 함)
+vi.mock('../api/tdee', () => ({ getTdee: vi.fn(() => new Promise(() => {})) }))
 const getSummaryMock = vi.mocked(getWeightSummary)
 
 const emptySummary: WeightSummary = {
