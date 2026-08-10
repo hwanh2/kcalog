@@ -4,3 +4,10 @@
 export function todayLocalDate(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
 }
+
+/** YYYY-MM-DD에 일수를 더한다(음수면 과거). UTC 정오 기준으로 계산해 DST·시간대 영향 없음 */
+export function addDays(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
