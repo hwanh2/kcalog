@@ -1,108 +1,178 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getDashboard } from '../api/dashboard'
-import type { Dashboard } from '../api/dashboard'
+import { getMeals } from '../api/meal'
+import type { Meal } from '../api/meal'
+import { getWeights } from '../api/weight'
+import { CalorieRing } from '../features/dashboard/CalorieRing'
+import { MacroProgress } from '../features/dashboard/MacroProgress'
+import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
+import { suggestNextMealType } from '../features/dashboard/mealSuggest'
 import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
-import { todayLocalDate } from '../lib/date'
+import { addDays, todayLocalDate } from '../lib/date'
 import { Card } from '../ui/form'
 
-/** 오늘 탭 — 잔여 칼로리·탄단지·식사 타임라인 대시보드 + 식사 기록 진입 */
+/** 홈(오늘) — 날짜 이동 + 칼로리 링·탄단지 달성도·체중 미니카드·오늘 식사 목록·촬영 유도 (v2 목업 기준) */
 export function HomePage() {
-  const date = todayLocalDate()
-  const { data, isPending, isError } = useQuery({
-    queryKey: ['dashboard', date],
-    queryFn: () => getDashboard(date),
+  const today = todayLocalDate()
+  const [date, setDate] = useState(today)
+
+  const dashboard = useQuery({ queryKey: ['dashboard', date], queryFn: () => getDashboard(date) })
+  const meals = useQuery({ queryKey: ['meals', date], queryFn: () => getMeals(date) })
+  const weights = useQuery({
+    queryKey: ['weights', addDays(date, -29), date],
+    queryFn: () => getWeights(addDays(date, -29), date),
   })
 
   return (
-    <section>
-      <h1 className="text-xl font-semibold">오늘</h1>
+    <section className="space-y-4">
+      <DateNav date={date} today={today} onChange={setDate} />
 
-      {isPending && <p className="mt-4 text-muted">불러오는 중…</p>}
-      {isError && <p className="mt-4 text-danger">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>}
-      {data && <Summary data={data} />}
+      {dashboard.isError && (
+        <p className="text-danger">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
+      )}
 
-      <Link
-        to="/meals/new"
-        className="mt-4 block rounded-md bg-brand py-3 text-center font-medium text-on-brand"
-      >
-        + 식사 기록
-      </Link>
+      {dashboard.data && (
+        <Card>
+          <CalorieRing
+            totalKcal={dashboard.data.totalKcal}
+            dailyKcalTarget={dashboard.data.dailyKcalTarget}
+            remainingKcal={dashboard.data.remainingKcal}
+          />
+        </Card>
+      )}
+
+      {dashboard.data && (
+        <Card>
+          <MacroProgress
+            carbG={Number(dashboard.data.carbG)}
+            proteinG={Number(dashboard.data.proteinG)}
+            fatG={Number(dashboard.data.fatG)}
+            carbTargetG={dashboard.data.carbTargetG}
+            proteinTargetG={dashboard.data.proteinTargetG}
+            fatTargetG={dashboard.data.fatTargetG}
+          />
+        </Card>
+      )}
+
+      <WeightMiniCard entries={weights.data ?? []} />
+
+      <MealSection meals={meals.data ?? []} />
     </section>
   )
 }
 
-function Summary({ data }: { data: Dashboard }) {
-  const { totalKcal, remainingKcal, dailyKcalTarget, carbG, proteinG, fatG, timeline } = data
-  const over = remainingKcal !== null && remainingKcal < 0
-
+function DateNav({
+  date,
+  today,
+  onChange,
+}: {
+  date: string
+  today: string
+  onChange: (d: string) => void
+}) {
   return (
-    <>
-      <Card className="mt-4">
-        {remainingKcal !== null ? (
-          <>
-            <p className="text-muted">{over ? '목표 초과' : '남은 칼로리'}</p>
-            <p className={`mt-1 text-3xl font-bold ${over ? 'text-danger' : 'text-brand'}`}>
-              {Math.abs(remainingKcal)}
-              <span className="ml-1 text-base font-normal text-muted">kcal</span>
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              섭취 {totalKcal} / 목표 {dailyKcalTarget} kcal
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-muted">오늘 섭취</p>
-            <p className="mt-1 text-3xl font-bold text-brand">
-              {totalKcal}
-              <span className="ml-1 text-base font-normal text-muted">kcal</span>
-            </p>
-          </>
-        )}
-
-        <MacroBar carbG={carbG} proteinG={proteinG} fatG={fatG} />
-      </Card>
-
-      <h2 className="mt-6 text-sm font-medium text-muted">식사 타임라인</h2>
-      {timeline.length === 0 ? (
-        <p className="mt-2 text-muted">오늘 기록한 식사가 없어요.</p>
-      ) : (
-        <ul className="mt-2 space-y-2">
-          {timeline.map((entry) => (
-            <li key={entry.id}>
-              <Card className="flex items-center justify-between gap-2">
-                <span className="font-medium">{MEAL_TYPE_LABELS[entry.mealType]}</span>
-                <span className="text-sm text-muted">{formatTime(entry.eatenAt)}</span>
-                <span className="text-brand">{entry.totalKcal} kcal</span>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+    <div className="flex items-center justify-between">
+      <button
+        type="button"
+        aria-label="이전 날짜"
+        onClick={() => onChange(addDays(date, -1))}
+        className="rounded-lg p-1.5 text-muted"
+      >
+        <Chevron dir="left" />
+      </button>
+      <span className="text-sm font-bold">{formatDateLabel(date, today)}</span>
+      <button
+        type="button"
+        aria-label="다음 날짜"
+        disabled={date >= today}
+        onClick={() => onChange(addDays(date, 1))}
+        className="rounded-lg p-1.5 text-muted disabled:opacity-30"
+      >
+        <Chevron dir="right" />
+      </button>
+    </div>
   )
 }
 
-/** 탄단지 gram 비율 막대 — 합계 0이면 렌더하지 않는다 */
-function MacroBar({ carbG, proteinG, fatG }: { carbG: number; proteinG: number; fatG: number }) {
-  const total = carbG + proteinG + fatG
-  if (total <= 0) return null
-  const pct = (v: number) => `${(v / total) * 100}%`
+function MealSection({ meals }: { meals: Meal[] }) {
+  const nextType = suggestNextMealType(meals.map((m) => m.mealType))
+
   return (
-    <div className="mt-4">
-      <div className="flex h-2 overflow-hidden rounded-full">
-        <span className="bg-brand" style={{ width: pct(carbG) }} />
-        <span className="bg-brand-dark" style={{ width: pct(proteinG) }} />
-        <span className="bg-muted" style={{ width: pct(fatG) }} />
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-sm font-extrabold">오늘 기록한 식사</h2>
+        <Link to="/records" className="flex items-center gap-0.5 text-xs font-bold text-brand">
+          전체보기
+          <Chevron dir="right" small />
+        </Link>
       </div>
-      <p className="mt-1 text-sm text-muted">
-        탄 {carbG} · 단 {proteinG} · 지 {fatG}
-      </p>
+
+      {meals.length === 0 && <p className="px-1 text-muted">오늘 기록한 식사가 없어요.</p>}
+
+      {meals.map((meal) => (
+        <MealCard key={meal.id} meal={meal} />
+      ))}
+
+      <Link
+        to="/meals/new"
+        className="flex items-center justify-between rounded-card border-2 border-dashed border-border bg-canvas/60 p-3.5"
+      >
+        <span className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface text-muted">+</span>
+          <span>
+            <span className="block text-xs font-bold">{MEAL_TYPE_LABELS[nextType]} 촬영 및 기록</span>
+            <span className="block text-[10px] text-muted">카메라로 찍으면 AI가 탄단지 자동 계산</span>
+          </span>
+        </span>
+        <span className="rounded-lg bg-surface px-2.5 py-1 text-xs font-bold text-brand shadow-sm">기록하기</span>
+      </Link>
     </div>
+  )
+}
+
+function MealCard({ meal }: { meal: Meal }) {
+  const names = meal.items.map((it) => it.name).join(' · ')
+  return (
+    <Card className="flex items-center justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase text-muted">
+            {MEAL_TYPE_LABELS[meal.mealType]} · {formatTime(meal.eatenAt)}
+          </span>
+          <span className="text-xs font-black">{meal.totalKcal} kcal</span>
+        </div>
+        {names && <p className="mt-0.5 truncate text-xs font-bold">{names}</p>}
+        <div className="mt-1.5 flex gap-2 text-[10px] font-bold">
+          <span className="rounded bg-carb-soft px-1.5 py-0.5 text-carb">탄 {meal.carbG}g</span>
+          <span className="rounded bg-protein-soft px-1.5 py-0.5 text-protein">단 {meal.proteinG}g</span>
+          <span className="rounded bg-fat-soft px-1.5 py-0.5 text-fat">지 {meal.fatG}g</span>
+        </div>
+      </div>
+    </Card>
   )
 }
 
 /** ISO instant → 로컬 HH:MM */
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+}
+
+/** YYYY-MM-DD → "8월 10일 (월)", 오늘이면 "오늘, …" 접두 */
+function formatDateLabel(date: string, today: string): string {
+  const d = new Date(`${date}T12:00:00Z`)
+  const md = d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', timeZone: 'UTC' })
+  const wd = d.toLocaleDateString('ko-KR', { weekday: 'short', timeZone: 'UTC' })
+  const label = `${md} (${wd})`
+  return date === today ? `오늘, ${label}` : label
+}
+
+function Chevron({ dir, small = false }: { dir: 'left' | 'right'; small?: boolean }) {
+  const s = small ? 14 : 20
+  return (
+    <svg aria-hidden="true" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {dir === 'left' ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
+    </svg>
+  )
 }
