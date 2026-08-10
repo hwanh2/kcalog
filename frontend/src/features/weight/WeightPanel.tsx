@@ -1,25 +1,30 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getWeights, recordWeight } from '../../api/weight'
+import { getWeightSummary, recordWeight } from '../../api/weight'
 import { addDays } from '../../lib/date'
-import { Button, Card, TextInput } from '../../ui/form'
+import { Card } from '../../ui/form'
 import { WeightTrend } from './WeightTrend'
+import { GoalEstimator } from './GoalEstimator'
+import { prevDelta, sliceByRange } from './estimator'
+import type { TrendRange } from './estimator'
 import { validateWeight } from './weightValidation'
 
-/** 기록 탭 체중 위젯 — 선택 날짜의 체중 입력(upsert) + 최근 30일 추이. date 기준 [date-29d, date] 조회 */
+const RANGES: TrendRange[] = ['1주', '1월', '3월']
+
+/** 체중 탭 위젯 — 스테퍼 입력 + 추세선(범위 토글) + 목표 에스티메이터. 요약은 [date-89, date] 조회(90일) */
 export function WeightPanel({ date }: { date: string }) {
   const queryClient = useQueryClient()
-  const from = addDays(date, -29)
-  const { data: weights } = useQuery({
-    queryKey: ['weights', from, date],
-    queryFn: () => getWeights(from, date),
+  const from = addDays(date, -89)
+  const { data: summary } = useQuery({
+    queryKey: ['weightSummary', from, date],
+    queryFn: () => getWeightSummary(from, date),
   })
-  const existing = weights?.find((w) => w.logDate === date)
-  const existingKg = existing?.weightKg
+  const existingKg = summary?.points.find((p) => p.logDate === date)?.weightKg
+  const existing = existingKg != null
 
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
-  // 날짜 변경·기존값 로드 시 입력 동기화 (객체가 아닌 값에 의존해 불필요한 재실행 방지)
+  const [range, setRange] = useState<TrendRange>('1주')
   useEffect(() => {
     setInput(existingKg != null ? String(existingKg) : '')
     setError(null)
@@ -27,8 +32,19 @@ export function WeightPanel({ date }: { date: string }) {
 
   const mutation = useMutation({
     mutationFn: (weightKg: number) => recordWeight({ weightKg, logDate: date }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['weights'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['weightSummary'] })
+      void queryClient.invalidateQueries({ queryKey: ['weights'] }) // 대시보드 미니카드 갱신
+    },
   })
+
+  /** −/＋ 0.1 조절 — 현재 입력(없으면 기존일·최신값·70 순)에서 시작 */
+  function step(delta: number) {
+    const cur = Number(input)
+    const base = input !== '' && Number.isFinite(cur) ? cur : (existingKg ?? summary?.latestKg ?? 70)
+    setInput(String(Math.round((base + delta) * 10) / 10))
+    setError(null)
+  }
 
   function save() {
     const result = validateWeight(input)
@@ -40,30 +56,108 @@ export function WeightPanel({ date }: { date: string }) {
     mutation.mutate(result.value)
   }
 
+  const [, m, d] = date.split('-')
+  const delta = summary ? prevDelta(summary.points) : null
+  const chartPoints = summary ? sliceByRange(summary.points, range) : []
+
   return (
-    <Card className="mt-4">
-      <p className="mb-2 font-medium">체중 기록</p>
-      <div className="flex items-start gap-2">
-        <div className="flex-1">
-          <TextInput
+    <>
+      {/* ① 체중 기록 — 오렌지 히어로 카드 */}
+      <section className="mt-4 rounded-card bg-gradient-to-br from-brand to-brand-dark p-5 text-white">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-white/80">
+            오늘 · {Number(m)}월 {Number(d)}일
+          </p>
+          {delta != null && (
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs text-white/90">
+              어제보다{' '}
+              <span className="font-semibold text-white">
+                {delta > 0 ? '+' : ''}
+                {delta}kg
+              </span>
+            </span>
+          )}
+        </div>
+
+        <div className="mt-2 flex items-end gap-1.5">
+          <input
+            aria-label="체중 (kg)"
             inputMode="decimal"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            aria-label="체중 (kg)"
-            placeholder="kg"
+            placeholder="0.0"
+            style={{ width: `${Math.max((input || '0.0').length, 1)}ch` }}
+            className="bg-transparent text-4xl font-extrabold tracking-tight text-white outline-none placeholder:text-white/50"
           />
-          {error && (
-            <p role="alert" className="mt-1 text-sm text-danger">
-              {error}
-            </p>
-          )}
+          <span className="mb-0.5 text-lg font-semibold text-white/75">kg</span>
         </div>
-        <Button type="button" onClick={save} disabled={mutation.isPending} aria-label={existing ? '체중 수정' : '체중 저장'}>
-          {existing ? '수정' : '저장'}
-        </Button>
-      </div>
+        {error && (
+          <p role="alert" className="mt-1 text-sm text-white">
+            {error}
+          </p>
+        )}
 
-      <WeightTrend weights={weights ?? []} />
-    </Card>
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="0.1 감소"
+            onClick={() => step(-0.1)}
+            className="rounded-full bg-white/20 px-4 py-2.5 text-sm font-medium text-white active:bg-white/30"
+          >
+            − 0.1
+          </button>
+          <button
+            type="button"
+            aria-label="0.1 증가"
+            onClick={() => step(0.1)}
+            className="rounded-full bg-white/20 px-4 py-2.5 text-sm font-medium text-white active:bg-white/30"
+          >
+            ＋ 0.1
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={mutation.isPending}
+            aria-label={existing ? '체중 수정' : '체중 저장'}
+            className="flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand disabled:opacity-70"
+          >
+            저장
+          </button>
+        </div>
+      </section>
+
+      {/* ② 추세선 */}
+      <Card className="mt-4">
+        <div className="flex items-center justify-between">
+          <p className="font-semibold text-ink">체중 변화 추세선</p>
+          <div className="flex rounded-full bg-canvas p-0.5 text-xs" role="tablist" aria-label="추세 범위">
+            {RANGES.map((r) => (
+              <button
+                key={r}
+                type="button"
+                role="tab"
+                aria-selected={range === r}
+                onClick={() => setRange(r)}
+                className={`rounded-full px-3 py-1 ${
+                  range === r ? 'bg-surface font-medium text-ink shadow-sm' : 'text-muted'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        <WeightTrend points={chartPoints} />
+      </Card>
+
+      {/* ③ 목표 달성 에스티메이터 (목표·기록 있을 때만) */}
+      {summary && summary.latestKg != null && summary.points.length > 0 && (
+        <GoalEstimator
+          startKg={summary.points[0].weightKg}
+          currentKg={summary.latestKg}
+          projection={summary.projection}
+        />
+      )}
+    </>
   )
 }
