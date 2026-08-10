@@ -1,5 +1,7 @@
 package com.kcalog.domain.dashboard.service;
 
+import com.kcalog.domain.meal.dto.MacroKcal;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -14,9 +16,6 @@ public record MacroTargetG(Integer carbG, Integer proteinG, Integer fatG) {
     private static final BigDecimal CARB_RATIO = new BigDecimal("0.5");
     private static final BigDecimal PROTEIN_RATIO = new BigDecimal("0.3");
     private static final BigDecimal FAT_RATIO = new BigDecimal("0.2");
-    private static final int CARB_KCAL_PER_G = 4;
-    private static final int PROTEIN_KCAL_PER_G = 4;
-    private static final int FAT_KCAL_PER_G = 9;
 
     /** 칼로리 목표(null이면 모든 값 null)로부터 탄단지 목표 g을 계산한다 */
     public static MacroTargetG from(Integer kcalTarget) {
@@ -24,9 +23,9 @@ public record MacroTargetG(Integer carbG, Integer proteinG, Integer fatG) {
             return new MacroTargetG(null, null, null);
         }
         return new MacroTargetG(
-                grams(kcalTarget, CARB_RATIO, CARB_KCAL_PER_G),
-                grams(kcalTarget, PROTEIN_RATIO, PROTEIN_KCAL_PER_G),
-                grams(kcalTarget, FAT_RATIO, FAT_KCAL_PER_G));
+                grams(kcalTarget, CARB_RATIO, MacroKcal.CARB),
+                grams(kcalTarget, PROTEIN_RATIO, MacroKcal.PROTEIN),
+                grams(kcalTarget, FAT_RATIO, MacroKcal.FAT));
     }
 
     private static int grams(int kcalTarget, BigDecimal ratio, int kcalPerGram) {

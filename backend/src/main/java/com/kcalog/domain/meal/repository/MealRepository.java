@@ -15,4 +15,7 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
 
     /** 소유권 검증용 — id + memberId 동시 일치해야 조회된다 (타인 것은 빈 Optional) */
     Optional<Meal> findByIdAndMemberId(Long id, Long memberId);
+
+    /** 첫 기록 — TOTAL 리포트의 기간 시작 계산용(전체 로드 없이 첫 건만) */
+    Optional<Meal> findFirstByMemberIdOrderByEatenAtAsc(Long memberId);
 }

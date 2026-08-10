@@ -19,7 +19,7 @@ function shellRoutes() {
           <Route path="/" element={<div>홈 화면</div>} />
           <Route path="/records" element={<div>음식기록 화면</div>} />
           <Route path="/weight" element={<div>체중 화면</div>} />
-          <Route path="/report" element={<ComingSoonPage title="리포트" />} />
+          <Route path="/report" element={<div>리포트 화면</div>} />
           <Route path="/ai-pt" element={<ComingSoonPage title="AI PT" />} />
           <Route path="/meals/new" element={<div>촬영 화면</div>} />
         </Route>
@@ -66,12 +66,9 @@ describe('AppShell', () => {
     expect(screen.getByText('촬영 화면')).toBeInTheDocument()
   })
 
-  it('준비 중 탭(리포트·AI PT)은 안내 화면을 표시한다', async () => {
+  it('준비 중 탭(AI PT)은 안내 화면을 표시한다', async () => {
     const user = userEvent.setup()
     renderWithAuth(shellRoutes(), { state: completed, path: '/' })
-
-    await user.click(screen.getByRole('link', { name: '리포트' }))
-    expect(screen.getByText(/준비 중인 기능/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'AI PT' }))
     expect(screen.getByRole('heading', { name: 'AI PT' })).toBeInTheDocument()
