@@ -10,6 +10,7 @@ import { MealRecordPage } from './pages/MealRecordPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RecordsPage } from './pages/RecordsPage'
+import { ReportPage } from './pages/ReportPage'
 import { WeightPage } from './pages/WeightPage'
 import { AppShell } from './shell/AppShell'
 
@@ -31,7 +32,7 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/records" element={<RecordsPage />} />
                 <Route path="/weight" element={<WeightPage />} />
-                <Route path="/report" element={<ComingSoonPage title="리포트" />} />
+                <Route path="/report" element={<ReportPage />} />
                 <Route path="/ai-pt" element={<ComingSoonPage title="AI PT" />} />
                 <Route path="/meals/new" element={<MealRecordPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

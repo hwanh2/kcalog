@@ -41,11 +41,17 @@ public class TdeeService {
 
     @Transactional(readOnly = true)
     public TdeeResponse get(Long memberId) {
+        return get(memberId, LocalDate.now(clock));
+    }
+
+    /** asOf 날짜 기준 트레일링 창으로 유지칼로리 계산 — 주간 리포트의 일별 시리즈가 임의 날짜로 호출 */
+    @Transactional(readOnly = true)
+    public TdeeResponse get(Long memberId, LocalDate asOf) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다"));
         Integer currentTarget = member.getDailyKcalTarget();
 
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = asOf;
         LocalDate from = today.minusDays(TdeeCalc.WINDOW_DAYS - 1L);
         ZoneId zone = clock.getZone();
 

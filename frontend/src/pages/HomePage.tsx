@@ -75,25 +75,29 @@ function DateNav({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <button
-        type="button"
-        aria-label="이전 날짜"
-        onClick={() => onChange(addDays(date, -1))}
-        className="rounded-lg p-1.5 text-muted"
-      >
-        <Chevron dir="left" />
-      </button>
       <span className="text-sm font-bold">{formatDateLabel(date, today)}</span>
-      <button
-        type="button"
-        aria-label="다음 날짜"
-        disabled={date >= today}
-        onClick={() => onChange(addDays(date, 1))}
-        className="rounded-lg p-1.5 text-muted disabled:opacity-30"
-      >
-        <Chevron dir="right" />
-      </button>
+      {/* 캘린더 아이콘 위에 네이티브 날짜 선택을 덮어, 탭하면 그 자리에서 달력이 열린다 */}
+      <div className="relative rounded-lg p-1.5 text-muted">
+        <CalendarIcon />
+        <input
+          type="date"
+          aria-label="날짜 선택"
+          value={date}
+          max={today}
+          onChange={(e) => e.target.value && onChange(e.target.value)}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        />
+      </div>
     </div>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 9h18M8 3v4M16 3v4" strokeLinecap="round" />
+    </svg>
   )
 }
 

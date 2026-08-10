@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDashboard } from '../api/dashboard'
@@ -119,15 +118,13 @@ describe('HomePage 대시보드', () => {
     expect(screen.getByText('-0.3kg')).toBeInTheDocument()
   })
 
-  it('날짜 이동 — 이전 날짜로 바꾸면 그 날짜로 다시 조회', async () => {
-    const user = userEvent.setup()
+  it('날짜 선택 — 캘린더에서 날짜를 고르면 그 날짜로 다시 조회', async () => {
     renderPage()
     await screen.findByText('남은 칼로리')
 
-    await user.click(screen.getByRole('button', { name: '이전 날짜' }))
+    fireEvent.change(screen.getByLabelText('날짜 선택'), { target: { value: '2026-08-01' } })
 
-    // 오늘 + 이전날 = getMeals가 최소 2개 날짜로 호출됨
-    await waitFor(() => expect(getMealsMock.mock.calls.length).toBeGreaterThanOrEqual(2))
+    await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith('2026-08-01'))
   })
 
   it('조회 실패 — 에러 안내', async () => {
