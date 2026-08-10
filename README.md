@@ -1,30 +1,49 @@
 # kcalog (칼로그)
 
-한식 사진 한 장으로 10초 안에 식사가 기록되는 체중 관리 앱.
+사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱. (서비스명 미정 — kcalog는 임시 이름)
+
+기능 범위·요구사항은 `openspec/`(스펙 주도 개발)이 기준이다. 상세 설계 문서·화면 템플릿은 로컬 전용(`docs/`, git 미추적).
 
 ## 모노레포 구조
 
 ```
 kcalog/
-├── frontend/   # Vite + React SPA (PWA)
-├── backend/    # Spring Boot 3 + JPA + Postgres
-├── eval/       # 식사 분석 프롬프트 평가 세트 (한식 사진 + 기대값)
+├── frontend/   # Vite 8 + React 19 + TypeScript SPA (PWA)
+├── backend/    # Spring Boot 4 + JPA + Postgres + Flyway
+├── eval/       # 식사 분석 프롬프트 평가 세트 (음식 사진 + 기대값)
 └── openspec/   # 스펙 주도 개발 (OpenSpec)
 ```
 
 ## 기술 스택
 
-- **프론트**: Vite + React SPA, PWA(vite-plugin-pwa), TanStack Query
-- **백엔드**: Spring Boot 3, JPA, Postgres, Spring Security + OAuth2(카카오/구글) + JWT
-- **스토리지**: S3/Cloudflare R2 (식사 사진, presigned URL 직접 업로드)
-- **AI**: Claude Vision API — 식사 사진 분석, 주간 리포트 생성
-- **운영 인프라**: 프론트 Vercel/Cloudflare Pages, 백엔드 Docker(단일 VPS/fly.io), DB Neon
+- **프론트**: Vite + React + TypeScript, react-router, TanStack Query, Tailwind v4, PWA(vite-plugin-pwa)
+- **백엔드**: Spring Boot 4, Java 21, JPA, Postgres 16, Flyway, Spring Security + OAuth2(카카오) + JWT
+- **AI**: OpenAI Vision(구조화 출력) — 식사 사진 분석. LLM 연동은 provider 교체 가능하게 추상화 예정
 
-## MVP 기능
+## 핵심 기능 (로드맵)
 
-1. 온보딩·목표 설정 — 소셜 로그인, 일일 칼로리 목표 자동 계산
-2. 식사 기록 — 사진 촬영 → AI 분석(메뉴·칼로리·탄단지) → 확인/수정 → 저장 (30초 이내 목표)
-3. 하루 대시보드 — 타임라인, 남은 칼로리, 탄단지 비율
-4. 체중 기록 — 추이 그래프
-5. 운동 기록 (간단) — 종류·시간 → MET 기반 소모 칼로리 추정
-6. 주간 AI 리포트 — 온디맨드 생성 + 주 단위 캐시
+1. 식사 기록 — 사진 촬영 → AI 분석 → 사진 위 음식별 탄단지 배지 → 탭하여 확인·수정 → 저장 ✅ (동기 분석·사진 무저장, 비동기·사진 저장으로 개편 예정)
+2. 온보딩·목표 — 카카오 로그인, 프로필 기반 일일 칼로리 목표 자동 계산 ✅
+3. 대시보드 — 남은 칼로리·탄단지·타임라인 ✅ / 체중 기록·추이 ✅
+4. 학습하는 수정 — 사용자가 고친 값을 개인 보정치로 기억해 다음 인식에 자동 반영 (예정)
+5. 적응형 유지칼로리(TDEE) — 체중 추세 + 섭취량으로 역산해 목표 자동 보정 (예정)
+6. 주간 리포트·AI PT 코칭 (예정)
+
+## 로컬 실행
+
+```bash
+docker compose up -d                 # Postgres 16 (127.0.0.1:5432, kcalog/kcalog)
+cd backend && ./gradlew bootRun      # API 서버 :8080
+cd frontend && npm run dev           # dev 서버 :5173 (/api → :8080 proxy)
+```
+
+- DB까지는 환경변수 없이 기본값으로 동작한다.
+- **AI 식사 분석**을 쓰려면 OpenAI API 키가 필요하다 — `.env.example`을 `.env`로 복사해 `OPENAI_API_KEY`를 채운다. 키가 없으면 분석 기능만 에러이고 나머지는 정상 동작한다.
+- 카카오 로그인 테스트에는 `KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`이 필요하다 (`.env.example` 참고).
+
+## 테스트
+
+```bash
+cd backend && ./gradlew test         # Docker 데몬만 켜져 있으면 됨 (Testcontainers)
+cd frontend && npm test              # vitest
+```
