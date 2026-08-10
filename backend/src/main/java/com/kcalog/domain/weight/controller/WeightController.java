@@ -2,6 +2,7 @@ package com.kcalog.domain.weight.controller;
 
 import com.kcalog.domain.weight.dto.RecordWeightRequest;
 import com.kcalog.domain.weight.dto.WeightResponse;
+import com.kcalog.domain.weight.dto.WeightSummaryResponse;
 import com.kcalog.domain.weight.service.WeightService;
 import com.kcalog.global.common.LoginMemberId;
 import jakarta.validation.Valid;
@@ -35,5 +36,13 @@ public class WeightController {
                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return weightService.history(memberId, from, to);
+    }
+
+    /** 체중 탭 요약 — 추세선·BMI·연속 기록·목표 예상 */
+    @GetMapping("/summary")
+    public WeightSummaryResponse summary(@LoginMemberId Long memberId,
+                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return weightService.summary(memberId, from, to);
     }
 }
