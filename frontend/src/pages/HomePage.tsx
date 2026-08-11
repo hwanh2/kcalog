@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '../auth/useAuth'
+import { getBriefing } from '../api/coach'
 import { getDashboard } from '../api/dashboard'
 import { getMeals } from '../api/meal'
 import type { Meal } from '../api/meal'
@@ -28,7 +30,7 @@ export function HomePage() {
 
   return (
     <section className="space-y-4">
-      <DateNav date={date} today={today} onChange={setDate} />
+      <Greeting date={date} today={today} onChange={setDate} />
 
       {dashboard.isError && (
         <p className="text-danger">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
@@ -36,11 +38,14 @@ export function HomePage() {
 
       {dashboard.data && (
         <Card>
-          <CalorieRing
-            totalKcal={dashboard.data.totalKcal}
-            dailyKcalTarget={dashboard.data.dailyKcalTarget}
-            remainingKcal={dashboard.data.remainingKcal}
-          />
+          <CoachHeader withCoaching={date === today} />
+          <div className="mt-3">
+            <CalorieRing
+              totalKcal={dashboard.data.totalKcal}
+              dailyKcalTarget={dashboard.data.dailyKcalTarget}
+              remainingKcal={dashboard.data.remainingKcal}
+            />
+          </div>
         </Card>
       )}
 
@@ -57,6 +62,8 @@ export function HomePage() {
         </Card>
       )}
 
+      {date === today && <CoachCard />}
+
       <WeightMiniCard entries={weights.data ?? []} />
 
       <MealSection meals={meals.data ?? []} />
@@ -64,7 +71,8 @@ export function HomePage() {
   )
 }
 
-function DateNav({
+/** 상단 인사말 — 날짜(오늘, 8월 11일 (화)) + 시간대 인사 + 날짜 선택 캘린더 */
+function Greeting({
   date,
   today,
   onChange,
@@ -73,11 +81,18 @@ function DateNav({
   today: string
   onChange: (d: string) => void
 }) {
+  const { state } = useAuth()
+  const nickname = state.status === 'authed' ? state.member.nickname : ''
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-bold">{formatDateLabel(date, today)}</span>
+    <div className="flex items-start justify-between">
+      <div className="min-w-0">
+        <p className="text-xs text-muted">{formatDateLabel(date, today)}</p>
+        <h1 className="text-xl font-medium text-ink">
+          {timeGreeting()}, {givenName(nickname)}님
+        </h1>
+      </div>
       {/* 캘린더 아이콘 위에 네이티브 날짜 선택을 덮어, 탭하면 그 자리에서 달력이 열린다 */}
-      <div className="relative rounded-lg p-1.5 text-muted">
+      <div className="relative shrink-0 rounded-lg p-1.5 text-muted">
         <CalendarIcon />
         <input
           type="date"
@@ -88,6 +103,67 @@ function DateNav({
           className="absolute inset-0 cursor-pointer opacity-0"
         />
       </div>
+    </div>
+  )
+}
+
+/** 성을 뗀 이름 — 한글 이름(2~4자)이면 첫 글자(1음절 성)를 떼고, 그 외(닉네임·영문)는 그대로 */
+function givenName(nickname: string): string {
+  return /^[가-힣]{2,4}$/.test(nickname) ? nickname.slice(1) : nickname
+}
+
+/** 시간대별 인사 (KST 기준) */
+function timeGreeting(): string {
+  const hour = kstHour()
+  if (hour >= 5 && hour < 11) return '좋은 아침이에요'
+  if (hour >= 11 && hour < 17) return '안녕하세요'
+  if (hour >= 17 && hour < 21) return '좋은 저녁이에요'
+  return '좋은 밤이에요'
+}
+
+function kstHour(): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Seoul',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date())
+  return Number(parts.find((p) => p.type === 'hour')?.value ?? '0') % 24
+}
+
+/** 오늘의 AI 코칭 카드 — 브리핑 본문을 초록 카드로, 탭하면 AI PT로 이동. 데이터 없으면 숨김 */
+function CoachCard() {
+  const { data: briefing } = useQuery({ queryKey: ['coachBriefing'], queryFn: getBriefing })
+  if (!briefing?.hasData) return null
+  return (
+    <Link
+      to="/ai-pt"
+      className="flex items-center gap-3 rounded-2xl bg-success-soft px-4 py-3.5"
+    >
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-success text-lg">
+        ✨
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-ink">오늘의 AI 코칭</p>
+        <p className="mt-0.5 text-sm text-ink/80">{briefing.message}</p>
+      </div>
+      <span className="shrink-0 text-muted" aria-hidden>›</span>
+    </Link>
+  )
+}
+
+/** 오늘의 칼로리 헤더 — 칼로리 카드 상단. 코칭 한 줄(오늘·데이터 있을 때)과 리포트 바로가기. */
+function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
+  const { data: briefing } = useQuery({ queryKey: ['coachBriefing'], queryFn: getBriefing })
+  const headline = withCoaching && briefing?.hasData ? briefing.headline : ''
+  return (
+    <div className="flex items-center justify-between">
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-ink">오늘의 칼로리</p>
+        {headline && <p className="truncate text-xs font-medium text-success">{headline}</p>}
+      </div>
+      <Link to="/report" className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-brand">
+        리포트 <span aria-hidden>›</span>
+      </Link>
     </div>
   )
 }

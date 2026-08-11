@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { Route } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { RequireAuth } from '../auth/RequireAuth'
-import { ComingSoonPage } from '../pages/ComingSoonPage'
 import { makeMember, renderWithAuth } from '../test/utils'
 import { AppShell } from './AppShell'
 
@@ -20,7 +19,7 @@ function shellRoutes() {
           <Route path="/records" element={<div>음식기록 화면</div>} />
           <Route path="/weight" element={<div>체중 화면</div>} />
           <Route path="/report" element={<div>리포트 화면</div>} />
-          <Route path="/ai-pt" element={<ComingSoonPage title="AI PT" />} />
+          <Route path="/ai-pt" element={<div>AI PT 화면</div>} />
           <Route path="/meals/new" element={<div>촬영 화면</div>} />
         </Route>
       </Route>
@@ -66,12 +65,12 @@ describe('AppShell', () => {
     expect(screen.getByText('촬영 화면')).toBeInTheDocument()
   })
 
-  it('준비 중 탭(AI PT)은 안내 화면을 표시한다', async () => {
+  it('AI PT 탭으로 전환된다', async () => {
     const user = userEvent.setup()
     renderWithAuth(shellRoutes(), { state: completed, path: '/' })
 
     await user.click(screen.getByRole('link', { name: 'AI PT' }))
-    expect(screen.getByRole('heading', { name: 'AI PT' })).toBeInTheDocument()
+    expect(screen.getByText('AI PT 화면')).toBeInTheDocument()
   })
 
   it('현재 탭에 aria-current가 설정된다', () => {
