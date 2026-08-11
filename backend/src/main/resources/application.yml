@@ -50,6 +50,7 @@ app:
     model: ${OPENAI_MODEL:gpt-5.4-mini}
     timeout: 20s
     daily-analysis-limit: 20
+    daily-coach-chat-limit: ${OPENAI_DAILY_COACH_CHAT_LIMIT:30}
   analysis:
     # 개인 보정치를 분석 프롬프트에 주입할 최근 개수 상한 — 토큰·지연 방어(초과분 제외). 0이면 주입 없음.
     correction-inject-limit: ${ANALYSIS_CORRECTION_INJECT_LIMIT:50}
