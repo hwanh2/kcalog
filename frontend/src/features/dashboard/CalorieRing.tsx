@@ -16,58 +16,67 @@ export function CalorieRing({
   const arcClass = over ? 'text-danger' : 'text-brand'
 
   return (
-    <div className="flex items-center gap-5">
-      <div className="relative flex h-32 w-32 shrink-0 items-center justify-center">
-        <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90" role="img" aria-label="칼로리 링">
-          <path
-            className="text-canvas"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={3.5}
-            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-          />
-          {hasTarget && (
+    <div>
+      <div className="flex justify-center">
+        <div className="relative flex h-36 w-36 items-center justify-center">
+          <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90" role="img" aria-label="칼로리 링">
             <path
-              className={arcClass}
+              className="text-canvas"
               fill="none"
               stroke="currentColor"
-              strokeWidth={3.8}
-              strokeLinecap="round"
-              strokeDasharray={`${pct}, 100`}
+              strokeWidth={3.5}
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
-          )}
-        </svg>
-        <div className="absolute text-center">
-          {hasTarget ? (
-            <>
-              <span className="block text-[10px] font-bold uppercase text-muted">
-                {over ? '목표 초과' : '남은 칼로리'}
-              </span>
-              <span className={`text-2xl font-black leading-none ${over ? 'text-danger' : 'text-brand'}`}>
-                {Math.abs(remainingKcal)}
-              </span>
-              <span className="mt-0.5 block text-[11px] font-semibold text-muted">kcal</span>
-            </>
-          ) : (
-            <>
-              <span className="block text-[10px] font-bold uppercase text-muted">오늘 섭취</span>
-              <span className="text-2xl font-black leading-none text-brand">{totalKcal}</span>
-              <span className="mt-0.5 block text-[11px] font-semibold text-muted">kcal</span>
-            </>
-          )}
+            {hasTarget && (
+              <path
+                className={arcClass}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={3.8}
+                strokeLinecap="round"
+                strokeDasharray={`${pct}, 100`}
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            )}
+          </svg>
+          <div className="absolute text-center">
+            {hasTarget ? (
+              <>
+                <span className="block text-[11px] font-bold text-muted">
+                  {over ? '목표 초과' : '남은 칼로리'}
+                </span>
+                <span className={`text-3xl font-black leading-none ${over ? 'text-danger' : 'text-brand'}`}>
+                  {Math.abs(remainingKcal)}
+                </span>
+                <span className="mt-1 block text-[11px] font-semibold text-muted">
+                  {totalKcal.toLocaleString()} / {dailyKcalTarget.toLocaleString()} kcal
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="block text-[11px] font-bold text-muted">오늘 섭취</span>
+                <span className="text-3xl font-black leading-none text-brand">{totalKcal}</span>
+                <span className="mt-1 block text-[11px] font-semibold text-muted">kcal</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted">오늘의 칼로리</p>
-        <p className="mt-1 text-lg font-black">
-          섭취 {totalKcal.toLocaleString()}
-          {hasTarget && (
-            <span className="text-xs font-medium text-muted"> / 목표 {dailyKcalTarget.toLocaleString()} kcal</span>
-          )}
-        </p>
+      <div className="mt-4 grid grid-cols-3 divide-x divide-border text-center">
+        <Stat label="섭취" value={totalKcal.toLocaleString()} />
+        <Stat label="남은" value={hasTarget ? remainingKcal.toLocaleString() : '–'} />
+        <Stat label="목표" value={hasTarget ? dailyKcalTarget.toLocaleString() : '–'} />
       </div>
+    </div>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-0.5 text-lg font-black text-ink">{value}</p>
     </div>
   )
 }

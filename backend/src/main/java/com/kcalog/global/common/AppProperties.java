@@ -18,8 +18,10 @@ public record AppProperties(String frontendBaseUrl, Jwt jwt, RefreshToken refres
     public record RefreshToken(Duration ttl) {
     }
 
-    /** OpenAI 식사 분석 설정. apiKey는 환경변수 주입 필수(로컬 기본값은 placeholder) */
-    public record Openai(String apiKey, String baseUrl, String model, Duration timeout, int dailyAnalysisLimit) {
+    /** OpenAI 설정. apiKey는 환경변수 주입 필수(로컬 기본값은 placeholder).
+     *  dailyCoachChatLimit: 회원당 하루 코치 채팅 호출 상한(LLM 비용 가드레일). */
+    public record Openai(String apiKey, String baseUrl, String model, Duration timeout,
+                         int dailyAnalysisLimit, int dailyCoachChatLimit) {
     }
 
     /** 사진 Object Storage 설정 — S3 호환(로컬 MinIO / 운영 S3·R2). endpoint 비우면 AWS 기본.
