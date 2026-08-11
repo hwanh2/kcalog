@@ -1,7 +1,7 @@
 # weekly-report Specification
 
 ## Purpose
-TBD - created by archiving change add-weekly-report. Update Purpose after archive.
+주간·월간·전체 기간의 식사 기록을 버킷으로 엮어 목표 달성 요약·탄단지 분포·유지칼로리(TDEE) 변화·규칙 기반 인사이트를 조회 시 계산해 제공하는 기간 리포트 능력을 규정한다. 전용 저장소 없이 기존 식사·체중·프로필에서 매 조회 재계산하며, 산출한 구조화 신호는 AI 코칭의 자연어 서술이 재사용한다.
 ## Requirements
 ### Requirement: 기간 리포트 조회
 시스템은 주간·월간·총 기간을 버킷으로 엮어 목표 달성 요약·탄단지 분포·TDEE 변화·인사이트를 계산해 제공해야 한다(SHALL). 기간을 지정할 수 있어야 하며 생략 시 주간으로 본다(MUST). 버킷은 주간=요일별·월간=일별·총=월별이어야 한다(MUST). 값은 조회 시 계산하며 별도 영속화하지 않아야 한다(MUST). 다른 회원의 리포트에는 접근할 수 없어야 한다(MUST).

@@ -112,7 +112,11 @@ describe('CoachPage', () => {
     await user.click(screen.getByRole('button', { name: '보내기' }))
 
     await waitFor(() =>
-      expect(streamMessageMock).toHaveBeenCalledWith('점심 뭐 먹을까요?', expect.any(Function)),
+      expect(streamMessageMock).toHaveBeenCalledWith(
+        '점심 뭐 먹을까요?',
+        expect.any(Function),
+        expect.any(AbortSignal),
+      ),
     )
     await waitFor(() => expect(screen.getByText('닭가슴살 샐러드 추천해요.')).toBeInTheDocument())
   })
@@ -125,7 +129,11 @@ describe('CoachPage', () => {
     await user.click(screen.getByRole('button', { name: '오늘 뭐 먹을까?' }))
 
     await waitFor(() =>
-      expect(streamMessageMock).toHaveBeenCalledWith('오늘 뭐 먹을까?', expect.any(Function)),
+      expect(streamMessageMock).toHaveBeenCalledWith(
+        '오늘 뭐 먹을까?',
+        expect.any(Function),
+        expect.any(AbortSignal),
+      ),
     )
   })
 

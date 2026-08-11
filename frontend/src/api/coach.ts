@@ -79,15 +79,16 @@ export function parseSseBuffer(buffer: string): { events: SseEvent[]; rest: stri
 export async function streamMessage(
   content: string,
   onToken: (piece: string) => void,
+  signal?: AbortSignal,
 ): Promise<CoachingChatMessage> {
-  let res = await postChat(content)
+  let res = await postChat(content, signal)
   if (res.status === 401) {
     const token = await refreshAccessToken()
     if (!token) {
       window.location.assign('/login')
       throw new ApiError(401, null)
     }
-    res = await postChat(content)
+    res = await postChat(content, signal)
   }
   if (!res.ok || !res.body) {
     throw new ApiError(res.status, await res.json().catch(() => null))
@@ -97,30 +98,36 @@ export async function streamMessage(
   const decoder = new TextDecoder()
   let buffer = ''
   let done: CoachingChatMessage | null = null
-  for (;;) {
-    const { value, done: finished } = await reader.read()
-    if (finished) break
-    buffer += decoder.decode(value, { stream: true })
-    const parsed = parseSseBuffer(buffer)
-    buffer = parsed.rest
-    for (const ev of parsed.events) {
-      if (ev.event === 'token') {
-        const piece = (JSON.parse(ev.data) as { t?: string }).t
-        if (piece) onToken(piece)
-      } else if (ev.event === 'done') {
-        done = JSON.parse(ev.data) as CoachingChatMessage
+  // 파싱 예외·중단 어느 쪽으로 빠져나가도 reader와 연결을 정리한다
+  try {
+    for (;;) {
+      const { value, done: finished } = await reader.read()
+      if (finished) break
+      buffer += decoder.decode(value, { stream: true })
+      const parsed = parseSseBuffer(buffer)
+      buffer = parsed.rest
+      for (const ev of parsed.events) {
+        if (ev.event === 'token') {
+          const piece = (JSON.parse(ev.data) as { t?: string }).t
+          if (piece) onToken(piece)
+        } else if (ev.event === 'done') {
+          done = JSON.parse(ev.data) as CoachingChatMessage
+        }
       }
     }
+  } finally {
+    await reader.cancel().catch(() => {})
   }
   if (!done) throw new ApiError(0, null)
   return done
 }
 
-function postChat(content: string): Promise<Response> {
+function postChat(content: string, signal?: AbortSignal): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const token = getAccessToken()
   if (token) headers.Authorization = `Bearer ${token}`
   return fetch(`${API_BASE}/api/coach/messages`, {
+    signal,
     method: 'POST',
     headers,
     body: JSON.stringify({ content }),

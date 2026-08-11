@@ -18,6 +18,7 @@ import com.kcalog.global.common.AppProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * AI PT 코칭 (차별점 #3) — 규칙이 계산한 구조화 신호를 LLM에 주입해 자연어 코칭·대화를 만든다(하이브리드).
@@ -58,7 +60,13 @@ public class CoachingService {
 
     // ---- 오늘의 브리핑 ---------------------------------------------------
 
-    @Transactional
+    /**
+     * 오늘의 브리핑 — 캐시 우선, 없으면 생성.
+     * <p>
+     * 메서드 전체를 트랜잭션으로 묶지 않는다: 수 초짜리 LLM 호출을 트랜잭션 안에 두면 그동안 커넥션을
+     * 점유하고, 저장 시 UNIQUE 위반이 나면 트랜잭션이 rollback-only가 되어 폴백을 반환해도 커밋 단계에서
+     * 500이 된다. 저장은 리포지토리 자체 트랜잭션에 맡기고, 동시 최초 조회 경쟁은 아래에서 처리한다.
+     */
     public CoachingBriefingResponse briefing(Long memberId) {
         LocalDate today = LocalDate.now(clock);
 
@@ -74,22 +82,44 @@ public class CoachingService {
         }
 
         String signalsJson = toJson(signals);
+        Generated generated;
         try {
-            String content = openAiClient.complete(CoachingPrompt.briefingBody(props.openai().model(), signalsJson));
-            JsonNode node = objectMapper.readTree(content);
-            String headline = node.path("headline").asText("");
-            String message = node.path("message").asText("");
-            List<Recommendation> recommendations = readRecommendations(node.path("recommendations"));
-            if (headline.isBlank() || message.isBlank()) {
-                throw new IllegalStateException("빈 코칭 응답");
-            }
-            briefingRepository.save(CoachingMessage.of(memberId, today, headline, message,
-                    objectMapper.writeValueAsString(recommendations), signalsJson, "LLM"));
-            return new CoachingBriefingResponse(true, headline, message, recommendations, stats, "LLM");
+            generated = generate(signalsJson);
         } catch (Exception e) {
             log.warn("코칭 브리핑 생성 실패, 규칙 폴백: {}", e.getMessage());
             return fallbackBriefing(signals, stats);  // 실패는 영속하지 않음 — 다음 조회에 재시도
         }
+
+        try {
+            briefingRepository.save(CoachingMessage.of(memberId, today, generated.headline(), generated.message(),
+                    toJson(generated.recommendations()), signalsJson, "LLM"));
+        } catch (DataIntegrityViolationException dup) {
+            // 같은 날 최초 조회가 동시에 들어와 경쟁에서 졌다 — 이긴 쪽이 저장한 브리핑을 그대로 쓴다
+            log.debug("브리핑 동시 생성 경쟁 — 저장된 브리핑 사용: memberId={}", memberId);
+            return briefingRepository.findByMemberIdAndCoachDate(memberId, today)
+                    .map(this::fromCached)
+                    .orElseGet(() -> toResponse(generated, stats));
+        }
+        return toResponse(generated, stats);
+    }
+
+    /** LLM 호출 + 파싱 — 빈 응답이면 예외로 폴백 경로에 넘긴다 */
+    private Generated generate(String signalsJson) throws Exception {
+        String content = openAiClient.complete(CoachingPrompt.briefingBody(props.openai().model(), signalsJson));
+        JsonNode node = objectMapper.readTree(content);
+        String headline = node.path("headline").asText("");
+        String message = node.path("message").asText("");
+        if (headline.isBlank() || message.isBlank()) {
+            throw new IllegalStateException("빈 코칭 응답");
+        }
+        return new Generated(headline, message, readRecommendations(node.path("recommendations")));
+    }
+
+    private CoachingBriefingResponse toResponse(Generated g, Stats stats) {
+        return new CoachingBriefingResponse(true, g.headline(), g.message(), g.recommendations(), stats, "LLM");
+    }
+
+    private record Generated(String headline, String message, List<Recommendation> recommendations) {
     }
 
     private CoachingBriefingResponse fromCached(CoachingMessage m) {
@@ -134,15 +164,17 @@ public class CoachingService {
     }
 
     /**
-     * 대화 — 코치 응답을 SSE로 스트리밍한다. 상한 검사·사용자 메시지 저장·신호 수집은 동기(요청 스레드)로 끝내
+     * 대화 — 코치 응답을 SSE로 스트리밍한다. 상한 선점·사용자 메시지 저장·신호 수집은 동기(요청 스레드)로 끝내
      * 상한 초과를 429로 반환하고, 토큰 스트리밍만 별도 스레드로 분리한다.
      * 이벤트: token({t})* → done(저장된 assistant 메시지). LLM 실패 시 폴백 문구로 done.
+     * <p>
+     * 트랜잭션으로 묶지 않는다: 각 쓰기는 리포지토리 자체 트랜잭션으로 원자적이고, 여기서 트랜잭션을 열면
+     * 워커 스레드가 아직 커밋되지 않은 선점을 되돌리려다(release) 빗나갈 수 있다.
      */
-    @Transactional
     public SseEmitter chatStream(Long memberId, String question) {
         LocalDate today = LocalDate.now(clock);
-        int limit = props.openai().dailyCoachChatLimit();
-        if (chatUsageRepository.count(memberId, today) >= limit) {
+        // 검사와 증가를 한 연산으로 — 스트리밍이 끝날 때까지 창이 열려 동시 요청이 상한을 넘는 걸 막는다
+        if (!chatUsageRepository.tryReserve(memberId, today, props.openai().dailyCoachChatLimit())) {
             throw new DailyCoachChatLimitException("오늘 코치와 나눌 수 있는 대화를 다 사용했어요. 내일 다시 이어가요.");
         }
 
@@ -151,27 +183,41 @@ public class CoachingService {
         String signalsJson = toJson(signalsCollector.collect(memberId));
 
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MS);
-        coachStreamExecutor.execute(() -> runStream(memberId, today, signalsJson, priorTurns, question, emitter));
+        // 타임아웃·클라이언트 이탈 시 워커가 계속 LLM을 읽지 않도록 취소 신호를 건다
+        AtomicBoolean cancelled = new AtomicBoolean(false);
+        emitter.onTimeout(() -> cancelled.set(true));
+        emitter.onError(e -> cancelled.set(true));
+        emitter.onCompletion(() -> cancelled.set(true));
+
+        coachStreamExecutor.execute(
+                () -> runStream(memberId, today, signalsJson, priorTurns, question, emitter, cancelled));
         return emitter;
     }
 
     /** 스트림 실행(별도 스레드) — 토큰 방출 후 성공/폴백 메시지를 저장하고 done 이벤트로 마무리 */
-    private void runStream(Long memberId, LocalDate day, String signalsJson,
-                           List<ChatTurn> priorTurns, String question, SseEmitter emitter) {
+    private void runStream(Long memberId, LocalDate day, String signalsJson, List<ChatTurn> priorTurns,
+                           String question, SseEmitter emitter, AtomicBoolean cancelled) {
         try {
             String answer = openAiClient.stream(
                     CoachingPrompt.chatBody(props.openai().model(), signalsJson, priorTurns, question),
-                    token -> emitToken(emitter, token));
+                    token -> emitToken(emitter, token, cancelled));
             if (answer == null || answer.isBlank()) {
                 throw new IllegalStateException("빈 코치 응답");
             }
-            CoachingChatMessage saved = persistAssistant(memberId, day, answer.trim(), true);
+            CoachingChatMessage saved = chatRepository.save(
+                    CoachingChatMessage.of(memberId, ChatRole.ASSISTANT, answer.trim()));
             emitter.send(SseEmitter.event().name("done").data(CoachingChatMessageResponse.from(saved)));
             emitter.complete();
+        } catch (StreamCancelledException cancel) {
+            // 타임아웃·클라이언트 이탈 — emitter는 이미 종료됐다. 생성 중이던 답을 폴백으로 덮어쓰지 않는다
+            log.debug("코치 스트림 취소됨: memberId={}", memberId);
+            chatUsageRepository.release(memberId, day);
         } catch (Exception e) {
             log.warn("코치 스트림 실패, 폴백 반환: {}", e.getMessage());
+            chatUsageRepository.release(memberId, day);  // 실패는 과금하지 않는다 — 선점 되돌리기
             try {
-                CoachingChatMessage saved = persistAssistant(memberId, day, CHAT_FALLBACK, false);
+                CoachingChatMessage saved = chatRepository.save(
+                        CoachingChatMessage.of(memberId, ChatRole.ASSISTANT, CHAT_FALLBACK));
                 emitter.send(SseEmitter.event().name("done").data(CoachingChatMessageResponse.from(saved)));
                 emitter.complete();
             } catch (IOException io) {
@@ -180,7 +226,10 @@ public class CoachingService {
         }
     }
 
-    private void emitToken(SseEmitter emitter, String token) {
+    private void emitToken(SseEmitter emitter, String token, AtomicBoolean cancelled) {
+        if (cancelled.get()) {
+            throw new StreamCancelledException();  // OpenAI 읽기 루프를 풀어 스트림을 중단
+        }
         try {
             emitter.send(SseEmitter.event().name("token").data(Map.of("t", token)));
         } catch (IOException e) {
@@ -188,16 +237,11 @@ public class CoachingService {
         }
     }
 
-    /**
-     * assistant 메시지 저장 + (성공 시) 사용량 증가. 별도 트랜잭션 없이 repository.save(Spring Data 기본 tx) +
-     * JdbcClient(autocommit)로 각각 원자적. 실패 호출은 과금하지 않는다.
-     */
-    private CoachingChatMessage persistAssistant(Long memberId, LocalDate day, String text, boolean success) {
-        CoachingChatMessage saved = chatRepository.save(CoachingChatMessage.of(memberId, ChatRole.ASSISTANT, text));
-        if (success) {
-            chatUsageRepository.increment(memberId, day);
+    /** 타임아웃·클라이언트 이탈로 스트림을 중단시키는 내부 신호 */
+    private static class StreamCancelledException extends RuntimeException {
+        StreamCancelledException() {
+            super(null, null, false, false);  // 제어 흐름용 — 스택트레이스 불필요
         }
-        return saved;
     }
 
     /** 프롬프트용 최근 N턴 — 최신 먼저 조회해 시간순으로 뒤집는다 */

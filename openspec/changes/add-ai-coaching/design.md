@@ -84,3 +84,12 @@ LLM이 `**굵게**`·목록을 쓰므로 코치 버블을 마크다운으로 렌
 - **3스탯 재계산**: 캐시된 브리핑을 읽을 때 저장된 `signals_json` 스냅샷을 역직렬화해 스탯을 도출 — 서술(캐시)과 지표의 근거를 일치시킨다.
 - **ComingSoonPage 제거**: AI PT가 마지막 준비중 탭이라 `ComingSoonPage`가 죽은 코드가 되어 삭제. AppShell 테스트는 스텁 라우트로 내비게이션만 검증하도록 갱신.
 - **홈 코칭 한 줄**: 별도 API 없이 홈이 `getBriefing`을 소비(쿼리 키 `coachBriefing` 공유). 오늘 날짜 + `hasData`일 때만 노출.
+- **브리핑 `response_format`(D8 이탈)**: D8은 `json_object`로 적었으나 구현은 `json_schema` + `strict: true`. 스키마를 모델에 강제해 필드 누락·형식 흔들림을 줄이려는 선택으로, 파싱 경로(content 문자열 → `ObjectMapper`)는 D8 그대로다.
+
+## 리뷰 대응 (PR #31)
+
+- **채팅 상한 TOCTOU(🔴)**: `count() >= limit` 검사 후 스트리밍 성공 시 증가하는 구조라, 검사~증가 창이 스트리밍 시간(최대 60초)만큼 벌어져 동시 요청이 모두 상한을 통과했다. `tryReserve`(`ON CONFLICT DO UPDATE ... WHERE call_count < :limit RETURNING`)로 **요청 스레드에서 원자적 선점**하고, 스트리밍 실패·취소 시 `release`로 되돌려 '실패 미과금' 정책을 유지한다.
+- **브리핑 동시 최초 조회 500(🔴)**: `@Transactional` 안에서 `save`가 UNIQUE를 위반하면 트랜잭션이 rollback-only가 되어, 폴백을 반환해도 커밋 단계에서 `UnexpectedRollbackException`(500)이 났다. `briefing()`의 `@Transactional`을 제거해 저장을 리포지토리 자체 트랜잭션에 맡기고, `DataIntegrityViolationException`은 '경쟁에서 짐'으로 보고 저장된 브리핑을 재조회해 반환한다. 부수 효과로 **수 초짜리 LLM 호출이 DB 트랜잭션·커넥션을 점유하던 문제**도 함께 해소된다(`chatStream`도 같은 이유로 트랜잭션 제거 — 워커의 `release`가 미커밋 선점을 놓치는 문제까지 방지).
+- **SSE 취소 처리**: `onTimeout`/`onError`/`onCompletion`에서 취소 플래그를 세우고 토큰 방출 시 확인해 OpenAI 읽기를 중단한다. 취소 시에는 생성 중이던 답을 폴백 문구로 덮어써 저장하지 않는다.
+- **프론트 스트림 정리**: `streamMessage(content, onToken, signal)`에 `AbortSignal`을 넘기고 읽기 루프를 `try/finally`로 감싸 `reader.cancel()`을 보장. `CoachPage`는 언마운트 시 `AbortController.abort()`로 진행 중 연결을 끊는다.
+- **보류**: 일일 카운터 공용 추출(`AnalysisUsageRepository`까지 건드려 이번 change 스코프 밖), `CoachingMessage`→`CoachingBriefing` 개명, `useTypewriter` 훅 분리.

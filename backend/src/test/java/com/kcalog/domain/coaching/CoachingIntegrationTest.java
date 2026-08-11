@@ -2,7 +2,9 @@ package com.kcalog.domain.coaching;
 
 import com.kcalog.IntegrationTest;
 import com.kcalog.domain.auth.service.JwtService;
+import com.kcalog.domain.coaching.entity.CoachingMessage;
 import com.kcalog.domain.coaching.repository.CoachingChatUsageRepository;
+import com.kcalog.domain.coaching.repository.CoachingMessageRepository;
 import com.kcalog.domain.meal.entity.Meal;
 import com.kcalog.domain.meal.entity.MealItem;
 import com.kcalog.domain.meal.entity.MealSource;
@@ -64,6 +66,8 @@ class CoachingIntegrationTest {
     WeightLogRepository weightLogRepository;
     @Autowired
     CoachingChatUsageRepository chatUsageRepository;
+    @Autowired
+    CoachingMessageRepository briefingRepository;
     @Autowired
     JwtService jwtService;
     @Autowired
@@ -233,12 +237,41 @@ class CoachingIntegrationTest {
         LocalDate today = LocalDate.now(KST);
         int limit = props.openai().dailyCoachChatLimit();
         for (int i = 0; i < limit; i++) {
-            chatUsageRepository.increment(member.getId(), today);
+            assertThat(chatUsageRepository.tryReserve(member.getId(), today, limit)).isTrue();
         }
 
         mockMvc.perform(post("/api/coach/messages").header("Authorization", bearer)
                         .contentType("application/json").content("{\"content\":\"질문\"}"))
                 .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    @DisplayName("상한 선점 — 검사와 증가가 한 연산이라 상한 초과분은 선점되지 않는다(TOCTOU 방어)")
+    void reserveIsAtomicAgainstLimit() {
+        LocalDate today = LocalDate.now(KST);
+        assertThat(chatUsageRepository.tryReserve(member.getId(), today, 2)).isTrue();
+        assertThat(chatUsageRepository.tryReserve(member.getId(), today, 2)).isTrue();
+        // 상한에 도달하면 더 이상 선점되지 않고 카운터도 증가하지 않는다
+        assertThat(chatUsageRepository.tryReserve(member.getId(), today, 2)).isFalse();
+        assertThat(chatUsageRepository.count(member.getId(), today)).isEqualTo(2);
+        // 실패 보정 — 되돌리면 다시 선점 가능
+        chatUsageRepository.release(member.getId(), today);
+        assertThat(chatUsageRepository.count(member.getId(), today)).isEqualTo(1);
+        assertThat(chatUsageRepository.tryReserve(member.getId(), today, 2)).isTrue();
+    }
+
+    @Test
+    @DisplayName("브리핑 — 이미 오늘 브리핑이 있으면(동시 생성 경쟁) 500 없이 저장된 브리핑을 반환")
+    void briefingLosesRaceReturnsSaved() throws Exception {
+        seedRecentData();
+        // 다른 요청이 먼저 저장한 상황을 재현 — 생성 경로가 UNIQUE 위반을 만나도 폴백/500이 아니라 캐시를 쓴다
+        briefingRepository.save(CoachingMessage.of(member.getId(), LocalDate.now(KST),
+                "먼저 저장된 브리핑", "경쟁에서 이긴 쪽 내용", "[]", "{}", "LLM"));
+
+        mockMvc.perform(get("/api/coach/briefing").header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.headline").value("먼저 저장된 브리핑"))
+                .andExpect(jsonPath("$.source").value("LLM"));
     }
 
     @Test

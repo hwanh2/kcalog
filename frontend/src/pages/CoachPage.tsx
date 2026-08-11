@@ -131,6 +131,7 @@ function Chat() {
   const streamDoneRef = useRef(false)
   const errorRef = useRef<string | null>(null)
   const timerRef = useRef<number | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const { data: messages = [] } = useQuery({ queryKey: ['coachMessages'], queryFn: getMessages })
 
@@ -144,9 +145,10 @@ function Chat() {
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, pending])
 
-  // 언마운트 시 리빌 타이머 정리
+  // 언마운트 시 리빌 타이머와 진행 중 스트림 정리 — 연결이 남아 서버 응답까지 열려 있지 않게
   useEffect(() => () => {
     if (timerRef.current != null) window.clearInterval(timerRef.current)
+    abortRef.current?.abort()
   }, [])
 
   function submit(content: string) {
@@ -173,10 +175,18 @@ function Chat() {
       }
     }, REVEAL_INTERVAL_MS)
 
-    void streamMessage(text, (piece) => {
-      targetRef.current += piece
-    })
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    void streamMessage(
+      text,
+      (piece) => {
+        targetRef.current += piece
+      },
+      controller.signal,
+    )
       .catch((e: unknown) => {
+        if (controller.signal.aborted) return // 언마운트로 중단 — 안내를 띄울 화면이 없다
         errorRef.current =
           e instanceof ApiError && e.status === 429
             ? '오늘 대화를 다 사용했어요. 내일 다시 이어가요.'
@@ -185,6 +195,7 @@ function Chat() {
       })
       .finally(() => {
         streamDoneRef.current = true
+        if (abortRef.current === controller) abortRef.current = null
       })
   }
 
