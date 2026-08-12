@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 /**
@@ -136,7 +137,11 @@ export function OptionCard({
   )
 }
 
-/** 슬라이더 + 직접 입력 — 큰 숫자 자체가 입력칸이라 정밀 입력도 가능하다 */
+/**
+ * 슬라이더 + 직접 입력 — 큰 숫자 자체가 입력칸이라 정밀 입력도 가능하다.
+ * 입력칸을 비운 상태를 허용해야 지우고 다시 칠 수 있어, 표시 문자열을 따로 들고 있다가
+ * 숫자로 읽히는 동안만 부모에 올린다(부모는 항상 마지막 유효 숫자를 갖는다).
+ */
 export function SliderField({
   label,
   unit,
@@ -154,6 +159,10 @@ export function SliderField({
   step?: number
   onChange: (v: number) => void
 }) {
+  const [raw, setRaw] = useState(String(value))
+  // 슬라이더 등 밖에서 값이 바뀌면 표시도 따라간다
+  useEffect(() => setRaw(String(value)), [value])
+
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-baseline justify-between">
@@ -163,11 +172,15 @@ export function SliderField({
       <input
         type="number"
         aria-label={label}
-        value={value}
+        value={raw}
         min={min}
         max={max}
         step={step}
-        onChange={(e) => e.target.value !== '' && onChange(Number(e.target.value))}
+        onChange={(e) => {
+          setRaw(e.target.value)
+          const parsed = Number(e.target.value)
+          if (e.target.value !== '' && Number.isFinite(parsed)) onChange(parsed)
+        }}
         className="mt-1 w-full bg-transparent text-4xl font-black text-ink outline-none"
       />
       <input

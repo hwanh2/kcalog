@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import type { WeightEntry } from '../../api/weight'
+import { trendScale } from '../weight/trendScale'
 import { weightSummary } from './weightSummary'
 
 /** 미니 차트에 그릴 최근 기록 수 — 7일 변화량과 눈금을 맞춘다 */
@@ -74,14 +75,7 @@ function TrendChart({ entries }: { entries: WeightEntry[] }) {
 
   const values = entries.map((e) => e.weightKg)
   const n = values.length
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const mid = (min + max) / 2
-  const span = Math.max(max - min, MIN_SPAN_KG)
-  const lo = mid - span / 2
-
-  const x = (i: number) => (n === 1 ? W / 2 : padX + (i / (n - 1)) * (W - 2 * padX))
-  const y = (v: number) => H - padY - ((v - lo) / span) * (H - 2 * padY)
+  const { x, y } = trendScale({ values, width: W, height: H, padX, padY, minSpan: MIN_SPAN_KG })
 
   const line = values.map((v, i) => `${x(i)},${y(v)}`).join(' ')
   const area = `${padX},${H} ${line} ${x(n - 1)},${H}`

@@ -61,6 +61,12 @@ export function AnalyzedItemList({
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-ink">
                   {item.name || '이름 없음'}
+                  {/* 오류는 테두리 색만으로 알리면 색을 못 보는 사용자에게 전달되지 않아 문구를 함께 단다 */}
+                  {hasError && (
+                    <span className="ml-1.5 rounded-full bg-protein-soft px-1.5 py-0.5 text-[11px] font-medium text-danger">
+                      확인 필요
+                    </span>
+                  )}
                   {item.corrected && (
                     <span className="ml-1.5 rounded-full bg-success-soft px-1.5 py-0.5 text-[11px] font-medium text-success">
                       내 보정값

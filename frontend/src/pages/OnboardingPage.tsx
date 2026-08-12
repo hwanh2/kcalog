@@ -35,6 +35,17 @@ export function OnboardingPage() {
 
   const birthYear = CURRENT_YEAR - age
 
+  /**
+   * 2단계 확정 — 값이 보이는 이 화면에서 범위를 검증한다.
+   * 뒤 단계로 미루면 오류 문구가 없는 화면에서 '다음'이 죽은 것처럼 막힌다.
+   */
+  function confirmBody() {
+    const fieldErrors = validateProfileFields({ birthYear, heightCm, weightKg })
+    setErrors(fieldErrors)
+    if (Object.keys(fieldErrors).length > 0) return
+    setStep(3)
+  }
+
   /** 4단계 → 5단계로 넘어갈 때 제안 칼로리를 받아온다 */
   async function loadSuggestion() {
     if (!gender || !activityLevel || !goal) return
@@ -44,7 +55,13 @@ export function OnboardingPage() {
       Object.assign(fieldErrors, validateProfileFields({ targetWeightKg: Number(targetWeightKg) }))
     }
     setErrors(fieldErrors)
-    if (Object.keys(fieldErrors).length > 0) return
+    if (Object.keys(fieldErrors).length > 0) {
+      // 신체 정보 오류는 2단계에만 문구가 있으므로 그 화면으로 되돌려 보여준다
+      if (fieldErrors.heightCm || fieldErrors.weightKg || fieldErrors.birthYear) {
+        setStep(2)
+      }
+      return
+    }
 
     setBusy(true)
     try {
@@ -124,7 +141,7 @@ export function OnboardingPage() {
         title="키와 몸무게, 나이"
         description="정확할수록 계산이 잘 맞아요."
         onBack={() => setStep(1)}
-        onNext={() => setStep(3)}
+        onNext={confirmBody}
       >
         {notice}
         <div className="space-y-3">

@@ -71,7 +71,7 @@ describe('OnboardingPage 위저드', () => {
     expect(screen.getByText('성별을 알려주세요')).toBeInTheDocument()
   })
 
-  it('범위 밖 키를 넣으면 오류를 보여주고 제안을 조회하지 않는다', async () => {
+  it('범위 밖 키는 그 자리(2단계)에서 오류를 보여주고 다음 단계로 넘기지 않는다', async () => {
     const user = userEvent.setup()
     renderOnboarding()
 
@@ -80,12 +80,17 @@ describe('OnboardingPage 위저드', () => {
     await user.clear(screen.getByLabelText('키'))
     await user.type(screen.getByLabelText('키'), '90') // 범위 밖
     await user.click(next())
-    await user.click(screen.getByRole('button', { name: /보통/ }))
-    await user.click(next())
-    await user.click(screen.getByRole('button', { name: /체중 유지/ }))
-    await user.click(next())
 
+    // 값이 보이는 화면에서 바로 알려주고, 단계는 그대로 머문다
+    expect(screen.getByText('키는 100~230cm 범위여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('키와 몸무게, 나이')).toBeInTheDocument()
     expect(getKcalSuggestionMock).not.toHaveBeenCalled()
+
+    // 고치면 진행된다
+    await user.clear(screen.getByLabelText('키'))
+    await user.type(screen.getByLabelText('키'), '175')
+    await user.click(next())
+    expect(screen.getByText('평소 활동량은 어느 정도인가요?')).toBeInTheDocument()
   })
 
   it('목표 체중 없이 방향만으로 제안을 받아 완료 화면을 보여준다', async () => {
