@@ -67,13 +67,14 @@ class MealSaveConsistencyTest {
     @DisplayName("meal 저장 실패 시 — 인수한 분석 작업 삭제가 롤백되어 작업·사진이 보존된다")
     void saveFailureRollsBackJobConsumption() {
         String key = storageService.put(member.getId(), "jpeg".getBytes(), "image/jpeg");
-        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), key));
+        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), key, null));
         when(mealRepository.save(any(Meal.class))).thenThrow(new RuntimeException("DB 저장 실패"));
 
         SaveMealRequest request = new SaveMealRequest(
                 Instant.parse("2026-08-06T03:30:00Z"), MealType.LUNCH, MealSource.AI,
                 List.of(new MealItemRequest("김치찌개", 400,
-                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"), false)),
+                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"),
+                        null, null, false)),
                 job.getId());
 
         assertThatThrownBy(() -> mealService.save(member.getId(), request))

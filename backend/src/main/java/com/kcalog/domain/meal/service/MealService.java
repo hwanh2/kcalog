@@ -80,7 +80,7 @@ public class MealService {
 
     private List<MealItem> toItems(List<MealItemRequest> items) {
         return items.stream()
-                .map(i -> MealItem.of(i.name(), i.kcal(), i.carbG(), i.proteinG(), i.fatG()))
+                .map(i -> MealItem.of(i.name(), i.kcal(), i.carbG(), i.proteinG(), i.fatG(), i.quantity(), i.unit()))
                 .toList();
     }
 

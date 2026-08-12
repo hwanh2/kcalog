@@ -39,7 +39,7 @@ public class MealAnalysisService {
     /** 동기 분석(레거시 엔드포인트) — 일일 제한 판정 후 이미지 분석. 개인 보정 주입 없음(빈 이력) */
     public MealAnalysisResponse analyze(Long memberId, byte[] image, String contentType) {
         enforceDailyLimit(memberId);
-        return analyzeImage(image, contentType, List.of());
+        return analyzeImage(image, contentType, null, List.of());
     }
 
     /**
@@ -56,13 +56,22 @@ public class MealAnalysisService {
     }
 
     /**
-     * 이미지만 분석(제한 판정 없음) — 비동기 워커가 호출. 재시도·NO_FOOD·파싱 실패 처리 포함.
+     * 사진 분석(제한 판정 없음) — 비동기 워커가 호출. 재시도·NO_FOOD·파싱 실패 처리 포함.
+     * note가 있으면 사진에 보이지 않는 정보로 함께 전달한다.
      * corrections가 있으면 개인 보정 이력을 프롬프트에 주입(B) — 이력이 비면 프롬프트는 기존과 동일(eval 유효).
      */
-    public MealAnalysisResponse analyzeImage(byte[] image, String contentType, List<PersonalCorrection> corrections) {
+    public MealAnalysisResponse analyzeImage(byte[] image, String contentType, String note,
+                                             List<PersonalCorrection> corrections) {
         AppProperties.Openai openai = props.openai();
         String dataUrl = toDataUrl(image, contentType);
-        Map<String, Object> body = MealAnalysisPrompt.requestBody(openai.model(), dataUrl, corrections);
+        Map<String, Object> body = MealAnalysisPrompt.requestBody(openai.model(), dataUrl, note, corrections);
+        return parse(callWithRetry(body));
+    }
+
+    /** 설명만 분석(제한 판정 없음) — 사진이 없으므로 위치 박스 없이 항목만 낸다 */
+    public MealAnalysisResponse analyzeText(String note, List<PersonalCorrection> corrections) {
+        AppProperties.Openai openai = props.openai();
+        Map<String, Object> body = MealAnalysisPrompt.textRequestBody(openai.model(), note, corrections);
         return parse(callWithRetry(body));
     }
 

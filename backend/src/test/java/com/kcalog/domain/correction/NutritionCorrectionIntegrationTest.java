@@ -100,7 +100,8 @@ class NutritionCorrectionIntegrationTest {
         return new SaveMealRequest(
                 Instant.parse("2026-08-10T03:30:00Z"), MealType.LUNCH, MealSource.MANUAL,
                 List.of(new MealItemRequest(name, kcal,
-                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"), remember)),
+                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"),
+                        null, null, remember)),
                 null);
     }
 

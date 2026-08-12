@@ -45,7 +45,7 @@ class DashboardIntegrationTest {
     Member member;
     String bearer;
 
-    // 2026-08-08 KST 하루 = [2026-08-07T15:00Z, 2026-08-08T15:00Z)
+    // 2026-08-08의 서비스 하루(05:00 경계) = [2026-08-07T20:00Z, 2026-08-08T20:00Z)
     static final String DATE = "2026-08-08";
     static final Instant LUNCH_AT = Instant.parse("2026-08-08T03:00:00Z");   // 12:00 KST
     static final Instant BREAKFAST_AT = Instant.parse("2026-08-08T00:00:00Z"); // 09:00 KST
@@ -111,16 +111,30 @@ class DashboardIntegrationTest {
     }
 
     @Test
-    @DisplayName("다른 날 식사는 집계에서 제외 — 자정 경계")
+    @DisplayName("다른 날 식사는 집계에서 제외 — 05:00 하루 경계")
     void otherDayExcluded() throws Exception {
         mealRepository.save(meal(LUNCH_AT, MealType.LUNCH, 650, "75.0", "30.0", "22.0"));
-        // 2026-08-08T15:00Z = 2026-08-09 00:00 KST → 다음날, 제외돼야 함
-        mealRepository.save(meal(Instant.parse("2026-08-08T15:00:00Z"), MealType.DINNER, 800, "90.0", "40.0", "25.0"));
+        // 2026-08-08T20:00Z = 2026-08-09 05:00 KST → 다음날, 제외돼야 함
+        mealRepository.save(meal(Instant.parse("2026-08-08T20:00:00Z"), MealType.DINNER, 800, "90.0", "40.0", "25.0"));
 
         mockMvc.perform(get("/api/dashboard").param("date", DATE).header("Authorization", bearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalKcal").value(650))
                 .andExpect(jsonPath("$.timeline.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("새벽 야식은 전날 집계에 포함된다 — 05:00 이전")
+    void lateNightCountsToPreviousDay() throws Exception {
+        mealRepository.save(meal(LUNCH_AT, MealType.LUNCH, 650, "75.0", "30.0", "22.0"));
+        // 2026-08-08T19:30Z = 2026-08-09 04:30 KST → 서비스 하루로는 아직 8/8
+        mealRepository.save(meal(Instant.parse("2026-08-08T19:30:00Z"), MealType.LATE_NIGHT,
+                350, "40.0", "10.0", "15.0"));
+
+        mockMvc.perform(get("/api/dashboard").param("date", DATE).header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalKcal").value(1000))
+                .andExpect(jsonPath("$.timeline.length()").value(2));
     }
 
     @Test

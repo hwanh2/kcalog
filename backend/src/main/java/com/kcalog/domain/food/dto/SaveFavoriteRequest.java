@@ -1,4 +1,4 @@
-package com.kcalog.domain.meal.dto;
+package com.kcalog.domain.food.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -20,21 +20,24 @@ import static com.kcalog.domain.meal.dto.MealValidation.QUANTITY_MAX;
 import static com.kcalog.domain.meal.dto.MealValidation.QUANTITY_MIN;
 import static com.kcalog.domain.meal.dto.MealValidation.UNIT_MAX;
 
-/** 음식별 항목 입력 — 저장·수정 요청의 items 원소.
- *  quantity·unit은 섭취량 표시용 선택 입력이며, 영양값은 이미 수량이 반영된 총량이다.
- *  remember=true면 저장 시 이 항목의 확정 영양값을 개인 보정치로 학습(upsert)한다(차별점 #1). 기본 false. */
-public record MealItemRequest(
+/**
+ * 즐겨찾기 저장 — 카탈로그에서 복사·AI 결과에서 저장·직접 입력이 모두 이 요청을 쓴다.
+ * rememberForAnalysis=true면 같은 값을 개인 보정치로도 저장한다(1단위 기준 환산). 기본 false —
+ * 담기 편하려고 누른 즐겨찾기가 AI 분석 결과까지 바꾸지 않게 하기 위함(design D6).
+ */
+public record SaveFavoriteRequest(
         @NotBlank @Size(max = NAME_MAX) String name,
+        @Size(max = 16) String emoji,
+        @NotNull @DecimalMin(QUANTITY_MIN) @DecimalMax(QUANTITY_MAX) @Digits(integer = 4, fraction = 2)
+        BigDecimal quantity,
+        @NotBlank @Size(max = UNIT_MAX) String unit,
         @NotNull @Min(KCAL_MIN) @Max(KCAL_MAX) Integer kcal,
         @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal carbG,
         @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal proteinG,
         @NotNull @DecimalMin(MACRO_MIN) @DecimalMax(MACRO_MAX) @Digits(integer = 4, fraction = 1) BigDecimal fatG,
-        @DecimalMin(QUANTITY_MIN) @DecimalMax(QUANTITY_MAX) @Digits(integer = 4, fraction = 2) BigDecimal quantity,
-        @Size(max = UNIT_MAX) String unit,
-        Boolean remember
+        Boolean rememberForAnalysis
 ) {
-    /** 미지정(null)은 기억하지 않음으로 취급 */
     public boolean shouldRemember() {
-        return Boolean.TRUE.equals(remember);
+        return Boolean.TRUE.equals(rememberForAnalysis);
     }
 }

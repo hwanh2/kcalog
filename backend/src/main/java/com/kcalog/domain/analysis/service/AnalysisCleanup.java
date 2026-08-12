@@ -42,7 +42,8 @@ public class AnalysisCleanup {
         Instant cutoff = Instant.now(clock).minus(retentionHours, ChronoUnit.HOURS);
         List<AnalysisJob> expired = jobRepository.findByCreatedAtBefore(cutoff);
         if (expired.isEmpty()) return;
-        expired.forEach(job -> storageService.delete(job.getImageKey()));
+        // 설명만으로 만든 작업은 사진이 없어 스토리지 접근이 필요 없다
+        expired.stream().filter(AnalysisJob::hasImage).forEach(job -> storageService.delete(job.getImageKey()));
         jobRepository.deleteAll(expired);
         log.info("미확인 분석 작업 {}건과 사진 정리", expired.size());
     }

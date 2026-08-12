@@ -19,7 +19,8 @@ class FoodCorrectionServiceTest {
 
     private AnalyzedItem item(String name, int kcal) {
         return new AnalyzedItem(name, kcal,
-                new BigDecimal("10.0"), new BigDecimal("10.0"), new BigDecimal("10.0"), null, false);
+                new BigDecimal("10.0"), new BigDecimal("10.0"), new BigDecimal("10.0"),
+                new BigDecimal("100"), "g", null, false);
     }
 
     private PersonalCorrection correction(String display, int kcal) {
