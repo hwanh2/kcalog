@@ -22,6 +22,7 @@
   - 첫 배포 후 GitHub 패키지 설정에서 이 레포와 연결(Package settings → Manage Actions access)
 - [ ] 0.12 👤 GitHub Secrets 등록
   - 접속: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `GHCR_PULL_TOKEN`
+  - `SSH_KNOWN_HOSTS` — VM에서 `ssh-keyscan -H <Elastic IP>` 결과를 그대로 등록. **없으면 배포가 실패한다**(고의) — 러너는 매번 새로 뜨므로 그때그때 keyscan하면 매 배포가 호스트 무검증 신뢰가 되고, 그 채널로 운영 시크릿 전량이 나간다
   - 인증서: `ACME_EMAIL` (Let's Encrypt 만료 알림 수신 주소)
   - 앱: `FRONTEND_BASE_URL`(`https://kcalog.site`), `CORS_ALLOWED_ORIGINS`(`https://kcalog.site`), `DB_PASSWORD`, `JWT_SECRET`(32바이트 이상 랜덤), `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`, `OPENAI_API_KEY`
   - 스토리지: `STORAGE_BUCKET`, `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`

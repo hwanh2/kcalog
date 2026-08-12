@@ -9,14 +9,24 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-# shellcheck disable=SC1091
-set -a; . ./.env; set +a
+# .env는 compose의 env_file 파서용이라 값이 리터럴로 해석된다. 셸로 소싱하면(`. ./.env`)
+# 값 안의 $·백틱·따옴표가 평가돼 오파싱되거나 의도치 않게 실행될 수 있으므로, 필요한 키만 그대로 읽는다.
+read_env() {
+	grep -m1 -E "^$1=" ./.env | cut -d= -f2- || true
+}
+
+BACKUP_BUCKET="$(read_env BACKUP_BUCKET)"
+BACKUP_ENDPOINT="$(read_env BACKUP_ENDPOINT)"
+BACKUP_ACCESS_KEY="$(read_env BACKUP_ACCESS_KEY)"
+BACKUP_SECRET_KEY="$(read_env BACKUP_SECRET_KEY)"
+BACKUP_REGION="$(read_env BACKUP_REGION)"
+RETENTION_DAYS="$(read_env BACKUP_RETENTION_DAYS)"
 
 : "${BACKUP_BUCKET:?BACKUP_BUCKET 미설정}"
 : "${BACKUP_ENDPOINT:?BACKUP_ENDPOINT 미설정}"
 : "${BACKUP_ACCESS_KEY:?BACKUP_ACCESS_KEY 미설정}"
 : "${BACKUP_SECRET_KEY:?BACKUP_SECRET_KEY 미설정}"
-RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+RETENTION_DAYS="${RETENTION_DAYS:-14}"
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 FILE="kcalog-${STAMP}.sql.gz"

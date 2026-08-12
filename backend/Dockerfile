@@ -26,6 +26,6 @@ USER app
 
 EXPOSE 8080
 
-# 컨테이너 메모리 한도에 맞춰 힙을 잡는다(e2-small에 JVM·Postgres·Caddy가 함께 산다)
+# 컨테이너 메모리 한도에 맞춰 힙을 잡는다(t3.small 2GB에 JVM·Postgres·Traefik이 함께 산다)
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=70"
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

@@ -22,7 +22,7 @@ export default defineConfig({
         theme_color: '#f8fafc',
         background_color: '#f8fafc',
         icons: [
-          // TODO 설치 배너·홈 화면 아이콘용 192/512 png 추가 (tasks 4.3)
+          // TODO 설치 배너·홈 화면 아이콘용 192/512 png 추가 (tasks 4.4)
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
       },
