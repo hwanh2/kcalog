@@ -32,8 +32,10 @@ export function Field({
   )
 }
 
+/* 포커스 표시는 테두리 색 변화가 아니라 링으로 준다 — 1px 색 변화는 눈에 띄지 않는다.
+   focus-visible이라 마우스 클릭에는 링이 뜨지 않고 키보드 이동에만 뜬다. */
 const controlClass =
-  'w-full rounded-md border border-border bg-surface px-3 py-2 text-ink outline-none focus:border-brand'
+  'w-full rounded-md border border-border bg-surface px-3 py-2 text-ink outline-none focus-visible:border-brand-ink focus-visible:ring-2 focus-visible:ring-brand-ink/40'
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={controlClass} />
@@ -55,6 +57,9 @@ export function Button({
   }[variant]
   // 라운드는 tile(12px) — 입력 필드(md)보다 둥글게 둬 누를 것과 채울 것을 구분한다
   return (
-    <button {...props} className={`rounded-tile px-4 py-2 text-sm font-medium ${styles} ${className}`} />
+    <button
+      {...props}
+      className={`rounded-tile px-4 py-2 text-sm font-medium touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink ${styles} ${className}`}
+    />
   )
 }

@@ -17,9 +17,9 @@ export function AnalysisSummary({ items }: { items: EditableItem[] }) {
         </p>
       </div>
       <div className="flex shrink-0 gap-1.5 text-center">
-        <MacroChip label="탄" grams={t.carbG} className="bg-carb-soft text-carb" />
-        <MacroChip label="단" grams={t.proteinG} className="bg-protein-soft text-protein" />
-        <MacroChip label="지" grams={t.fatG} className="bg-fat-soft text-fat" />
+        <MacroChip label="탄" grams={t.carbG} className="bg-carb-soft text-carb-ink" />
+        <MacroChip label="단" grams={t.proteinG} className="bg-protein-soft text-protein-ink" />
+        <MacroChip label="지" grams={t.fatG} className="bg-fat-soft text-fat-ink" />
       </div>
     </div>
   )

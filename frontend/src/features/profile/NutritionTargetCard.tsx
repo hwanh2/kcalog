@@ -33,14 +33,14 @@ export function NutritionTargetCard({
           <p className="text-xs font-medium text-muted">영양 목표</p>
           <p className="mt-0.5 text-base font-black text-ink">하루 기준</p>
         </div>
-        <button type="button" onClick={onEdit} className="text-xs font-bold text-brand">
+        <button type="button" onClick={onEdit} className="text-xs font-bold text-brand-ink">
           ✎ 조정
         </button>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-tile bg-brand-soft p-3">
-          <p className="text-[11px] font-semibold text-brand">유지 칼로리</p>
+          <p className="text-[11px] font-semibold text-brand-ink">유지 칼로리</p>
           <p className="mt-0.5 text-xl font-black text-ink">
             {maintenanceKcal === null ? '-' : maintenanceKcal.toLocaleString()}
             <span className="ml-0.5 text-[11px] font-bold text-muted">kcal</span>

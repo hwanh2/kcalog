@@ -19,7 +19,7 @@ export function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 text-center">
-      <h1 className="text-3xl font-bold text-brand">kcalog</h1>
+      <h1 className="text-3xl font-bold text-brand-ink">kcalog</h1>
       <p className="mt-2 text-muted">사진 한 장으로 10초 안에 기록하는 체중 관리</p>
       {error && (
         <p role="alert" className="mt-4 text-sm text-danger">

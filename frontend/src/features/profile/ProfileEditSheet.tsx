@@ -40,7 +40,8 @@ export function ProfileEditSheet({
   const [kcalInput, setKcalInput] = useState(String(member.dailyKcalTarget ?? ''))
   const [suggested, setSuggested] = useState<number | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
-  const [message, setMessage] = useState<string | null>(null)
+  // 안내와 오류는 알리는 방식이 달라야 한다(status vs alert)
+  const [message, setMessage] = useState<{ text: string; kind: 'info' | 'error' } | null>(null)
   const [busy, setBusy] = useState(false)
 
   // 키·활동량·목표 방향이 저장값과 달라지면 새 제안 칼로리를 조회해 보여준다
@@ -96,7 +97,7 @@ export function ProfileEditSheet({
     if (goal !== (member.goal ?? '') && goal !== '') request.goal = goal as Goal
     if (parsed.dailyKcalTarget !== member.dailyKcalTarget) request.dailyKcalTarget = parsed.dailyKcalTarget!
     if (Object.keys(request).length === 0) {
-      setMessage('변경된 내용이 없습니다.')
+      setMessage({ text: '변경된 내용이 없습니다.', kind: 'info' })
       return
     }
 
@@ -108,7 +109,7 @@ export function ProfileEditSheet({
     } catch (error) {
       const serverErrors = fieldErrorsFrom(error)
       if (serverErrors) setErrors(serverErrors)
-      else setMessage('저장에 실패했어요. 잠시 후 다시 시도해주세요.')
+      else setMessage({ text: '저장에 실패했어요. 잠시 후 다시 시도해주세요.', kind: 'error' })
     } finally {
       setBusy(false)
     }
@@ -119,8 +120,11 @@ export function ProfileEditSheet({
       <p className="mb-3 text-lg font-bold text-ink">프로필 편집</p>
 
       {message && (
-        <p role="status" className="mb-3 text-sm text-brand">
-          {message}
+        <p
+          role={message.kind === 'error' ? 'alert' : 'status'}
+          className={`mb-3 text-sm ${message.kind === 'error' ? 'font-medium text-danger' : 'text-brand-ink'}`}
+        >
+          {message.text}
         </p>
       )}
 

@@ -1,4 +1,5 @@
 import { Button } from '../../ui/form'
+import { Sheet } from '../../ui/Sheet'
 import { ItemNutritionFields } from './ItemNutritionFields'
 import type { EditableItem, ItemErrors } from './mealItems'
 
@@ -17,34 +18,32 @@ export function ItemEditSheet({
   onDelete: () => void
   onClose: () => void
 }) {
+  // 자체 껍데기 대신 Sheet를 쓴다 — Esc·포커스 가둠·안전 영역을 시트 하나에서만 관리하려고
   return (
-    <div role="dialog" aria-label="음식 편집" aria-modal="true" className="fixed inset-0 z-50 flex items-end">
-      <button type="button" aria-label="닫기" className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full rounded-t-card bg-surface p-4 shadow-lg">
-        {item.corrected && (
-          <p className="mb-2 inline-block rounded-full bg-success-soft px-2 py-0.5 text-xs text-success">
-            ✓ 내 값 적용됨
-          </p>
-        )}
-        <ItemNutritionFields item={item} errors={errors} onChange={onChange} idPrefix="sheet" />
-        <label className="mt-3 flex items-center gap-2 text-sm text-ink">
-          <input
-            type="checkbox"
-            checked={item.remember}
-            onChange={(e) => onChange({ remember: e.target.checked })}
-          />
-          이 값 기억하기
-          <span className="text-xs text-muted">다음에 같은 음식이면 자동 적용돼요</span>
-        </label>
-        <div className="mt-2 flex gap-2">
-          <Button type="button" variant="ghost" onClick={onDelete} className="text-danger">
-            삭제
-          </Button>
-          <Button type="button" onClick={onClose} className="flex-1">
-            완료
-          </Button>
-        </div>
+    <Sheet label="음식 편집" onClose={onClose}>
+      {item.corrected && (
+        <p className="mb-2 inline-block rounded-full bg-success-soft px-2 py-0.5 text-xs text-success">
+          ✓ 내 값 적용됨
+        </p>
+      )}
+      <ItemNutritionFields item={item} errors={errors} onChange={onChange} idPrefix="sheet" />
+      <label className="mt-3 flex items-center gap-2 text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={item.remember}
+          onChange={(e) => onChange({ remember: e.target.checked })}
+        />
+        이 값 기억하기
+        <span className="text-xs text-muted">다음에 같은 음식이면 자동 적용돼요</span>
+      </label>
+      <div className="mt-2 flex gap-2">
+        <Button type="button" variant="ghost" onClick={onDelete} className="text-danger">
+          삭제
+        </Button>
+        <Button type="button" onClick={onClose} className="flex-1">
+          완료
+        </Button>
       </div>
-    </div>
+    </Sheet>
   )
 }

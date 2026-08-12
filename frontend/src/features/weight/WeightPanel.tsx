@@ -84,7 +84,7 @@ export function WeightPanel({ date }: { date: string }) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="0.0"
             style={{ width: `${Math.max((input || '0.0').length, 1)}ch` }}
-            className="bg-transparent text-4xl font-extrabold tracking-tight text-white outline-none placeholder:text-white/50"
+            className="rounded bg-transparent text-4xl font-extrabold tracking-tight text-white outline-none placeholder:text-white/50 focus-visible:ring-2 focus-visible:ring-white"
           />
           <span className="mb-0.5 text-lg font-semibold text-white/75">kg</span>
         </div>
@@ -125,7 +125,7 @@ export function WeightPanel({ date }: { date: string }) {
             onClick={save}
             disabled={mutation.isPending}
             aria-label={existing ? '체중 수정' : '체중 저장'}
-            className="flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand disabled:opacity-70"
+            className="flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand-ink disabled:opacity-70"
           >
             저장
           </button>

@@ -30,7 +30,7 @@ export function GoalEstimator({
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-ink">목표 달성 예상</p>
         {dday != null && dday > 0 && (
-          <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
+          <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-ink">
             예상 D-{dday}일
           </span>
         )}
@@ -41,7 +41,7 @@ export function GoalEstimator({
         ) : (
           <>
             목표 체중 {target} kg까지{' '}
-            <span className="text-brand">
+            <span className="text-brand-ink">
               {remaining > 0 ? '+' : ''}
               {remaining} kg
             </span>
@@ -74,7 +74,7 @@ export function GoalEstimator({
         ) : onTrackFuture ? (
           <>
             💡 현재 페이스(주당 평균 {projection.weeklyRateKg}kg) 지속 시,{' '}
-            <span className="font-medium text-brand">{formatKoreanDate(projection.projectedDate as string)}</span>
+            <span className="font-medium text-brand-ink">{formatKoreanDate(projection.projectedDate as string)}</span>
             에 도달할 것으로 계산돼요.
           </>
         ) : projection.status === 'INSUFFICIENT_DATA' ? (

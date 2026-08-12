@@ -8,7 +8,7 @@ export function TotalsLine({ items }: { items: EditableItem[] }) {
   const t = totals(items)
   return (
     <p className="text-sm font-medium text-ink">
-      합계 <span className="text-brand">{t.kcal} kcal</span>
+      합계 <span className="text-brand-ink">{t.kcal} kcal</span>
       <span className="ml-2 text-muted">
         탄 {t.carbG} · 단 {t.proteinG} · 지 {t.fatG}
       </span>

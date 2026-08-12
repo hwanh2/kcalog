@@ -280,7 +280,7 @@ function Chat() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="코치에게 물어보기"
           aria-label="코치에게 물어보기"
-          className="flex-1 bg-transparent px-3 text-sm outline-none"
+          className="flex-1 rounded bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
         />
         <button
           type="submit"

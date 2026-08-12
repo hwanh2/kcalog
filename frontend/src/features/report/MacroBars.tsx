@@ -59,9 +59,9 @@ export function MacroBars({ buckets }: { buckets: ReportBucket[] }) {
             style={{ left: `${((active + 0.5) / n) * 100}%` }}
           >
             <p className="mb-1 font-semibold">{buckets[active].label}</p>
-            <p className="text-carb">탄 {round(buckets[active].carbG)}g</p>
-            <p className="text-protein">단 {round(buckets[active].proteinG)}g</p>
-            <p className="text-fat">지 {round(buckets[active].fatG)}g</p>
+            <p className="text-carb-ink">탄 {round(buckets[active].carbG)}g</p>
+            <p className="text-protein-ink">단 {round(buckets[active].proteinG)}g</p>
+            <p className="text-fat-ink">지 {round(buckets[active].fatG)}g</p>
           </div>
         )}
       </div>

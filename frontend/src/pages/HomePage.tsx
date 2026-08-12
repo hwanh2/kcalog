@@ -167,7 +167,7 @@ function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
         <p className="text-sm font-bold text-ink">오늘의 칼로리</p>
         {headline && <p className="truncate text-xs font-medium text-success">{headline}</p>}
       </div>
-      <Link to="/report" className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-brand">
+      <Link to="/report" className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-brand-ink">
         리포트 <span aria-hidden>›</span>
       </Link>
     </div>
@@ -190,7 +190,7 @@ function MealSection({ meals }: { meals: Meal[] }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-extrabold">오늘 기록한 식사</h2>
-        <Link to="/records" className="flex items-center gap-0.5 text-xs font-bold text-brand">
+        <Link to="/records" className="flex items-center gap-0.5 text-xs font-bold text-brand-ink">
           전체보기
           <Chevron dir="right" small />
         </Link>
@@ -213,7 +213,7 @@ function MealSection({ meals }: { meals: Meal[] }) {
             <span className="block text-[10px] text-muted">카메라로 찍으면 AI가 탄단지 자동 계산</span>
           </span>
         </span>
-        <span className="rounded-lg bg-surface px-2.5 py-1 text-xs font-bold text-brand shadow-sm">기록하기</span>
+        <span className="rounded-lg bg-surface px-2.5 py-1 text-xs font-bold text-brand-ink shadow-sm">기록하기</span>
       </Link>
     </div>
   )
@@ -235,9 +235,9 @@ function MealCard({ meal }: { meal: Meal }) {
         </div>
         {names && <p className="mt-0.5 truncate text-xs font-bold">{names}</p>}
         <div className="mt-1.5 flex gap-2 text-[10px] font-bold">
-          <span className="rounded bg-carb-soft px-1.5 py-0.5 text-carb">탄 {meal.carbG}g</span>
-          <span className="rounded bg-protein-soft px-1.5 py-0.5 text-protein">단 {meal.proteinG}g</span>
-          <span className="rounded bg-fat-soft px-1.5 py-0.5 text-fat">지 {meal.fatG}g</span>
+          <span className="rounded bg-carb-soft px-1.5 py-0.5 text-carb-ink">탄 {meal.carbG}g</span>
+          <span className="rounded bg-protein-soft px-1.5 py-0.5 text-protein-ink">단 {meal.proteinG}g</span>
+          <span className="rounded bg-fat-soft px-1.5 py-0.5 text-fat-ink">지 {meal.fatG}g</span>
         </div>
       </div>
     </Card>

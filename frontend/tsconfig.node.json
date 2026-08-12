@@ -19,5 +19,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  // test/ 는 node API(fs)를 쓰는 검사라 여기에 둔다 — 앱 설정(tsconfig.app)에
+  // node 타입을 넣으면 화면 코드가 fs 같은 것을 import해도 타입 검사를 통과해버린다
+  "include": ["vite.config.ts", "test"]
 }

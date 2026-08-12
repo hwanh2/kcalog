@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- viewport-fit=cover — 없으면 env(safe-area-inset-*)이 항상 0이라 노치 대응이 무효가 된다 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- 페이지 배경(--color-canvas)과 같은 값 — 어긋나면 PWA 상태 표시줄에 다른 색 띠가 생긴다 -->
     <meta name="theme-color" content="#f8fafc" />
     <meta name="description" content="사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱" />
     <title>kcalog</title>

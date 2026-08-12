@@ -39,7 +39,7 @@ export function TdeeCard() {
         <p className="font-semibold text-ink">내 유지칼로리</p>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            adaptive ? 'bg-brand-soft text-brand' : 'bg-canvas text-muted'
+            adaptive ? 'bg-brand-soft text-brand-ink' : 'bg-canvas text-muted'
           }`}
         >
           {adaptive ? `최근 ${tdee.windowDays}일 실측` : '공식 추정'}

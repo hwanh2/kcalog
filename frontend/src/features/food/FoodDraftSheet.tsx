@@ -46,7 +46,7 @@ export function FoodDraftSheet({
 
   return (
     <Sheet label={title} onClose={onClose}>
-      <p className="mb-3 text-lg font-bold text-ink">{title}</p>
+      <p className="mb-3 pr-12 text-lg font-bold text-ink">{title}</p>
       <FoodForm
         draft={draft}
         errors={errors}

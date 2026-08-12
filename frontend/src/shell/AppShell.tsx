@@ -22,7 +22,7 @@ export function AppShell() {
           </div>
           <div>
             <p className="text-base font-extrabold leading-none tracking-tight">
-              kcalog<span className="text-brand">.ai</span>
+              kcalog<span className="text-brand-ink">.ai</span>
             </p>
             <p className="text-[10px] font-medium text-muted">AI 식단 · 탄단지 코칭</p>
           </div>
@@ -45,7 +45,7 @@ export function AppShell() {
         <Link
           to="/records?camera=1"
           aria-label="식사 촬영"
-          className="fixed bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl"
+          className="fixed bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2"
         >
           <CameraIcon />
         </Link>
@@ -64,8 +64,9 @@ export function AppShell() {
               to={tab.to}
               end={tab.end}
               className={({ isActive }) =>
-                `flex flex-1 flex-col items-center gap-1 py-2 text-[10px] ${
-                  isActive ? 'font-extrabold text-brand' : 'font-bold text-muted'
+                // min-h-11 — 탭 대상 44px (아이콘·라벨 크기는 그대로)
+                `flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] touch-manipulation focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-ink ${
+                  isActive ? 'font-extrabold text-brand-ink' : 'font-bold text-muted'
                 }`
               }
             >

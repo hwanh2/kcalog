@@ -14,9 +14,9 @@ export function MacroChips({
   tone?: 'chip' | 'text'
 }) {
   const macros = [
-    { label: '탄', value: carbG, chip: 'bg-carb-soft text-carb', text: 'text-carb' },
-    { label: '단', value: proteinG, chip: 'bg-protein-soft text-protein', text: 'text-protein' },
-    { label: '지', value: fatG, chip: 'bg-fat-soft text-fat', text: 'text-fat' },
+    { label: '탄', value: carbG, chip: 'bg-carb-soft text-carb-ink', text: 'text-carb-ink' },
+    { label: '단', value: proteinG, chip: 'bg-protein-soft text-protein-ink', text: 'text-protein-ink' },
+    { label: '지', value: fatG, chip: 'bg-fat-soft text-fat-ink', text: 'text-fat-ink' },
   ]
   return (
     <div className={tone === 'chip' ? 'flex flex-wrap gap-1.5' : 'flex gap-2'}>

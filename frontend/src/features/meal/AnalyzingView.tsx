@@ -20,7 +20,7 @@ export function AnalyzingView({ photoUrl }: { photoUrl: string | null }) {
       ) : (
         <span
           aria-hidden
-          className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-brand-soft text-brand"
+          className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-brand-soft text-brand-ink"
         >
           <SparklesIcon />
         </span>

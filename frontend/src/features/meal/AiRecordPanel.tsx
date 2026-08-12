@@ -156,7 +156,7 @@ export function AiRecordPanel({
       </label>
 
       <label htmlFor="ai-note" className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-ink">
-        <span className="text-brand">
+        <span className="text-brand-ink">
           <NoteIcon />
         </span>
         무엇을 드셨나요? <span className="font-normal text-muted">(사진 없이 설명만으로도 돼요)</span>
@@ -167,11 +167,12 @@ export function AiRecordPanel({
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="예: 김밥 한 줄이랑 라면 반 개"
-        className="mt-1 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-ink outline-none focus:border-brand"
+        className="mt-1 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-ink outline-none focus-visible:border-brand-ink focus-visible:ring-2 focus-visible:ring-brand-ink/40"
       />
 
+      {/* 이 안내는 전부 실패 경로(분석 실패·429·음식 미검출)다 — 놓치면 안 되므로 alert로 알린다 */}
       {notice && (
-        <p role="status" className="mt-2 text-sm text-muted">
+        <p role="alert" className="mt-2 text-sm font-medium text-danger">
           {notice}
         </p>
       )}
