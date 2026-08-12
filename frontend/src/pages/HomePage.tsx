@@ -20,6 +20,8 @@ import { Card } from '../ui/form'
 export function HomePage() {
   const today = todayLocalDate()
   const [date, setDate] = useState(today)
+  const { state } = useAuth()
+  const targetWeightKg = state.status === 'authed' ? state.member.targetWeightKg : null
 
   const dashboard = useQuery({ queryKey: ['dashboard', date], queryFn: () => getDashboard(date) })
   const meals = useQuery({ queryKey: ['meals', date], queryFn: () => getMeals(date) })
@@ -29,44 +31,47 @@ export function HomePage() {
   })
 
   return (
-    <section className="space-y-4">
+    <section>
       <Greeting date={date} today={today} onChange={setDate} />
 
-      {dashboard.isError && (
-        <p className="text-danger">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
-      )}
+      {/* 인사말과 첫 카드는 붙이고, 카드끼리는 넉넉히 띄운다 */}
+      <div className="mt-2 space-y-4">
+        {dashboard.isError && (
+          <p className="text-danger">대시보드를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
+        )}
 
-      {dashboard.data && (
-        <Card>
-          <CoachHeader withCoaching={date === today} />
-          <div className="mt-3">
-            <CalorieRing
-              totalKcal={dashboard.data.totalKcal}
-              dailyKcalTarget={dashboard.data.dailyKcalTarget}
-              remainingKcal={dashboard.data.remainingKcal}
+        {dashboard.data && (
+          <Card>
+            <CoachHeader withCoaching={date === today} />
+            <div className="mt-3">
+              <CalorieRing
+                totalKcal={dashboard.data.totalKcal}
+                dailyKcalTarget={dashboard.data.dailyKcalTarget}
+                remainingKcal={dashboard.data.remainingKcal}
+              />
+            </div>
+          </Card>
+        )}
+
+        {dashboard.data && (
+          <Card>
+            <MacroProgress
+              carbG={Number(dashboard.data.carbG)}
+              proteinG={Number(dashboard.data.proteinG)}
+              fatG={Number(dashboard.data.fatG)}
+              carbTargetG={dashboard.data.carbTargetG}
+              proteinTargetG={dashboard.data.proteinTargetG}
+              fatTargetG={dashboard.data.fatTargetG}
             />
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {dashboard.data && (
-        <Card>
-          <MacroProgress
-            carbG={Number(dashboard.data.carbG)}
-            proteinG={Number(dashboard.data.proteinG)}
-            fatG={Number(dashboard.data.fatG)}
-            carbTargetG={dashboard.data.carbTargetG}
-            proteinTargetG={dashboard.data.proteinTargetG}
-            fatTargetG={dashboard.data.fatTargetG}
-          />
-        </Card>
-      )}
+        {date === today && <CoachCard />}
 
-      {date === today && <CoachCard />}
+        <WeightMiniCard entries={weights.data ?? []} targetWeightKg={targetWeightKg} />
 
-      <WeightMiniCard entries={weights.data ?? []} />
-
-      <MealSection meals={meals.data ?? []} />
+        <MealSection meals={meals.data ?? []} />
+      </div>
     </section>
   )
 }
@@ -84,15 +89,15 @@ function Greeting({
   const { state } = useAuth()
   const nickname = state.status === 'authed' ? state.member.nickname : ''
   return (
-    <div className="flex items-start justify-between">
-      <div className="min-w-0">
+    <div className="-mt-1 flex items-start justify-between">
+      <div className="min-w-0 leading-tight">
         <p className="text-xs text-muted">{formatDateLabel(date, today)}</p>
-        <h1 className="text-xl font-medium text-ink">
+        <h1 className="text-[15px] font-medium text-ink">
           {timeGreeting()}, {givenName(nickname)}님
         </h1>
       </div>
       {/* 캘린더 아이콘 위에 네이티브 날짜 선택을 덮어, 탭하면 그 자리에서 달력이 열린다 */}
-      <div className="relative shrink-0 rounded-lg p-1.5 text-muted">
+      <div className="relative shrink-0 rounded-lg p-1 text-muted">
         <CalendarIcon />
         <input
           type="date"
