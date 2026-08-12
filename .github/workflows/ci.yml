@@ -3,7 +3,8 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    # release는 배포 대상 브랜치 — 여기 들어온 코드도 반드시 검증한다
+    branches: [main, release]
 
 # 최소 권한 — 쓰기 권한은 필요한 잡에서만 개별 부여
 permissions:

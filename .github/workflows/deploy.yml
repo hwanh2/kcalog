@@ -1,0 +1,186 @@
+name: Deploy
+
+# 배포는 release 브랜치에 들어왔을 때만 일어난다. main 머지는 배포하지 않는다 —
+# 프론트만 먼저 나가면 아직 없는 API를 부르는 화면이 운영에 뜬다.
+#   git checkout release && git merge main && git push origin release
+#
+# 브랜치 하나가 곧 "지금 운영에 떠 있는 코드"다. 이미지는 커밋 SHA로 태깅해
+# 어느 커밋이 배포됐는지 되짚을 수 있게 한다(롤백: 되돌릴 커밋을 release에 올린다).
+on:
+  push:
+    branches: [release]
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/kcalog-backend
+
+jobs:
+  backend-image:
+    name: 백엔드 이미지 빌드·푸시
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: backend
+          push: true
+          # 커밋 SHA로 고정 배포해 재현 가능하게 하고, latest는 조회 편의용
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  backend-deploy:
+    name: VM 배포
+    needs: backend-image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH 준비
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          umask 077
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          # 호스트 키를 첫 접속 때 신뢰한다(TOFU). 고정하려면 SSH_KNOWN_HOSTS 시크릿으로 대체할 것.
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 운영 .env 생성
+        # 시크릿을 셸 변수로 받아 파일에 쓴다. 워크플로우에 값을 직접 보간하면
+        # 특수문자에 깨지고 로그에 새어나갈 여지가 생긴다.
+        env:
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+          FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          STORAGE_BUCKET: ${{ secrets.STORAGE_BUCKET }}
+          STORAGE_ENDPOINT: ${{ secrets.STORAGE_ENDPOINT }}
+          STORAGE_REGION: ${{ secrets.STORAGE_REGION }}
+          STORAGE_ACCESS_KEY: ${{ secrets.STORAGE_ACCESS_KEY }}
+          STORAGE_SECRET_KEY: ${{ secrets.STORAGE_SECRET_KEY }}
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_ENDPOINT: ${{ secrets.BACKUP_ENDPOINT }}
+          BACKUP_ACCESS_KEY: ${{ secrets.BACKUP_ACCESS_KEY }}
+          BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+        run: |
+          umask 077
+          {
+            printf 'IMAGE_TAG=%s\n' "${{ github.sha }}"
+            printf 'ACME_EMAIL=%s\n' "$ACME_EMAIL"
+            printf 'FRONTEND_BASE_URL=%s\n' "$FRONTEND_BASE_URL"
+            printf 'CORS_ALLOWED_ORIGINS=%s\n' "$CORS_ALLOWED_ORIGINS"
+            printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
+            printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+            printf 'KAKAO_CLIENT_ID=%s\n' "$KAKAO_CLIENT_ID"
+            printf 'KAKAO_CLIENT_SECRET=%s\n' "$KAKAO_CLIENT_SECRET"
+            printf 'OPENAI_API_KEY=%s\n' "$OPENAI_API_KEY"
+            printf 'STORAGE_BUCKET=%s\n' "$STORAGE_BUCKET"
+            printf 'STORAGE_ENDPOINT=%s\n' "$STORAGE_ENDPOINT"
+            printf 'STORAGE_REGION=%s\n' "$STORAGE_REGION"
+            printf 'STORAGE_ACCESS_KEY=%s\n' "$STORAGE_ACCESS_KEY"
+            printf 'STORAGE_SECRET_KEY=%s\n' "$STORAGE_SECRET_KEY"
+            printf 'STORAGE_PATH_STYLE=true\n'
+            printf 'BACKUP_BUCKET=%s\n' "$BACKUP_BUCKET"
+            printf 'BACKUP_ENDPOINT=%s\n' "$BACKUP_ENDPOINT"
+            printf 'BACKUP_ACCESS_KEY=%s\n' "$BACKUP_ACCESS_KEY"
+            printf 'BACKUP_SECRET_KEY=%s\n' "$BACKUP_SECRET_KEY"
+          } > env.prod
+
+      - name: 구성·시크릿 전송
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'mkdir -p ~/kcalog'
+          scp -i ~/.ssh/deploy_key deploy/compose.prod.yml deploy/backup.sh "$SSH_USER@$SSH_HOST:~/kcalog/"
+          scp -i ~/.ssh/deploy_key env.prod "$SSH_USER@$SSH_HOST:~/kcalog/.env"
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'chmod 600 ~/kcalog/.env && chmod +x ~/kcalog/backup.sh'
+
+      - name: 컨테이너 교체
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          # 토큰 소유자(레포 소유자) 이름으로 로그인한다. github.actor는 "이번에 push한 사람"이라
+          # 소유자와 다를 수 있고, 그러면 PAT와 사용자명이 어긋나 pull이 실패한다.
+          GHCR_USER: ${{ github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          # 토큰은 stdin으로 넘긴다 — 명령줄에 실으면 VM의 프로세스 목록에 잠깐이라도 노출된다
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "docker login ghcr.io -u '$GHCR_USER' --password-stdin && \
+             cd ~/kcalog && docker compose -f compose.prod.yml pull && \
+             docker compose -f compose.prod.yml up -d && \
+             docker image prune -af --filter 'until=168h'"
+        # prune에 -a와 기간 필터를 준다. 기본 prune은 태그 없는 이미지만 지우는데
+        # 배포마다 받는 이미지는 SHA 태그가 붙어 있어 지워지지 않고 쌓인다(회당 약 800MB).
+        # 7일치는 남겨 롤백 여지를 두고, 그보다 오래된 미사용 이미지만 정리한다.
+
+      - name: 배포된 커밋 기록
+        # release 브랜치는 계속 움직이므로, 실행 로그에 어느 커밋이 나갔는지 남겨둔다.
+        # 커밋 메시지는 셸에 직접 보간하지 않는다 — 메시지 내용이 명령으로 실행될 수 있다.
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          {
+            printf '배포 커밋: `%s`\n\n' "${{ github.sha }}"
+            printf '%s\n' "$COMMIT_MESSAGE"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 기동 확인
+        # 공개 주소로 확인해 앱뿐 아니라 Traefik·인증서까지 함께 검증한다
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS https://api.kcalog.site/actuator/health | grep -q '"status":"UP"'; then
+              echo "기동 확인 완료"
+              exit 0
+            fi
+            echo "대기 중... ($i/30)"
+            sleep 5
+          done
+          echo "헬스체크가 정상을 응답하지 않았다"
+          exit 1
+
+  frontend-deploy:
+    name: 프론트 운영 배포
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Vercel 운영 배포
+        run: |
+          npx vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+          npx vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+          npx vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"

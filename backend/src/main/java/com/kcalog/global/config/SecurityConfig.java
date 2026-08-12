@@ -13,6 +13,11 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Slf4j
 @Configuration
@@ -28,8 +33,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                // 프론트가 다른 출처(kcalog.site)에서 서비스되므로 허용 목록 기반 CORS가 필요하다
+                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // 배포 파이프라인·프록시가 인증 없이 기동 여부를 판정해야 한다
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(oAuth2UserService))
@@ -45,5 +54,22 @@ public class SecurityConfig {
                         new BearerTokenAuthenticationEntryPoint(),
                         PathPatternRequestMatcher.withDefaults().matcher("/api/**")));
         return http.build();
+    }
+
+    /**
+     * 허용 목록에 있는 출처만 통과시킨다. 목록이 비면(로컬 — Vite 프록시로 동일 출처) CORS 헤더를 내리지 않는다.
+     * refresh 쿠키를 쓰는 재발급·로그아웃 때문에 allowCredentials가 필요하고, 그래서 출처는 와일드카드일 수 없다.
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(AppProperties props) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(props.cors().allowedOrigins());
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

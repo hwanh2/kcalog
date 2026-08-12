@@ -1,3 +1,20 @@
+server:
+  # 리버스 프록시(Traefik)가 TLS를 끝내고 평문으로 넘기므로, X-Forwarded-* 를 반영해야
+  # OAuth redirect-uri({baseUrl})가 https로 만들어진다. 없으면 카카오 로그인이 실패한다.
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # health만 노출 — env·configprops 등이 열리면 시크릿이 새어나간다
+        include: health
+  endpoint:
+    health:
+      # 인증 없이 열려 있으므로 내부 구성(컴포넌트별 상태)은 감춘다. 전체 상태에는 DB 연결이 반영된다.
+      show-details: never
+      show-components: never
+
 spring:
   application:
     name: kcalog-backend
@@ -37,6 +54,9 @@ spring:
 
 app:
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+  cors:
+    # 교차 출처 허용 목록(콤마 구분). 로컬은 Vite 프록시로 동일 출처라 비워둔다.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
   jwt:
     # HS256 서명 키 — 32바이트 이상. 운영에서는 반드시 환경변수로 주입한다.
     secret: ${JWT_SECRET:kcalog-local-dev-only-secret-key-32bytes!}

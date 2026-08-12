@@ -19,6 +19,8 @@ repositories {
 }
 
 dependencies {
+	// 헬스체크 — 배포 파이프라인·리버스 프록시가 기동 성공을 판정하는 근거
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.springframework.boot:spring-boot-starter-security")

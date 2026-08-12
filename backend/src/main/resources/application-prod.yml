@@ -7,6 +7,9 @@ spring:
 
 app:
   frontend-base-url: ${FRONTEND_BASE_URL}
+  cors:
+    # 프론트 도메인 필수 — 비면 브라우저가 모든 API 응답을 차단해 앱이 통째로 멈춘다
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
   jwt:
     secret: ${JWT_SECRET}
   openai:
