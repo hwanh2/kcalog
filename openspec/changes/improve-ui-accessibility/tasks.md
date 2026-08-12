@@ -58,6 +58,17 @@
 - [x] 7.3 `web-design-guidelines` 스킬 레포 포함 + `skills-lock.json`
 - [x] 7.4 `DESIGN.md`의 대비·키보드·ARIA 절을 구현 결과에 맞춰 갱신(면/글씨 표, 예외, `Sheet` 사용 규칙)
 
+## 7-1. PR #37 리뷰 대응
+
+- [x] 7-1.1 **중첩 시트에서 Esc가 바깥까지 닫던 회귀**(🔴) — `useDialog`가 모듈 스택으로 맨 위 다이얼로그만 처리하고 `stopImmediatePropagation`으로 형제 리스너를 막는다. 훅 주석의 "중첩 경로가 없다"는 **작성 시점에 이미 거짓**이었다(`AnalysisResultSheet`가 `ItemEditSheet`·`FoodDraftSheet`를 자식으로 연다)
+- [x] 7-1.2 배경 스크롤 잠금을 스택 기준으로 — 처음 열릴 때 걸고 마지막이 닫힐 때 푼다(cleanup 순서에 의존하던 우연을 제거)
+- [x] 7-1.3 중첩 회귀 테스트 3개 — Esc가 안쪽만 닫음·두 번 눌러야 바깥이 닫힘·안쪽만 닫혀도 스크롤은 잠긴 채
+- [x] 7-1.4 **`prefers-reduced-motion`에서 맥동이 안 멈추던 spec 위반**(🔴) — 클래스 나열 대신 전역으로 걷어 기본값을 "멈춤"으로. 나열 방식이었기에 `animate-pulse`를 빠뜨렸다
+- [x] 7-1.5 `@theme` ↔ `tokens.ts` 동기화 테스트 — 한쪽만 고치면 **테스트는 통과하는데 화면 색은 미검증**이 되던 구멍을 CI로 옮겼다. 값 불일치·CSS에만 있는 색을 모두 잡는다
+- [x] 7-1.6 `-ink`가 곧 AA 안전은 아님을 정의부에 명시(`brandInk`만 예외)
+- [x] 7-1.7 design.md D1 값 정정 — `protein-ink`·`success`를 soft 배경 미달로 700 단계까지 내린 결정을 "구현 이탈"에 기록
+- [x] 7-1.8 main 머지 — `viewport-fit=cover`가 main에서 들어왔다. **이게 없으면 이 change의 `safe-area-inset`이 전부 0**이라 노치 대응이 무효였다
+
 ## 8. 마무리
 
 - [x] 8.1 `npm test`(241) · `npm run build` · `openspec validate --strict` 통과

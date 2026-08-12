@@ -17,16 +17,27 @@ function focusableIn(root: HTMLElement): HTMLElement[] {
 }
 
 /**
+ * 열려 있는 다이얼로그 스택 — 나중에 열린 것이 뒤에 온다.
+ *
+ * 시트는 실제로 중첩된다: `AnalysisResultSheet`(자체가 Sheet)가 `ItemEditSheet`·
+ * `FoodDraftSheet`를 자식으로 연다. 각 훅이 document에 리스너를 붙이므로,
+ * 게이트가 없으면 **Esc 한 번에 바깥 시트까지 닫혀 편집하던 항목이 통째로 사라진다.**
+ * 그래서 "맨 위 것만 처리한다"를 여기서 강제한다.
+ */
+const stack: symbol[] = []
+/** 첫 다이얼로그가 열리기 전 body의 overflow — 마지막이 닫힐 때 이 값으로 되돌린다 */
+let savedOverflow = ''
+
+/**
  * 모달 다이얼로그의 키보드·스크롤 규약을 한 곳에 모은다.
  *
  * - 열 때 시트 안으로 포커스를 옮긴다(첫 요소, 없으면 컨테이너)
- * - Esc로 닫는다
+ * - Esc로 닫는다 — **맨 위 다이얼로그만**
  * - Tab이 시트 안에서만 순환한다(뒤 배경으로 새지 않게)
  * - 닫을 때 열기 전 요소로 포커스를 되돌린다
- * - 열려 있는 동안 뒤 배경 스크롤을 잠근다
+ * - 열려 있는 동안 뒤 배경 스크롤을 잠근다(중첩돼도 마지막 하나가 닫힐 때만 푼다)
  *
- * 라이브러리를 쓰지 않는 이유는 design.md D5 — 시트가 하나뿐이라 의존성 비용이 더 크다.
- * 시트가 중첩되기 시작하면 이 훅을 다시 봐야 한다(지금은 중첩 경로가 없다).
+ * 라이브러리를 쓰지 않는 이유는 design.md D5 — 구조가 단순해 의존성 비용이 더 크다.
  */
 export function useDialog(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null)
@@ -38,14 +49,22 @@ export function useDialog(onClose: () => void) {
     const panel = ref.current
     if (!panel) return
 
+    const id = Symbol('dialog')
+    stack.push(id)
+
     const restoreTo = document.activeElement as HTMLElement | null
     const first = focusableIn(panel)[0]
     if (first) first.focus()
     else panel.focus()
 
     function onKeyDown(event: KeyboardEvent) {
+      // 맨 위 다이얼로그가 아니면 아무것도 하지 않는다
+      if (stack[stack.length - 1] !== id) return
+
       if (event.key === 'Escape') {
         event.preventDefault()
+        // document에 붙은 형제 리스너까지 막으려면 stopPropagation으로는 부족하다
+        event.stopImmediatePropagation()
         closeRef.current()
         return
       }
@@ -74,12 +93,18 @@ export function useDialog(onClose: () => void) {
     }
 
     document.addEventListener('keydown', onKeyDown)
-    const bodyOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    // 스크롤 잠금은 **처음 열린 다이얼로그만** 걸고 마지막이 닫힐 때 푼다.
+    // 각자 걸었다 풀면 cleanup 순서에 결과가 좌우된다(중첩 시 안쪽이 먼저 풀어버릴 수 있다).
+    if (stack.length === 1) {
+      savedOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+    }
 
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = bodyOverflow
+      const at = stack.lastIndexOf(id)
+      if (at !== -1) stack.splice(at, 1)
+      if (stack.length === 0) document.body.style.overflow = savedOverflow
       // 시트를 연 버튼이 아직 화면에 있으면 그리로 돌려준다
       if (restoreTo && document.contains(restoreTo)) restoreTo.focus()
     }

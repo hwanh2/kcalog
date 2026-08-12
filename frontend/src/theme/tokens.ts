@@ -27,9 +27,11 @@ export const SURFACE = {
 } as const
 
 /**
- * 글씨로 쓰는 색 — 아래 PAIRS의 모든 배경 위에서 AA를 만족해야 한다.
- * 매크로·브랜드 계열은 Tailwind 색상표의 **700 단계**로 통일했다(앰버·로즈·시안·오렌지).
- * 한 단계로 맞추면 다음에 색을 늘릴 때 고민할 것이 없다.
+ * 글씨로 쓰는 색. 매크로 계열은 Tailwind 색상표의 **700 단계**로 통일했다(앰버·로즈·시안).
+ *
+ * ⚠️ **`-ink`가 곧 "AA 안전"은 아니다.** `carbInk`·`proteinInk`·`fatInk`는 PAIRS에서
+ * 검증되지만 `brandInk`는 KNOWN_EXCEPTIONS의 미달 색이다(3.21~3.64:1). 브랜드 계열만
+ * 예외라는 걸 모르고 `text-brand-ink`를 새 화면에 쓰면 기준을 지켰다고 오인할 수 있다.
  */
 export const INK = {
   ink: '#0f172a',

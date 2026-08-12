@@ -113,6 +113,89 @@ describe('바텀시트 접근성 트리', () => {
   })
 })
 
+/** 분석 결과 시트 안에서 항목 편집 시트를 여는 실제 구조 */
+function NestedHost({ onOuterClose, onInnerClose }: { onOuterClose: () => void; onInnerClose: () => void }) {
+  const [outer, setOuter] = useState(false)
+  const [inner, setInner] = useState(false)
+  return (
+    <>
+      <button type="button" onClick={() => setOuter(true)}>
+        바깥 열기
+      </button>
+      {outer && (
+        <Sheet
+          label="분석 결과"
+          onClose={() => {
+            setOuter(false)
+            onOuterClose()
+          }}
+        >
+          <p>바깥 내용</p>
+          <button type="button" onClick={() => setInner(true)}>
+            항목 편집
+          </button>
+          {inner && (
+            <Sheet
+              label="음식 편집"
+              onClose={() => {
+                setInner(false)
+                onInnerClose()
+              }}
+            >
+              <button type="button">완료</button>
+            </Sheet>
+          )}
+        </Sheet>
+      )}
+    </>
+  )
+}
+
+describe('중첩된 시트', () => {
+  it('Esc는 맨 위 시트만 닫는다 — 바깥까지 닫히면 편집하던 내용이 사라진다', async () => {
+    const user = userEvent.setup()
+    const onOuterClose = vi.fn()
+    const onInnerClose = vi.fn()
+    render(<NestedHost onOuterClose={onOuterClose} onInnerClose={onInnerClose} />)
+
+    await user.click(screen.getByRole('button', { name: '바깥 열기' }))
+    await user.click(screen.getByRole('button', { name: '항목 편집' }))
+
+    await user.keyboard('{Escape}')
+
+    expect(onInnerClose).toHaveBeenCalledTimes(1)
+    expect(onOuterClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: '분석 결과' })).toBeInTheDocument()
+  })
+
+  it('안쪽을 닫은 뒤 Esc를 다시 누르면 그때 바깥이 닫힌다', async () => {
+    const user = userEvent.setup()
+    const onOuterClose = vi.fn()
+    render(<NestedHost onOuterClose={onOuterClose} onInnerClose={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '바깥 열기' }))
+    await user.click(screen.getByRole('button', { name: '항목 편집' }))
+    await user.keyboard('{Escape}')
+    await user.keyboard('{Escape}')
+
+    expect(onOuterClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('안쪽이 닫혀도 바깥이 열려 있는 동안 배경 스크롤은 잠긴 채다', async () => {
+    const user = userEvent.setup()
+    render(<NestedHost onOuterClose={vi.fn()} onInnerClose={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '바깥 열기' }))
+    await user.click(screen.getByRole('button', { name: '항목 편집' }))
+    await user.keyboard('{Escape}') // 안쪽만 닫힘
+
+    expect(document.body.style.overflow).toBe('hidden')
+
+    await user.keyboard('{Escape}') // 바깥까지 닫힘
+    expect(document.body.style.overflow).not.toBe('hidden')
+  })
+})
+
 describe('바텀시트 배경 스크롤', () => {
   it('열려 있는 동안 뒤 페이지 스크롤을 잠그고, 닫으면 되돌린다', async () => {
     const user = userEvent.setup()
