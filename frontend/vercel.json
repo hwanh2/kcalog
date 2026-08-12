@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "comment": "클라이언트 라우팅(react-router) — 정적 파일이 없는 경로는 앱 진입 문서를 돌려준다. 없으면 /weight 직접 진입·새로고침이 404. 파일이 있으면 파일이 우선한다.",
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

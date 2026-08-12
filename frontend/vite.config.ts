@@ -12,13 +12,19 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        // 서비스명 확정 시 함께 변경
         name: 'kcalog',
         short_name: 'kcalog',
+        description: '사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱',
+        lang: 'ko',
         start_url: '/',
         display: 'standalone',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        // 앱 배경(canvas)과 맞춰 설치 후 실행 시 흰 화면이 번쩍이지 않게 한다
+        theme_color: '#f8fafc',
+        background_color: '#f8fafc',
+        icons: [
+          // TODO 설치 배너·홈 화면 아이콘용 192/512 png 추가 (tasks 4.4)
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        ],
       },
     }),
   ],

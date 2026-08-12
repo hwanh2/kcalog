@@ -42,7 +42,7 @@ class MealAnalysisServiceTest {
 
     AppProperties props = new AppProperties(null, null, null,
             new AppProperties.Openai("key", "http://x", "gpt-5.4-mini", Duration.ofSeconds(20), 20, 30), null,
-            new AppProperties.Analysis(50));
+            new AppProperties.Analysis(50), null);
 
     MealAnalysisService service;
 

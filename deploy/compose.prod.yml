@@ -1,0 +1,89 @@
+# 운영 compose — 운영 VM(AWS EC2)에서만 쓴다. 로컬 개발은 레포 루트의 docker-compose.yml.
+#   사용: docker compose -f compose.prod.yml up -d   (같은 디렉터리의 .env를 읽는다)
+#
+# ⚠️ `down -v` 금지. 로컬에서 DB를 초기화할 때 쓰는 습관대로 치면 db-data 볼륨이 지워져
+#    운영 데이터가 전부 사라지고, traefik-acme까지 날아가 인증서를 재발급받다 Let's Encrypt
+#    한도(동일 도메인 주 5회)에 걸린다. 컨테이너만 내릴 때는 `down`(볼륨 유지)을 쓴다.
+#
+# backend·db는 호스트 포트를 열지 않는다 — 외부에서 닿는 경로는 Traefik(80/443)뿐이다.
+# 라우팅은 backend 서비스의 라벨에 붙어 있다(Traefik 방식): 서비스가 자기 라우팅 규칙을 들고 다닌다.
+
+# 로그 용량 제한. 없으면 로그가 디스크를 채우고, 디스크가 차면 DB까지 같이 멈춘다.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: kcalog-traefik
+    restart: unless-stopped
+    command:
+      # 도커 컨테이너의 라벨을 읽어 라우팅을 구성한다
+      - --providers.docker=true
+      # 라벨로 명시한 서비스만 노출한다 — db가 실수로 외부에 열리는 것을 막는다
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # 평문 접속은 전부 HTTPS로 돌린다
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # Let's Encrypt 자동 발급·갱신 (TLS-ALPN-01 챌린지 — 443으로 검증)
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # 라벨을 읽기 위해 도커 소켓이 필요하다. 읽기 전용으로만 준다(design Risks 참고).
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # 발급받은 인증서 — 지우면 Let's Encrypt 재발급 한도(주 5회)에 걸릴 수 있다
+      - traefik-acme:/letsencrypt
+    logging: *default-logging
+
+  backend:
+    image: ghcr.io/hwanh2/kcalog-backend:${IMAGE_TAG:-latest}
+    container_name: kcalog-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # DB는 같은 compose 네트워크 안에 있다 — .env로 덮지 않는다
+      DB_URL: jdbc:postgresql://db:5432/kcalog
+      DB_USERNAME: kcalog
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`api.kcalog.site`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls.certresolver=le
+      # 컨테이너 내부 포트. 호스트에 열지 않으므로 Traefik만 이 포트로 접근한다.
+      - traefik.http.services.api.loadbalancer.server.port=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    logging: *default-logging
+
+  db:
+    image: postgres:16-alpine
+    container_name: kcalog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kcalog
+      POSTGRES_USER: kcalog
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kcalog"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *default-logging
+
+volumes:
+  db-data:
+  traefik-acme:
