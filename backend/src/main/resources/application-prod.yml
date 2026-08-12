@@ -5,8 +5,21 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            # 개발용 placeholder 기본값이 운영까지 따라오지 않게 덮어쓴다.
+            # 카카오는 앱의 유일한 인증 수단이라, 빠뜨리면 기동은 성공하고 로그인만 조용히 깨진다.
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+
 app:
   frontend-base-url: ${FRONTEND_BASE_URL}
+  cors:
+    # 프론트 도메인 필수 — 비면 브라우저가 모든 API 응답을 차단해 앱이 통째로 멈춘다
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
   jwt:
     secret: ${JWT_SECRET}
   openai:
