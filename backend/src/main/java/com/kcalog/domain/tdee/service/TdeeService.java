@@ -2,6 +2,7 @@ package com.kcalog.domain.tdee.service;
 
 import com.kcalog.domain.meal.service.MealDailyIntake;
 import com.kcalog.domain.meal.service.MealDailyIntake.DailyNutrition;
+import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.repository.MemberRepository;
 import com.kcalog.domain.member.service.DailyKcalCalculator;
@@ -85,9 +86,13 @@ public class TdeeService {
             return TdeeResponse.insufficient(currentTarget, TdeeCalc.WINDOW_DAYS);
         }
 
-        // 추천 목표는 목표체중·성별·현재 체중이 있어야 산출
-        Integer recommended = (member.getTargetWeightKg() != null && member.getGender() != null && latest != null)
-                ? calculator.toTarget(maintenance, member.getGender(), latest.getWeightKg(), member.getTargetWeightKg())
+        // 추천 목표는 목표 방향과 성별이 있으면 산출 — 방향이 저장되지 않은 회원만 목표체중 비교로 폴백.
+        // 방향도 목표체중도 없으면 추천할 근거가 없어 null.
+        Goal goal = member.getGoal() != null ? member.getGoal()
+                : (member.getTargetWeightKg() != null && latest != null
+                        ? Goal.fromWeights(latest.getWeightKg(), member.getTargetWeightKg()) : null);
+        Integer recommended = (goal != null && member.getGender() != null)
+                ? calculator.toTarget(maintenance, member.getGender(), goal)
                 : null;
 
         return new TdeeResponse(status, roundTo10(maintenance), source, currentTarget, recommended,

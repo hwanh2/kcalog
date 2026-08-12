@@ -55,7 +55,7 @@ class WeightSummaryIntegrationTest {
     @Test
     @DisplayName("추세·BMI·연속 기록·목표 예상을 함께 반환한다")
     void fullSummary() throws Exception {
-        member.updateProfile(new BigDecimal("170"), null, new BigDecimal("65"), null);
+        member.updateProfile(new BigDecimal("170"), null, null, new BigDecimal("65"), null);
         memberRepository.save(member);
         insertSeries("2026-07-01", 20, 70.0, -0.1); // 70 → 68.1, 목표 65 방향
 
@@ -87,7 +87,7 @@ class WeightSummaryIntegrationTest {
     @Test
     @DisplayName("기록이 없으면 빈 점 목록·데이터 부족 예상")
     void noLogs() throws Exception {
-        member.updateProfile(null, null, new BigDecimal("65"), null);
+        member.updateProfile(null, null, null, new BigDecimal("65"), null);
         memberRepository.save(member);
 
         mockMvc.perform(get("/api/weights/summary").header("Authorization", bearer)

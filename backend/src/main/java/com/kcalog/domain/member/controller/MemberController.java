@@ -36,7 +36,7 @@ public class MemberController {
 
     @GetMapping("/me/kcal-suggestion")
     public KcalSuggestionResponse kcalSuggestion(@Valid KcalSuggestionRequest request) {
-        return new KcalSuggestionResponse(memberService.suggestKcal(request));
+        return memberService.suggestKcal(request);
     }
 
     @PatchMapping("/me")
