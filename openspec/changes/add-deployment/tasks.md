@@ -63,7 +63,7 @@
 - [x] 4.1 `frontend/vercel.json` — 정적 자산 외 모든 경로를 `index.html`로 rewrite (SPA 폴백)
 - [x] 4.2 운영 빌드에서 `VITE_API_BASE_URL`이 반영되는지 확인 (`api/client.ts`의 `API_BASE` — 코드 변경 불필요)
 - [x] 4.3 `index.html` 정리 — `lang="ko"`, 제목 `frontend` → `kcalog`, description·theme-color. PWA manifest에 설명·언어·테마색(앱 배경과 일치)
-- [ ] 4.4 PWA 아이콘 — 설치 배너·홈 화면용 192/512 png 추가 (현재 favicon.svg만 등록돼 있어 안드로이드 설치 배너가 뜨지 않는다)
+- [x] 4.4 PWA 아이콘 — 칼로리 링 모티브로 192/512 png 생성, maskable 등록. Vite 기본 로고로 남아 있던 favicon.svg도 같은 마크로 교체
 
 ## 5. 백업
 
