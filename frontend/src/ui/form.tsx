@@ -53,7 +53,8 @@ export function Button({
     secondary: 'border border-border bg-surface text-ink hover:bg-canvas disabled:opacity-50',
     ghost: 'text-muted hover:text-ink',
   }[variant]
+  // 라운드는 tile(12px) — 입력 필드(md)보다 둥글게 둬 누를 것과 채울 것을 구분한다
   return (
-    <button {...props} className={`rounded-md px-4 py-2 text-sm font-medium ${styles} ${className}`} />
+    <button {...props} className={`rounded-tile px-4 py-2 text-sm font-medium ${styles} ${className}`} />
   )
 }

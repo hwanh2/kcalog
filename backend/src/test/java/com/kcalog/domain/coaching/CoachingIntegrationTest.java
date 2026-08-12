@@ -29,6 +29,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import com.kcalog.global.common.ServiceDay;
+
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -73,6 +76,8 @@ class CoachingIntegrationTest {
     JwtService jwtService;
     @Autowired
     AppProperties props;
+    @Autowired
+    Clock clock;
 
     @MockitoBean
     OpenAiClient openAiClient;
@@ -265,8 +270,9 @@ class CoachingIntegrationTest {
     @DisplayName("브리핑 — 이미 오늘 브리핑이 있으면(동시 생성 경쟁) 500 없이 저장된 브리핑을 반환")
     void briefingLosesRaceReturnsSaved() throws Exception {
         seedRecentData();
-        // 다른 요청이 먼저 저장한 상황을 재현 — 생성 경로가 UNIQUE 위반을 만나도 폴백/500이 아니라 캐시를 쓴다
-        briefingRepository.save(CoachingMessage.of(member.getId(), LocalDate.now(KST),
+        // 다른 요청이 먼저 저장한 상황을 재현 — 생성 경로가 UNIQUE 위반을 만나도 폴백/500이 아니라 캐시를 쓴다.
+        // coach_date는 섭취 기준(ServiceDay)이라 달력 날짜로 저장하면 00~05시에 조회 키가 어긋난다.
+        briefingRepository.save(CoachingMessage.of(member.getId(), ServiceDay.today(clock),
                 "먼저 저장된 브리핑", "경쟁에서 이긴 쪽 내용", "[]", "{}", "LLM"));
 
         mockMvc.perform(get("/api/coach/briefing").header("Authorization", bearer))

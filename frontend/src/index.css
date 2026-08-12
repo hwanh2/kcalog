@@ -11,6 +11,8 @@
   --color-muted: #94a3b8;
   --color-surface: #ffffff;
   --color-canvas: #f8fafc;
+  /* 페이지 배경(canvas) 위에 얹는 눌린 면 — 세그먼트 트랙·합계 바처럼 테두리만으로는 구분되지 않는 곳에 쓴다 */
+  --color-track: #eef1f6;
   --color-danger: #ef4444;
   --color-border: #e2e8f0;
   --color-on-brand: #ffffff;
@@ -27,13 +29,37 @@
 
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
+  /* 라운드는 요소 크기에 맞춰 세 단계로만 쓴다 — 큰 면(card) · 중간 블록(2xl) · 작은 조각(tile).
+     작은 요소에 큰 라운드를 주면 모서리가 면을 먹어 알약처럼 보인다 */
   --radius-card: 1.5rem;
+  --radius-tile: 0.75rem;
 }
 
 html,
 body,
 #root {
   min-height: 100dvh;
+}
+
+/* 분석 중 스캔 라인 — 사진 위를 오르내려 "지금 읽고 있다"를 보여준다 */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+
+.animate-scan {
+  animation: scan 1.8s ease-in-out infinite;
+}
+
+/* 애니메이션을 줄여달라는 설정이면 움직임을 멈춘다 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-scan {
+    animation: none;
+  }
 }
 
 body {

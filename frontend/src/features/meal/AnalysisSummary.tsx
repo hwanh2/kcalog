@@ -27,36 +27,43 @@ export function AnalysisSummary({ items }: { items: EditableItem[] }) {
 
 function MacroChip({ label, grams, className }: { label: string; grams: number; className: string }) {
   return (
-    <div className={`rounded-xl px-2.5 py-1.5 ${className}`}>
+    <div className={`rounded-tile px-2.5 py-1.5 ${className}`}>
       <p className="text-[11px] font-bold">{label}</p>
       <p className="text-sm font-black">{grams}g</p>
     </div>
   )
 }
 
-/** 음식 항목 리스트 — 행을 누르면 편집 시트가 열린다. 보정·오류 상태를 배지로 알린다 */
+/** 음식 항목 리스트 — 행을 누르면 편집 시트가 열린다. 보정·오류 상태를 배지로 알린다.
+ *  onFavorite을 주면 항목마다 ★이 붙어 그 값을 즐겨찾기로 저장할 수 있다 */
 export function AnalyzedItemList({
   items,
   onSelect,
+  onFavorite,
+  selectedIndex = null,
   errorIndices,
 }: {
   items: EditableItem[]
   onSelect: (index: number) => void
+  onFavorite?: (index: number) => void
+  selectedIndex?: number | null
   errorIndices?: number[]
 }) {
   return (
     <ul className="space-y-2">
       {items.map((item, index) => {
         const hasError = errorIndices?.includes(index)
+        const selected = selectedIndex === index
         return (
-          <li key={index}>
+          <li key={index} className="relative">
             <button
               type="button"
               onClick={() => onSelect(index)}
               aria-label={`${item.name || '이름 없음'} 항목 편집`}
-              className={`flex w-full items-center gap-2 rounded-2xl border px-4 py-3 text-left ${
-                hasError ? 'border-danger bg-surface' : 'border-border bg-surface'
-              }`}
+              aria-pressed={selected}
+              className={`flex w-full items-center gap-2 rounded-tile border bg-surface px-4 py-3 text-left ${
+                selected ? 'border-brand ring-1 ring-brand' : hasError ? 'border-danger' : 'border-border'
+              } ${onFavorite ? 'pr-12' : ''}`}
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-ink">
@@ -74,6 +81,12 @@ export function AnalyzedItemList({
                   )}
                 </span>
                 <span className="block text-xs text-muted">
+                  {item.quantity && item.unit && (
+                    <span className="mr-1 font-medium text-ink">
+                      {item.quantity}
+                      {item.unit} ·
+                    </span>
+                  )}
                   탄 {item.carbG || 0} · 단 {item.proteinG || 0} · 지 {item.fatG || 0}
                 </span>
               </span>
@@ -82,6 +95,16 @@ export function AnalyzedItemList({
                 ›
               </span>
             </button>
+            {onFavorite && (
+              <button
+                type="button"
+                aria-label={`${item.name || '이름 없음'} 즐겨찾기에 저장`}
+                onClick={() => onFavorite(index)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-1.5 text-lg text-muted"
+              >
+                ☆
+              </button>
+            )}
           </li>
         )
       })}

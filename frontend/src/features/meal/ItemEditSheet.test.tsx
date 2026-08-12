@@ -10,6 +10,8 @@ const item = (over: Partial<EditableItem> = {}): EditableItem => ({
   carbG: '30',
   proteinG: '20',
   fatG: '18',
+  quantity: '',
+  unit: '',
   box: null,
   remember: false,
   corrected: false,

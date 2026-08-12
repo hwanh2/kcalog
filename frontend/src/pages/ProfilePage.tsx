@@ -1,32 +1,29 @@
-import { useEffect, useState } from 'react'
-import { fieldErrorsFrom } from '../api/client'
-import { getKcalSuggestion, updateMember } from '../api/member'
-import type { ActivityLevel, Goal, MemberResponse, UpdateMemberRequest } from '../api/member'
-import { toNumber, validateProfileFields } from '../api/memberValidation'
-import type { FieldErrors } from '../api/memberValidation'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getDashboard } from '../api/dashboard'
+import { getReport } from '../api/report'
+import type { MemberResponse } from '../api/member'
+import { getTdee } from '../api/tdee'
+import { getWeightSummary } from '../api/weight'
 import { useAuth } from '../auth/useAuth'
-import { Button, Card, Field, Select, TextInput } from '../ui/form'
-
-const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
-  LOW: '거의 앉아서 생활 (주 0~1회 운동)',
-  MID: '보통 (주 2~3회 운동)',
-  HIGH: '활동적 (주 4~5회 운동)',
-  VERY_HIGH: '매우 활동적 (거의 매일 운동 · 육체노동)',
-}
-
-const GOAL_LABELS: Record<Goal, string> = {
-  CUT: '체중 감량',
-  MAINTAIN: '체중 유지',
-  BULK: '근육 증량',
-}
+import { NutritionTargetCard } from '../features/profile/NutritionTargetCard'
+import { ProfileEditSheet } from '../features/profile/ProfileEditSheet'
+import { ProfileSummaryCard } from '../features/profile/ProfileSummaryCard'
+import { WeeklySummaryCard } from '../features/profile/WeeklySummaryCard'
+import { WeightProgressCard } from '../features/profile/WeightProgressCard'
+import { addDays, todayLocalDate, todayServiceDate } from '../lib/date'
+import { Button } from '../ui/form'
 
 export function ProfilePage() {
   const { state, reloadMember, signOut } = useAuth()
   if (state.status !== 'authed') return null
-  return <ProfileForm member={state.member} reloadMember={reloadMember} signOut={signOut} />
+  return <Profile member={state.member} reloadMember={reloadMember} signOut={signOut} />
 }
 
-function ProfileForm({
+/** 최근 3주 — 각 주의 아무 날짜(anchor)를 넘기면 서버가 그 주 범위로 잡아준다 */
+const WEEK_ANCHORS = [14, 7, 0]
+
+function Profile({
   member,
   reloadMember,
   signOut,
@@ -35,153 +32,110 @@ function ProfileForm({
   reloadMember: () => Promise<void>
   signOut: () => Promise<void>
 }) {
-  const [heightCm, setHeightCm] = useState(String(member.heightCm ?? ''))
-  const [targetWeightKg, setTargetWeightKg] = useState(String(member.targetWeightKg ?? ''))
-  const [activityLevel, setActivityLevel] = useState<string>(member.activityLevel ?? '')
-  const [goal, setGoal] = useState<string>(member.goal ?? '')
-  const [kcalInput, setKcalInput] = useState(String(member.dailyKcalTarget ?? ''))
-  const [suggested, setSuggested] = useState<number | null>(null)
-  const [errors, setErrors] = useState<FieldErrors>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
 
-  // 키·활동량·목표 방향이 저장값과 달라지면 새 제안 칼로리를 조회해 보여준다 (확정은 사용자 몫)
-  useEffect(() => {
-    const parsedHeight = toNumber(heightCm)
-    const changed =
-      parsedHeight !== member.heightCm ||
-      activityLevel !== member.activityLevel ||
-      goal !== (member.goal ?? '')
-    const valid =
-      parsedHeight !== null && activityLevel !== '' && goal !== '' &&
-      Object.keys(validateProfileFields({ heightCm: parsedHeight })).length === 0
-    if (!changed || !valid || member.gender === null || member.birthYear === null || member.latestWeightKg === null) {
-      setSuggested(null)
-      return
-    }
-    let cancelled = false
-    getKcalSuggestion({
-      gender: member.gender,
-      birthYear: member.birthYear,
-      heightCm: parsedHeight,
-      weightKg: member.latestWeightKg,
-      activityLevel: activityLevel as ActivityLevel,
-      goal: goal as Goal,
-    })
-      .then((r) => {
-        if (!cancelled) setSuggested(r.dailyKcalTarget)
-      })
-      .catch(() => {
-        if (!cancelled) setSuggested(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [heightCm, activityLevel, goal, member])
-
-  async function save() {
-    setMessage(null)
-    const parsed = {
-      heightCm: toNumber(heightCm),
-      targetWeightKg: toNumber(targetWeightKg),
-      dailyKcalTarget: toNumber(kcalInput),
-    }
-    const fieldErrors = validateProfileFields(parsed)
-    setErrors(fieldErrors)
-    if (Object.keys(fieldErrors).length > 0) return
-
-    // 저장값과 달라진 필드만 PATCH
-    const request: UpdateMemberRequest = {}
-    if (parsed.heightCm !== member.heightCm) request.heightCm = parsed.heightCm!
-    if (parsed.targetWeightKg !== member.targetWeightKg) request.targetWeightKg = parsed.targetWeightKg!
-    if (activityLevel !== member.activityLevel) request.activityLevel = activityLevel as ActivityLevel
-    if (goal !== (member.goal ?? '') && goal !== '') request.goal = goal as Goal
-    if (parsed.dailyKcalTarget !== member.dailyKcalTarget) request.dailyKcalTarget = parsed.dailyKcalTarget!
-    if (Object.keys(request).length === 0) {
-      setMessage('변경된 내용이 없습니다.')
-      return
-    }
-
-    setBusy(true)
-    try {
-      await updateMember(request)
-      await reloadMember()
-      setMessage('저장했습니다.')
-    } catch (error) {
-      const serverErrors = fieldErrorsFrom(error)
-      if (serverErrors) setErrors(serverErrors)
-      else setMessage('저장에 실패했어요. 잠시 후 다시 시도해주세요.')
-    } finally {
-      setBusy(false)
-    }
-  }
+  const today = todayServiceDate()
+  const weights = useQuery({
+    queryKey: ['weights', 'summary', 'profile'],
+    // 체중은 달력 날짜 기준(ServiceDay 미적용 — design D8)
+    queryFn: () => getWeightSummary(addDays(todayLocalDate(), -89), todayLocalDate()),
+  })
+  const tdee = useQuery({ queryKey: ['tdee'], queryFn: getTdee })
+  const dashboard = useQuery({ queryKey: ['dashboard', today], queryFn: () => getDashboard(today) })
+  const reports = useQuery({
+    queryKey: ['reports', 'weekly3'],
+    queryFn: () => Promise.all(WEEK_ANCHORS.map((back) => getReport('WEEK', addDays(today, -back)))),
+  })
 
   return (
-    <section>
-      <h1 className="text-xl font-semibold">프로필</h1>
-      <p className="mt-1 text-muted">
-        {member.nickname}
-        {member.email ? ` · ${member.email}` : ''}
-      </p>
-      <p className="text-muted">최신 체중: {member.latestWeightKg ?? '-'} kg</p>
+    <section className="space-y-3 pb-2">
+      <ProfileSummaryCard member={member} streakDays={weights.data?.streakDays ?? null} />
 
-      {message && (
-        <p role="status" className="mt-3 text-sm text-brand">
-          {message}
-        </p>
-      )}
+      <WeightProgressCard
+        points={weights.data?.points ?? []}
+        latestKg={weights.data?.latestKg ?? member.latestWeightKg}
+        targetKg={member.targetWeightKg}
+      />
 
-      <Card className="mt-4">
-        <Field id="heightCm" label="키 (cm)" error={errors.heightCm}>
-          <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-        </Field>
+      <NutritionTargetCard
+        maintenanceKcal={tdee.data?.maintenanceKcal ?? null}
+        targetKcal={member.dailyKcalTarget}
+        carbTargetG={dashboard.data?.carbTargetG ?? null}
+        proteinTargetG={dashboard.data?.proteinTargetG ?? null}
+        fatTargetG={dashboard.data?.fatTargetG ?? null}
+        onEdit={() => setEditing(true)}
+      />
 
-        <Field id="targetWeightKg" label="목표 체중 (kg, 선택)" error={errors.targetWeightKg}>
-          <TextInput id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
-        </Field>
+      <WeeklySummaryCard reports={reports.data ?? []} points={weights.data?.points ?? []} />
 
-        <Field id="goal" label="목표">
-          <Select id="goal" value={goal} onChange={(e) => setGoal(e.target.value)}>
-            <option value="">선택</option>
-            {Object.entries(GOAL_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+      <nav aria-label="설정" className="overflow-hidden rounded-card border border-border bg-surface">
+        <MenuItem label="프로필 편집" onClick={() => setEditing(true)} />
+        <MenuItem label="도움말 & 피드백" href="https://github.com/hwanh2/kcalog/issues" external />
+        <MenuItem label="앱 정보" value={`v${APP_VERSION}`} />
+      </nav>
 
-        <Field id="activityLevel" label="활동량">
-          <Select id="activityLevel" value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
-            {Object.entries(ACTIVITY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-
-        {suggested !== null && (
-          <p className="mb-4 text-sm text-muted">
-            새 제안 일일 칼로리: <strong className="text-ink">{suggested} kcal</strong>{' '}
-            <Button type="button" variant="ghost" onClick={() => setKcalInput(String(suggested))}>
-              제안 적용
-            </Button>
-          </p>
-        )}
-
-        <Field id="dailyKcalTarget" label="일일 칼로리 목표" error={errors.dailyKcalTarget}>
-          <TextInput id="dailyKcalTarget" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} />
-        </Field>
-
-        <Button type="button" onClick={save} disabled={busy} className="w-full">
-          저장
-        </Button>
-      </Card>
-
-      <Button type="button" variant="secondary" onClick={() => void signOut()} className="mt-4 w-full">
+      <Button type="button" variant="secondary" onClick={() => void signOut()} className="w-full">
         로그아웃
       </Button>
+
+      <p className="pt-1 text-center text-[11px] text-muted">kcalog v{APP_VERSION}</p>
+
+      {editing && (
+        <ProfileEditSheet member={member} reloadMember={reloadMember} onClose={() => setEditing(false)} />
+      )}
     </section>
   )
+}
+
+const APP_VERSION = '1.0.0'
+
+/**
+ * 설정 메뉴 한 줄 — 누를 수 있는 항목(onClick·href)만 화살표를 보여주고,
+ * 값만 알리는 항목(앱 정보)은 오른쪽에 값을 둔다. 동작하지 않는 항목은 만들지 않는다.
+ */
+function MenuItem({
+  label,
+  value,
+  onClick,
+  href,
+  external,
+}: {
+  label: string
+  value?: string
+  onClick?: () => void
+  href?: string
+  external?: boolean
+}) {
+  const body = (
+    <>
+      <span className="flex-1 text-left text-sm font-semibold text-ink">{label}</span>
+      {value && <span className="text-xs font-medium text-muted">{value}</span>}
+      {(onClick || href) && (
+        <span aria-hidden className="text-muted">
+          ›
+        </span>
+      )}
+    </>
+  )
+  const className = 'flex w-full items-center gap-2 border-b border-border px-4 py-3.5 last:border-b-0'
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        className={className}
+        {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
+      >
+        {body}
+      </a>
+    )
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {body}
+      </button>
+    )
+  }
+  return <div className={className}>{body}</div>
 }

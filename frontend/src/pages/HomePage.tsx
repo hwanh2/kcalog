@@ -12,13 +12,14 @@ import { MacroProgress } from '../features/dashboard/MacroProgress'
 import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
 import { suggestNextMealType } from '../features/dashboard/mealSuggest'
 import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
-import { addDays, todayLocalDate } from '../lib/date'
+import { addDays, todayServiceDate } from '../lib/date'
 import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
 
 /** 홈(오늘) — 날짜 이동 + 칼로리 링·탄단지 달성도·체중 미니카드·오늘 식사 목록·촬영 유도 (v2 목업 기준) */
 export function HomePage() {
-  const today = todayLocalDate()
+  // 섭취 집계는 05시에 하루가 바뀐다 — 새벽에 열어도 방금 담은 야식이 보이도록(백엔드 ServiceDay와 동일)
+  const today = todayServiceDate()
   const [date, setDate] = useState(today)
   const { state } = useAuth()
   const targetWeightKg = state.status === 'authed' ? state.member.targetWeightKg : null

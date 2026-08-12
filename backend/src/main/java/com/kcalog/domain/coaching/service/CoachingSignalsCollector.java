@@ -49,6 +49,10 @@ public class CoachingSignalsCollector {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다"));
         LocalDate today = ServiceDay.today(clock);
+        // 체중은 달력 날짜로 저장된다(ServiceDay 미적용 — 아침 공복 측정이라 달력 기준이 자연스럽다).
+        // 섭취용 today를 체중 조회에 그대로 쓰면 00~05시 사이에 하루가 어긋나, 방금 기록한
+        // 오늘 체중이 조회 구간 밖으로 밀려 연속일이 0으로 보인다.
+        LocalDate calendarToday = LocalDate.now(clock);
         ZoneId zone = clock.getZone();
 
         ReportResponse week = reportService.get(memberId, Period.WEEK, null);
@@ -71,7 +75,7 @@ public class CoachingSignalsCollector {
                 week.daysLogged(), week.avgKcal(), week.onTargetDays(),
                 week.carbPct(), week.proteinPct(), week.fatPct(),
                 tdee.maintenanceKcal(), tdee.source(), tdee.recommendedTargetKcal(),
-                weightLoss7d(memberId, today), weightStreak(memberId, today), latestWeight,
+                weightLoss7d(memberId, calendarToday), weightStreak(memberId, calendarToday), latestWeight,
                 week.insights().stream().map(ReportResponse.Insight::message).toList());
     }
 
