@@ -5,16 +5,17 @@
 ## 0. 사전 준비 (👤 — 대부분 다른 작업의 선행 조건)
 
 - [ ] 0.1 👤 도메인 `kcalog.site` 구매
-- [ ] 0.2 👤 DNS 레코드 — `kcalog.site` → Vercel(안내대로 A/CNAME), `api.kcalog.site` → GCP VM 고정 IP(A 레코드)
+- [ ] 0.2 👤 DNS 레코드 — `kcalog.site` → Vercel(안내대로 A/CNAME), `api.kcalog.site` → EC2 Elastic IP(A 레코드)
   - **첫 배포보다 먼저 끝나야 한다.** Let's Encrypt가 `api.kcalog.site`로 직접 접속해 소유를 검증하므로, DNS가 아직 안 퍼졌으면 인증서 발급이 실패하고 배포 워크플로우의 헬스체크가 타임아웃된다(코드 문제가 아니다 — DNS 확인 후 재배포)
-- [ ] 0.3 👤 GCP VM 생성 — Compute Engine `e2-small`, Ubuntu LTS, 고정 외부 IP 예약, 방화벽 **80·443 둘 다** 개방(SSH는 IAP 또는 본인 IP로 제한)
+- [ ] 0.3 👤 EC2 인스턴스 생성 — **`t3.small`**(x86, 2GB), Ubuntu LTS, **Elastic IP 할당**, 보안 그룹 인바운드 **80·443 둘 다** 개방(SSH는 본인 IP로 제한)
+  - `t4g`(ARM)를 쓰면 amd64 이미지가 실행되지 않는다 — 인스턴스 타입을 바꾸려면 워크플로우에 멀티플랫폼 빌드를 먼저 추가할 것
   - 443만 열면 안 된다: 80은 평문 접속을 HTTPS로 돌리는 리다이렉트에 쓰이고, 인증서 챌린지(TLS-ALPN-01)는 443을 쓴다
 - [ ] 0.4 👤 VM 초기 세팅 — Docker + compose 플러그인 설치, 배포 전용 사용자 생성 후 docker 그룹에 추가
 - [ ] 0.5 👤 배포용 SSH 키쌍 생성(이 용도 전용) — 공개키는 VM의 배포 사용자에, 개인키는 GitHub Secret에
 - [ ] 0.6 👤 Cloudflare R2 버킷 2개 생성 — 사진용, 백업용. S3 호환 액세스 키 발급
 - [ ] 0.7 👤 카카오 개발자 콘솔 — Redirect URI에 `https://api.kcalog.site/login/oauth2/code/kakao` 추가, 사이트 도메인 등록
 - [ ] 0.8 👤 OpenAI 대시보드에서 **월 사용 한도** 설정 (완전 공개라 유일한 비용 천장 — design Risks 참고)
-- [ ] 0.9 👤 GCP 예산 알림 설정
+- [ ] 0.9 👤 AWS Budgets 예산 알림 설정
 - [ ] 0.10 👤 `release` 브랜치 생성 + 보호 규칙 — CI 통과 필수, 직접 푸시 제한(핫픽스 예외는 본인만)
 - [ ] 0.11 👤 ghcr 패키지는 **private 유지**. VM이 pull할 수 있도록 PAT 발급 → `GHCR_PULL_TOKEN`
   - 스코프는 **`read:packages`만** 준다. VM에 저장되는 자격증명이라, 유출되더라도 이미지 읽기 외에는 아무것도 못 하게 막는다(코드 접근·push 불가)
@@ -78,7 +79,7 @@
 - [ ] 6.5 사진 분석 → R2 업로드 → 썸네일 표시
 - [ ] 6.6 AI 코치 **SSE 스트리밍**이 Traefik을 통과해 끊기지 않는지 — `text/event-stream`은 즉시 flush되는 게 기본 동작이라 설정을 넣지 않았다. 실제로 토큰이 실시간으로 오는지 눈으로 확인할 것
 - [ ] 6.7 딥링크 확인 — `https://kcalog.site/weight` 직접 진입·새로고침
-- [ ] 6.8 VM 실사용 메모리 확인 (e2-small 2GB에서 여유가 있는지)
+- [ ] 6.8 VM 실사용 메모리 확인 (t3.small 2GB에서 여유가 있는지)
 
 ## 7. 문서
 

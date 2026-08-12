@@ -53,7 +53,7 @@ cd frontend && npm test              # vitest
 
 ```
 kcalog.site       → Vercel (프론트)
-api.kcalog.site   → GCP Compute Engine VM
+api.kcalog.site   → AWS EC2 (t3.small)
                       └ docker compose: Traefik(자동 HTTPS) + backend + Postgres 16
 사진               → Cloudflare R2 (S3 호환, 24시간 보관)
 백업               → 매일 pg_dump → R2 (deploy/backup.sh, 14일 보관)

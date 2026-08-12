@@ -4,13 +4,13 @@
 
 기능은 로컬에서만 돈다. 실제 사용자가 쓰려면 운영 환경이 필요하고, 그 순간부터 지금까지 미뤄둔 것들(도메인, HTTPS, 시크릿, 백업, DB 마이그레이션 동결)이 한꺼번에 확정된다.
 
-배포 형태를 정하는 일은 코드에도 되돌아온다. 프론트(Vercel)와 백엔드(GCP)를 분리하면 **지금 코드로는 로그인이 동작하지 않는다** — CORS 설정이 아예 없고, 리버스 프록시 뒤에서 카카오 리다이렉트 URI가 `http://`로 만들어지며, 헬스체크 요청은 401을 받는다. 이 change는 인프라 구성과 함께 그 최소 코드 변경을 담는다.
+배포 형태를 정하는 일은 코드에도 되돌아온다. 프론트(Vercel)와 백엔드(AWS)를 분리하면 **지금 코드로는 로그인이 동작하지 않는다** — CORS 설정이 아예 없고, 리버스 프록시 뒤에서 카카오 리다이렉트 URI가 `http://`로 만들어지며, 헬스체크 요청은 401을 받는다. 이 change는 인프라 구성과 함께 그 최소 코드 변경을 담는다.
 
 서비스명은 **kcalog로 확정**한다(도메인 `kcalog.site`). AGENTS.md·README에 남아 있던 "서비스명 미정, 확정 시 레포·패키지명 일괄 변경" 항목이 이로써 닫힌다.
 
 ## What Changes
 
-- **운영 토폴로지 확정** — `kcalog.site`(Vercel, 프론트) + `api.kcalog.site`(GCP Compute Engine e2-small VM). VM 한 대에 Traefik(자동 HTTPS) + 백엔드 + Postgres 16을 docker compose로 올린다. 사진은 Cloudflare R2.
+- **운영 토폴로지 확정** — `kcalog.site`(Vercel, 프론트) + `api.kcalog.site`(AWS EC2 t3.small). VM 한 대에 Traefik(자동 HTTPS) + 백엔드 + Postgres 16을 docker compose로 올린다. 사진은 Cloudflare R2.
 - **CORS 신설** — 허용 출처(`kcalog.site`)의 자격증명 포함 요청만 통과. 지금은 설정 자체가 없어 분리 배포 시 모든 API 호출이 브라우저에서 차단된다.
 - **프록시 헤더 신뢰** — `forward-headers-strategy`로 `X-Forwarded-Proto`를 반영해 OAuth 리다이렉트 URI가 `https`로 생성되게 한다.
 - **헬스체크** — actuator 추가, `/actuator/health`를 인증 없이 공개하고 DB 연결 상태를 포함한다.

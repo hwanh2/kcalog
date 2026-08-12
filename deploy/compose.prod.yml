@@ -1,4 +1,4 @@
-# 운영 compose — GCP VM에서만 쓴다. 로컬 개발은 레포 루트의 docker-compose.yml.
+# 운영 compose — 운영 VM(AWS EC2)에서만 쓴다. 로컬 개발은 레포 루트의 docker-compose.yml.
 #   사용: docker compose -f compose.prod.yml up -d   (같은 디렉터리의 .env를 읽는다)
 #
 # ⚠️ `down -v` 금지. 로컬에서 DB를 초기화할 때 쓰는 습관대로 치면 db-data 볼륨이 지워져

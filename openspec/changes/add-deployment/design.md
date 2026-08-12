@@ -4,7 +4,7 @@
 
 지금까지 운영을 전제한 코드는 `application-prod.yml`(시크릿 fail-closed)과 S3 호환 스토리지 추상화뿐이다. Dockerfile·CD 워크플로우·헬스체크·CORS가 모두 없고, 로컬은 Vite dev 프록시로 프론트와 백엔드를 같은 출처로 묶어 쓰고 있어 **출처가 갈리는 상황을 코드가 한 번도 겪지 않았다**.
 
-결정은 사용자 그릴링(2026-08-12) 확정. 서비스명 kcalog·도메인 `kcalog.site` 확정, 완전 공개, 프론트 Vercel / 백엔드 GCP 분리, DB는 관리형 대신 VM 내 컨테이너.
+결정은 사용자 그릴링(2026-08-12) 확정. 서비스명 kcalog·도메인 `kcalog.site` 확정, 완전 공개, 프론트 Vercel / 백엔드 VM 분리, DB는 관리형 대신 VM 내 컨테이너. 클라우드는 구현 중 GCP → AWS로 바뀌었다(D2).
 
 ## Decisions
 
@@ -12,23 +12,25 @@
 
 ```
 kcalog.site       → Vercel        (프론트, SPA)
-api.kcalog.site   → GCP e2-small VM
+api.kcalog.site   → AWS EC2 t3.small
                       └ docker compose: Traefik(자동 HTTPS) → backend ← postgres:16
 사진               → Cloudflare R2 (S3 호환, 보관 24h)
 ```
 
 **도메인 구매가 선택이 아니라 인증의 전제 조건이다.** refresh 토큰은 쿠키에 있고 `SameSite=Lax`다(`RefreshCookie`).
 
-- `*.vercel.app` ↔ GCP 기본 주소는 서로 **다른 사이트** → Lax 쿠키가 전송되지 않는다. `SameSite=None; Secure`로 바꾸면 서드파티 쿠키가 되고, Safari는 이를 기본 차단한다. 모바일 PWA를 지향하는 앱에서 iOS 로그인 유지가 깨진다.
+- `*.vercel.app` ↔ 클라우드가 주는 기본 주소는 서로 **다른 사이트** → Lax 쿠키가 전송되지 않는다. `SameSite=None; Secure`로 바꾸면 서드파티 쿠키가 되고, Safari는 이를 기본 차단한다. 모바일 PWA를 지향하는 앱에서 iOS 로그인 유지가 깨진다.
 - `kcalog.site` ↔ `api.kcalog.site`는 eTLD+1이 같아 **same-site**다 → 현재 `SameSite=Lax` 코드를 그대로 두고도 쿠키가 전송된다. 쿠키 관련 코드는 손대지 않는다.
 
 출처는 다르므로(cross-origin, same-site) CORS는 필요하다 — D6.
 
-### D2. 백엔드 런타임 — Compute Engine VM + docker compose
+### D2. 백엔드 런타임 — VM(AWS EC2) + docker compose
 
-"DB를 관리형 대신 서버에 컨테이너로" 결정이 런타임을 강제한다. **Cloud Run은 영속 디스크가 없어 Postgres 컨테이너를 띄울 수 없다.** 따라서 VM이다.
+"DB를 관리형 대신 서버에 컨테이너로" 결정이 런타임을 강제한다. **서버리스 컨테이너 런타임(Cloud Run·App Runner·Fargate)은 영속 디스크가 없어 Postgres 컨테이너를 띄울 수 없다.** 따라서 VM이다 — 이 판단은 클라우드가 바뀌어도 같다.
 
-- **e2-small (RAM 2GB)** 선택. e2-micro(1GB, 무료)는 JVM + Postgres + Traefik 세 프로세스를 함께 올리기에 빠듯해 힙 튜닝·스왑에 시간을 쓰게 되고, 완전 공개 상태에서 OOM 재기동 위험을 안는다. 월 $13 수준을 그 비용으로 본다.
+- **AWS EC2 `t3.small` (2 vCPU / RAM 2GB)** 선택. 프리티어 `t3.micro`(1GB)는 JVM + Postgres + Traefik 세 프로세스를 함께 올리기에 빠듯해 힙 튜닝·스왑에 시간을 쓰게 되고, 완전 공개 상태에서 OOM 재기동 위험을 안는다. 월 $15 수준을 그 비용으로 본다.
+- **x86(`t3`)을 쓴다.** `t4g`(Graviton/ARM)가 더 싸지만 GitHub Actions 러너가 x86_64라 amd64 이미지가 만들어져 ARM 인스턴스에서 실행되지 않는다. 멀티플랫폼 빌드를 넣으면 QEMU 에뮬레이션으로 Gradle 빌드가 몇 배 느려져, 절감액보다 배포 대기 시간의 대가가 크다고 봤다.
+- **클라우드는 GCP에서 AWS로 바뀌었지만 배포 코드는 그대로다.** SSH 기반 배포를 고른 덕분에 워크플로우·compose·Dockerfile 중 어느 것도 클라우드에 묶여 있지 않다. 바뀐 것은 인스턴스 타입·Elastic IP·보안 그룹·예산 알림 같은 콘솔 작업뿐이다.
 - 리버스 프록시는 **Traefik**(v3) — Let's Encrypt 인증서를 자동 발급·갱신하므로 nginx + certbot 조합의 갱신 크론·reload 훅이 필요 없다. Caddy도 같은 일을 하고 이 고정 구성에는 설정이 더 짧지만, **사용자가 이미 다뤄본 도구를 택했다**(운영 중 장애 대응 속도가 설정 길이보다 중요하다).
 - 라우팅은 backend 서비스의 **도커 라벨**에 붙인다. `exposedbydefault=false`로 두어 라벨을 명시한 서비스만 노출되게 한다 — Postgres가 실수로 외부에 열리는 것을 구조적으로 막는다.
 - 백엔드 컨테이너는 포트를 호스트에 직접 노출하지 않고 compose 내부 네트워크로만 Traefik에 연결한다. Postgres도 마찬가지로 외부 미노출.
@@ -48,7 +50,7 @@ git checkout release && git merge main && git push origin release
 - **대가**: 사람이 부를 수 있는 버전 번호(`v1.0.2`)가 사라져 "운영에 뭐가 떠 있나"의 답이 커밋 SHA가 된다. 이를 보완하려고 이미지를 커밋 SHA로 태깅하고, 배포 워크플로우가 실행 요약에 배포 커밋을 남긴다. 롤백은 되돌릴 커밋을 release에 올리는 방식이 된다.
 - 이미지는 **ghcr.io** — GitHub Actions가 실행마다 자동 발급되는 `GITHUB_TOKEN`으로 push할 수 있어, Docker Hub와 달리 장기 유효한 토큰을 별도로 만들어 보관할 필요가 없다.
 - **패키지는 private 유지.** 레포가 public이고 이미지에 시크릿이 없어(전부 런타임 주입) 공개해도 새는 정보는 없지만, 굳이 열 이유도 없다는 판단. 대신 VM이 pull하려면 자격증명이 필요해 `read:packages` 스코프만 가진 PAT를 쓴다 — VM의 `~/.docker/config.json`에 남는 값이므로, 유출되어도 이미지 읽기 외에는 할 수 없게 스코프를 최소로 묶는다.
-- VM에서 이미지를 직접 빌드하지 않는다. e2-small에서 Gradle 빌드는 메모리 부담이 커 같은 서버의 DB를 위협하고, 이전 버전 이미지가 남지 않아 롤백 수단이 사라진다.
+- VM에서 이미지를 직접 빌드하지 않는다. t3.small에서 Gradle 빌드는 메모리 부담이 커 같은 서버의 DB를 위협하고, 이전 버전 이미지가 남지 않아 롤백 수단이 사라진다.
 - **SSH 키** 방식을 쓴다. Workload Identity Federation이 보안상 우위지만 IAM·풀 설정 비용이 개인 프로젝트 규모에 비해 크다. 대신 배포 전용 계정 + 명령 제한으로 피해 범위를 줄인다(Risks 참고).
 - 컨테이너 교체 중 **수 초 단절을 감수**한다. 무중단은 인스턴스 2개 + 헬스체크 기반 전환이 필요해 단일 VM 전제와 맞지 않는다.
 
@@ -96,14 +98,14 @@ git checkout release && git merge main && git push origin release
 
 - **[Traefik에 도커 소켓을 마운트]** 라벨을 읽으려면 `/var/run/docker.sock`이 필요한데, 도커 소켓 접근은 사실상 호스트 root 권한과 같다. Traefik이 뚫리면 VM 전체가 넘어간다. 읽기 전용(`:ro`)으로 제한하지만 완전한 방어는 아니다 — 완전히 막으려면 소켓 프록시를 한 단 더 두어야 하고, 개인 프로젝트 규모에서는 과하다고 보고 감수한다. (Caddy는 소켓이 필요 없어 이 위험이 없다 — 도구 선택의 대가다.)
 - **[단일 VM = 단일 장애점]** VM이 죽으면 서비스 전체가 멈춘다. 개인 프로젝트 규모에서 이중화 비용이 이득보다 크다고 보고 감수한다. 데이터 손실만 백업으로 막는다.
-- **[LLM 비용에 천장이 없음]** 완전 공개인데 방어가 1인당 일일 상한(분석 20·채팅 30)뿐이라, 가입자 수에 비례해 비용이 늘고 상한이 없다. 유일한 천장인 OpenAI 월 한도는 걸리는 순간 **모든 사용자의 분석이 동시에 실패**하는 방식으로 걸린다. 기록·조회 기능은 살아 있고 되돌리기 쉬워, 실사용 규모를 본 뒤 서비스 전체 상한을 다음 change로 다루기로 했다. GCP 예산 알림과 OpenAI 월 한도는 이번에 반드시 설정한다.
+- **[LLM 비용에 천장이 없음]** 완전 공개인데 방어가 1인당 일일 상한(분석 20·채팅 30)뿐이라, 가입자 수에 비례해 비용이 늘고 상한이 없다. 유일한 천장인 OpenAI 월 한도는 걸리는 순간 **모든 사용자의 분석이 동시에 실패**하는 방식으로 걸린다. 기록·조회 기능은 살아 있고 되돌리기 쉬워, 실사용 규모를 본 뒤 서비스 전체 상한을 다음 change로 다루기로 했다. AWS Budgets 알림과 OpenAI 월 한도는 이번에 반드시 설정한다.
 - **[SSH 키가 GitHub에 상주]** 유출되면 서버가 통째로 넘어간다. 배포 전용 사용자 + 최소 권한으로 피해를 줄이고, 키는 이 용도로만 발급한다.
 - **[시크릿이 매 배포마다 CI 경유]** D4의 대가. 로그 노출 방지와 액션 권한 최소화로 완화한다.
 - **[Vercel 프리뷰에서 로그인 불가]** 프리뷰는 `*.vercel.app`이라 쿠키가 가지 않는다. 프리뷰마다 카카오 리다이렉트 URI를 등록하는 비용이 이득보다 커서, **프리뷰는 화면 확인용으로만** 쓰고 인증 검증은 운영에서 한다.
 - **[배포 중 단절]** 컨테이너 교체 동안 수 초 502. 릴리스 배포라 빈도가 낮아 감수한다.
 - **[release → main 역머지 누락]** release 브랜치에 핫픽스를 직접 얹으면 그 커밋을 main으로 되돌려 머지해야 한다. 빼먹으면 다음 릴리스에서 수정이 사라진다 — 브랜치 방식을 고른 대가이고, 규칙으로 관리한다(핫픽스도 가급적 main을 거쳐 release로 내린다).
 - **[마이그레이션 동결]** 첫 배포 이후 V1~V17은 수정 불가가 된다. 지금까지는 미배포라 자유롭게 고쳤지만, 배포 순간부터 AGENTS.md의 "머지된 뒤에는 새 버전으로만" 규칙이 실제로 발효한다.
-- **[e2-small 메모리]** 2GB에 JVM·Postgres·Traefik이 함께 산다. 여유는 있지만 무한하지 않아, 첫 배포 후 실사용 메모리를 확인한다.
+- **[t3.small 메모리]** 2GB에 JVM·Postgres·Traefik이 함께 산다. 여유는 있지만 무한하지 않아, 첫 배포 후 실사용 메모리를 확인한다.
 
 ## Migration Plan
 
@@ -113,6 +115,7 @@ git checkout release && git merge main && git push origin release
 
 ## 구현 이탈 (design 대비)
 
+- **클라우드를 GCP → AWS로 변경**: 구현 후 사용자가 이미 쓰는 계정에 맞췄다. **코드는 한 줄도 바뀌지 않았다** — SSH 기반 배포라 워크플로우·compose·Dockerfile 어디에도 클라우드 종속이 없었고, 인스턴스 타입(`e2-small` → `t3.small`)·Elastic IP·보안 그룹·예산 알림 같은 문서 표기만 고쳤다. 초기에 Workload Identity Federation 대신 SSH를 고른 선택이 여기서 값을 했다.
 - **배포 트리거를 태그 → `release` 브랜치로 변경**: 그릴링에서 태그로 확정했으나 구현 중 사용자가 릴리스 브랜치 방식으로 바꿨다(D3에 근거·대가 기록). 이미지 태그가 버전 번호에서 커밋 SHA로 바뀌었다.
 - **CI를 `release` 브랜치에서도 실행**: 브랜치 보호 규칙(0.10)이 "CI 통과"를 요구하려면 그 브랜치에서 검사가 돌아야 한다. `ci.yml`의 push 대상에 `release`를 추가했다.
 - **`index.html` 정리**: 제목이 `frontend`, `lang="en"`이었다. 운영 도메인에 그대로 나가면 브라우저 탭에 "frontend"가 뜨고 한국어 페이지가 영어로 선언된다. 배포로 드러나는 결함이라 함께 고쳤다(제목·언어·description·theme-color).
