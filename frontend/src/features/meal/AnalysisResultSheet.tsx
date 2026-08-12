@@ -56,7 +56,11 @@ export function AnalysisResultSheet({
   const [notice, setNotice] = useState<string | null>(null)
 
   const confidence = analysis.result?.overallConfidence ?? 0
-  const overlay = photoUrl !== null && shouldOverlay(items, confidence)
+  // 오버레이 여부는 분석 결과를 받은 시점에 한 번 정하고 고정한다 —
+  // 매 렌더 재계산하면 "+ 음식 추가"로 box 없는 항목이 들어오는 순간 사진이 배지에서 민무늬로 뒤집힌다
+  const [overlay, setOverlay] = useState(
+    () => photoUrl !== null && shouldOverlay((analysis.result?.items ?? []).map(fromAnalyzed), confidence),
+  )
   const needsReview = confidence < LOW_CONFIDENCE_THRESHOLD
   const errorIndices = items.map((_, i) => i).filter((i) => Object.keys(itemErrors[i] ?? {}).length > 0)
   const correctedCount = items.filter((it) => it.corrected).length
@@ -92,7 +96,10 @@ export function AnalysisResultSheet({
       const started = await reanalyze(analysis.id, note.trim())
       const done = await pollAnalysis(started.id)
       if (done.status === 'COMPLETED' && done.result && done.result.items.length > 0) {
-        setItems(done.result.items.map(fromAnalyzed))
+        const next = done.result.items.map(fromAnalyzed)
+        setItems(next)
+        // 결과가 통째로 바뀌었으니 오버레이 여부도 이 시점 기준으로 다시 확정한다
+        setOverlay(photoUrl !== null && shouldOverlay(next, done.result.overallConfidence))
         setDirty(false)
         setNote('')
         onAnalysisChange(done)

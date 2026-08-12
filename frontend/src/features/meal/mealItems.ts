@@ -1,5 +1,6 @@
 import type { AnalyzedItem, BoundingBox, MealItem, MealItemInput } from '../../api/meal'
 import { toNumber } from '../../api/memberValidation'
+import { round1 } from '../../lib/number'
 
 // 백엔드 MealValidation의 거울
 export const KCAL_MAX = 10_000
@@ -115,7 +116,6 @@ export function totals(items: EditableItem[]): { kcal: number; carbG: number; pr
     { kcal: 0, carbG: 0, proteinG: 0, fatG: 0 },
   )
   // 매크로 합산은 소수 1자리 반올림 — 0.1+0.2 같은 부동소수 잔차를 화면에 노출하지 않는다
-  const round1 = (x: number) => Math.round(x * 10) / 10
   return { kcal: raw.kcal, carbG: round1(raw.carbG), proteinG: round1(raw.proteinG), fatG: round1(raw.fatG) }
 }
 

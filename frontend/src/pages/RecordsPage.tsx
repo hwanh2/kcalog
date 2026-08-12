@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { getMeals, saveMeal } from '../api/meal'
@@ -11,6 +11,7 @@ import { MEAL_TYPE_LABELS, MEAL_TYPE_ORDER, defaultMealType } from '../features/
 import { toSaveItems } from '../features/meal/mealItems'
 import type { EditableItem } from '../features/meal/mealItems'
 import { eatenAtFor, todayServiceDate } from '../lib/date'
+import { round1 } from '../lib/number'
 import { Card } from '../ui/form'
 
 /**
@@ -23,8 +24,17 @@ export function RecordsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const autoCamera = searchParams.get('camera') === '1'
 
-  const [date] = useState(todayServiceDate)
+  const [date, setDate] = useState(todayServiceDate)
   const [mealType, setMealType] = useState<MealType>(() => defaultMealType(new Date()))
+
+  // 화면을 열어둔 채 05시를 넘기면 "오늘"이 바뀐다 — 돌아올 때 다시 읽어 어제 날짜에 담기는 걸 막는다
+  useEffect(() => {
+    const sync = () => {
+      if (document.visibilityState === 'visible') setDate(todayServiceDate())
+    }
+    document.addEventListener('visibilitychange', sync)
+    return () => document.removeEventListener('visibilitychange', sync)
+  }, [])
 
   const { data: meals, isPending } = useQuery({
     queryKey: ['meals', date],
@@ -46,8 +56,11 @@ export function RecordsPage() {
   const totals = sumMeals(selected)
 
   function recordItems(items: EditableItem[], analysisJobId?: number) {
+    // 담는 순간의 "오늘"을 다시 읽는다 — 04:59에 연 화면으로 05:01에 담아도 오늘로 들어가게
+    const target = todayServiceDate()
+    if (target !== date) setDate(target)
     saveMutation.mutate({
-      eatenAt: eatenAtFor(date),
+      eatenAt: eatenAtFor(target),
       mealType,
       source: analysisJobId ? 'AI' : 'MANUAL',
       items: toSaveItems(items),
@@ -116,7 +129,6 @@ function countByMealType(meals: Meal[]): Record<MealType, number> {
 
 /** 끼니 합계 — 그 끼니 기록들의 합(서버가 계산해둔 기록별 합계를 더한다) */
 function sumMeals(meals: Meal[]) {
-  const round1 = (value: number) => Math.round(value * 10) / 10
   return meals.reduce(
     (acc, meal) => ({
       kcal: acc.kcal + meal.totalKcal,

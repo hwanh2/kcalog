@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { deleteMeal, updateMeal } from '../../api/meal'
 import type { Meal } from '../../api/meal'
 import { AuthImage } from '../../ui/AuthImage'
+import { formatQuantity } from '../../lib/number'
 import { MacroChips } from '../../ui/MacroChips'
 import { UtensilsIcon } from '../../ui/icons'
 import { Button } from '../../ui/form'
@@ -128,7 +129,7 @@ function summarize(meal: Meal): string {
   return meal.items
     .map((item) =>
       item.quantity !== null && item.unit !== null
-        ? `${item.name} ${Math.round(item.quantity * 100) / 100}${item.unit}`
+        ? `${item.name} ${formatQuantity(item.quantity)}${item.unit}`
         : item.name,
     )
     .join(' & ')

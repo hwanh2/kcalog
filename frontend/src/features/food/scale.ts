@@ -1,3 +1,5 @@
+import { round1 } from '../../lib/number'
+
 /** 수량에 비례해 조정할 영양값 묶음 */
 export interface Nutrition {
   kcal: number
@@ -22,10 +24,6 @@ export function scaleNutrition(base: Nutrition, baseQuantity: number, quantity: 
     proteinG: round1(base.proteinG * ratio),
     fatG: round1(base.fatG * ratio),
   }
-}
-
-function round1(value: number): number {
-  return Math.round(value * 10) / 10
 }
 
 /**

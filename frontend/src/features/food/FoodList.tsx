@@ -2,7 +2,8 @@ import type { Food } from '../../api/food'
 import { Button } from '../../ui/form'
 import { MacroChips } from '../../ui/MacroChips'
 import { SearchField } from '../../ui/SearchField'
-import { formatQuantity } from './quantity'
+import { formatQuantity } from '../../lib/number'
+import { normalizeName } from './search'
 
 /**
  * 음식 목록 — 한 줄에 하나씩(★ · 이름/기준량 · 탄단지 · kcal · 담기).
@@ -55,7 +56,7 @@ export function FoodList({
       ) : (
         <ul className="mt-3 space-y-2">
           {foods.map((food) => {
-            const saved = food.source === 'FAVORITE' || favoriteNames.has(normalizeKey(food.name))
+            const saved = food.source === 'FAVORITE' || favoriteNames.has(normalizeName(food.name))
             return (
               <li key={`${food.source}-${food.id}`}>
                 <div className="flex items-center gap-3 rounded-tile border border-border bg-surface p-2.5">
@@ -99,9 +100,4 @@ export function FoodList({
       )}
     </>
   )
-}
-
-/** 즐겨찾기 여부 매칭용 키 — 백엔드 정규화 규칙(공백 제거·소문자)의 거울 */
-export function normalizeKey(name: string): string {
-  return name.replace(/\s+/g, '').toLowerCase()
 }

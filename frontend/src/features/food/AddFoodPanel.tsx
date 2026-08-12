@@ -11,9 +11,9 @@ import { fromFood } from '../meal/mealItems'
 import { EmptyFavorites } from './EmptyFavorites'
 import { FoodDraftSheet } from './FoodDraftSheet'
 import type { DraftValues } from './FoodDraftSheet'
-import { FoodList, normalizeKey } from './FoodList'
+import { FoodList } from './FoodList'
 import { FoodQuantitySheet } from './FoodQuantitySheet'
-import { searchFoods } from './search'
+import { normalizeName, searchFoods } from './search'
 
 type Tab = 'catalog' | 'favorite' | 'ai'
 
@@ -68,7 +68,7 @@ export function AddFoodPanel({
 
   const all = foods ?? []
   const favorites = all.filter((food) => food.source === 'FAVORITE')
-  const favoriteNames = new Set(favorites.map((food) => normalizeKey(food.name)))
+  const favoriteNames = new Set(favorites.map((food) => normalizeName(food.name)))
   const visible = searchFoods(tab === 'favorite' ? favorites : all, query)
 
   /** ★ — 이미 있으면 빼고, 없으면 값을 확인하는 저장 시트를 연다 */
@@ -77,7 +77,7 @@ export function AddFoodPanel({
       setStarred(food)
       return
     }
-    const target = favorites.find((f) => normalizeKey(f.name) === normalizeKey(food.name))
+    const target = favorites.find((f) => normalizeName(f.name) === normalizeName(food.name))
     if (target) removeFavoriteMutation.mutate(target.id)
   }
 

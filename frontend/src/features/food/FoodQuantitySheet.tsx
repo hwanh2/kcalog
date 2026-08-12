@@ -5,7 +5,7 @@ import { MEAL_TYPE_LABELS } from '../meal/mealDefaults'
 import { Button } from '../../ui/form'
 import { MacroChips } from '../../ui/MacroChips'
 import { Sheet } from '../../ui/Sheet'
-import { formatQuantity } from './quantity'
+import { formatQuantity, round2 } from '../../lib/number'
 import { scaleNutrition, stepFor } from './scale'
 
 /**
@@ -73,9 +73,4 @@ export function FoodQuantitySheet({
       </Button>
     </Sheet>
   )
-}
-
-/** 0.5 단위까지만 쓰므로 소수 둘째 자리에서 잘라 부동소수 잔차를 없앤다 */
-function round2(value: number): number {
-  return Math.round(value * 100) / 100
 }

@@ -24,6 +24,9 @@ export function todayServiceDate(now: Date = new Date()): string {
  * 그 날짜로 기록할 섭취 시각(ISO).
  * 오늘(서비스 하루 기준)이면 지금 시각 그대로, 과거 날짜면 그 날의 정오로 둔다 —
  * 과거 날짜에 새벽 시각을 쓰면 05시 경계 때문에 하루 전으로 밀려버린다.
+ * <p>
+ * 지금 화면에는 과거 날짜로 담는 경로가 없다(음식기록 탭은 오늘만 다룬다).
+ * 과거 분기는 날짜 선택이 생길 때를 위해 남겨둔 것이며, 그때까지는 테스트로만 지켜진다.
  */
 export function eatenAtFor(date: string, now: Date = new Date()): string {
   if (date === todayServiceDate(now)) {
