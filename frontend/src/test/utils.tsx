@@ -16,6 +16,7 @@ export function makeMember(overrides: Partial<MemberResponse> = {}): MemberRespo
     birthYear: null,
     heightCm: null,
     activityLevel: null,
+    goal: null,
     targetWeightKg: null,
     dailyKcalTarget: null,
     latestWeightKg: null,

@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react'
 import { fieldErrorsFrom } from '../api/client'
 import { getKcalSuggestion, updateMember } from '../api/member'
-import type { ActivityLevel, MemberResponse, UpdateMemberRequest } from '../api/member'
+import type { ActivityLevel, Goal, MemberResponse, UpdateMemberRequest } from '../api/member'
 import { toNumber, validateProfileFields } from '../api/memberValidation'
 import type { FieldErrors } from '../api/memberValidation'
 import { useAuth } from '../auth/useAuth'
 import { Button, Card, Field, Select, TextInput } from '../ui/form'
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
-  LOW: '낮음 (좌식 위주)',
-  MID: '보통 (가벼운 활동)',
-  HIGH: '높음 (활동적)',
+  LOW: '거의 앉아서 생활 (주 0~1회 운동)',
+  MID: '보통 (주 2~3회 운동)',
+  HIGH: '활동적 (주 4~5회 운동)',
+  VERY_HIGH: '매우 활동적 (거의 매일 운동 · 육체노동)',
+}
+
+const GOAL_LABELS: Record<Goal, string> = {
+  CUT: '체중 감량',
+  MAINTAIN: '체중 유지',
+  BULK: '근육 증량',
 }
 
 export function ProfilePage() {
@@ -31,23 +38,23 @@ function ProfileForm({
   const [heightCm, setHeightCm] = useState(String(member.heightCm ?? ''))
   const [targetWeightKg, setTargetWeightKg] = useState(String(member.targetWeightKg ?? ''))
   const [activityLevel, setActivityLevel] = useState<string>(member.activityLevel ?? '')
+  const [goal, setGoal] = useState<string>(member.goal ?? '')
   const [kcalInput, setKcalInput] = useState(String(member.dailyKcalTarget ?? ''))
   const [suggested, setSuggested] = useState<number | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  // 키·목표 체중·활동량이 저장값과 달라지면 새 제안 칼로리를 조회해 보여준다 (확정은 사용자 몫)
+  // 키·활동량·목표 방향이 저장값과 달라지면 새 제안 칼로리를 조회해 보여준다 (확정은 사용자 몫)
   useEffect(() => {
     const parsedHeight = toNumber(heightCm)
-    const parsedTarget = toNumber(targetWeightKg)
     const changed =
       parsedHeight !== member.heightCm ||
-      parsedTarget !== member.targetWeightKg ||
-      activityLevel !== member.activityLevel
+      activityLevel !== member.activityLevel ||
+      goal !== (member.goal ?? '')
     const valid =
-      parsedHeight !== null && parsedTarget !== null && activityLevel !== '' &&
-      Object.keys(validateProfileFields({ heightCm: parsedHeight, targetWeightKg: parsedTarget })).length === 0
+      parsedHeight !== null && activityLevel !== '' && goal !== '' &&
+      Object.keys(validateProfileFields({ heightCm: parsedHeight })).length === 0
     if (!changed || !valid || member.gender === null || member.birthYear === null || member.latestWeightKg === null) {
       setSuggested(null)
       return
@@ -58,8 +65,8 @@ function ProfileForm({
       birthYear: member.birthYear,
       heightCm: parsedHeight,
       weightKg: member.latestWeightKg,
-      targetWeightKg: parsedTarget,
       activityLevel: activityLevel as ActivityLevel,
+      goal: goal as Goal,
     })
       .then((r) => {
         if (!cancelled) setSuggested(r.dailyKcalTarget)
@@ -70,7 +77,7 @@ function ProfileForm({
     return () => {
       cancelled = true
     }
-  }, [heightCm, targetWeightKg, activityLevel, member])
+  }, [heightCm, activityLevel, goal, member])
 
   async function save() {
     setMessage(null)
@@ -88,6 +95,7 @@ function ProfileForm({
     if (parsed.heightCm !== member.heightCm) request.heightCm = parsed.heightCm!
     if (parsed.targetWeightKg !== member.targetWeightKg) request.targetWeightKg = parsed.targetWeightKg!
     if (activityLevel !== member.activityLevel) request.activityLevel = activityLevel as ActivityLevel
+    if (goal !== (member.goal ?? '') && goal !== '') request.goal = goal as Goal
     if (parsed.dailyKcalTarget !== member.dailyKcalTarget) request.dailyKcalTarget = parsed.dailyKcalTarget!
     if (Object.keys(request).length === 0) {
       setMessage('변경된 내용이 없습니다.')
@@ -128,8 +136,19 @@ function ProfileForm({
           <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
         </Field>
 
-        <Field id="targetWeightKg" label="목표 체중 (kg)" error={errors.targetWeightKg}>
+        <Field id="targetWeightKg" label="목표 체중 (kg, 선택)" error={errors.targetWeightKg}>
           <TextInput id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
+        </Field>
+
+        <Field id="goal" label="목표">
+          <Select id="goal" value={goal} onChange={(e) => setGoal(e.target.value)}>
+            <option value="">선택</option>
+            {Object.entries(GOAL_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
         </Field>
 
         <Field id="activityLevel" label="활동량">

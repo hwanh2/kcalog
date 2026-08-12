@@ -24,6 +24,7 @@ const savedMember = makeMember({
   targetWeightKg: 65,
   dailyKcalTarget: 1930,
   latestWeightKg: 70,
+  goal: 'CUT',
 })
 
 function renderProfile(member: MemberResponse = savedMember) {
@@ -44,14 +45,14 @@ describe('ProfilePage', () => {
     expect(screen.getByText('테스터')).toBeInTheDocument()
     expect(screen.getByText('최신 체중: 70 kg')).toBeInTheDocument()
     expect(screen.getByLabelText('키 (cm)')).toHaveValue('175')
-    expect(screen.getByLabelText('목표 체중 (kg)')).toHaveValue('65')
+    expect(screen.getByLabelText('목표 체중 (kg, 선택)')).toHaveValue('65')
     expect(screen.getByLabelText('일일 칼로리 목표')).toHaveValue('1930')
     expect(getKcalSuggestionMock).not.toHaveBeenCalled() // 변경 전엔 재계산 없음
   })
 
   it('활동량을 바꾸면 새 제안 칼로리를 조회해 보여주고, 적용 버튼으로 목표에 반영한다', async () => {
     const user = userEvent.setup()
-    getKcalSuggestionMock.mockResolvedValue({ dailyKcalTarget: 2250 })
+    getKcalSuggestionMock.mockResolvedValue({ maintenanceKcal: 2400, carbTargetG: 220, proteinTargetG: 130, fatTargetG: 40, dailyKcalTarget: 2250 })
     renderProfile()
 
     await user.selectOptions(screen.getByLabelText('활동량'), 'HIGH')
