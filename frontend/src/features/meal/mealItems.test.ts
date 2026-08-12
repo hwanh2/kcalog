@@ -17,6 +17,8 @@ const analyzed = (over: Partial<AnalyzedItem> = {}): AnalyzedItem => ({
   carbG: 30,
   proteinG: 20,
   fatG: 18,
+  amount: 1,
+  unit: '인분',
   box: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
   corrected: false,
   ...over,
@@ -28,6 +30,8 @@ const editable = (over: Partial<EditableItem> = {}): EditableItem => ({
   carbG: '30',
   proteinG: '20',
   fatG: '18',
+  quantity: '1',
+  unit: '인분',
   box: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
   remember: false,
   corrected: false,
@@ -120,7 +124,16 @@ describe('fromAnalyzed / toSaveItems', () => {
     expect(e.box).toEqual({ x: 0.1, y: 0.2, w: 0.3, h: 0.3 })
 
     const saved = toSaveItems([e])
-    expect(saved[0]).toEqual({ name: '김치찌개', kcal: 400, carbG: 30, proteinG: 20, fatG: 18 })
+    // 분석이 낸 섭취량(amount·unit)은 저장 항목의 quantity·unit으로 넘어간다
+    expect(saved[0]).toEqual({
+      name: '김치찌개',
+      kcal: 400,
+      carbG: 30,
+      proteinG: 20,
+      fatG: 18,
+      quantity: 1,
+      unit: '인분',
+    })
     expect(saved[0]).not.toHaveProperty('box')
     expect(saved[0]).not.toHaveProperty('remember') // 기본은 기억 안 함 → 필드 생략
   })
@@ -142,6 +155,8 @@ describe('fromAnalyzed / toSaveItems', () => {
       carbG: '',
       proteinG: '',
       fatG: '',
+      quantity: '',
+      unit: '',
       box: null,
       remember: false,
       corrected: false,

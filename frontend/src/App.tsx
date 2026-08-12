@@ -6,7 +6,6 @@ import { CallbackPage } from './pages/CallbackPage'
 import { CoachPage } from './pages/CoachPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
-import { MealRecordPage } from './pages/MealRecordPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RecordsPage } from './pages/RecordsPage'
@@ -34,7 +33,6 @@ function App() {
                 <Route path="/weight" element={<WeightPage />} />
                 <Route path="/report" element={<ReportPage />} />
                 <Route path="/ai-pt" element={<CoachPage />} />
-                <Route path="/meals/new" element={<MealRecordPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>

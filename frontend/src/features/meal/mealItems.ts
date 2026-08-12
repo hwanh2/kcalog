@@ -1,5 +1,6 @@
 import type { AnalyzedItem, BoundingBox, MealItem, MealItemInput } from '../../api/meal'
 import { toNumber } from '../../api/memberValidation'
+import { round1 } from '../../lib/number'
 
 // 백엔드 MealValidation의 거울
 export const KCAL_MAX = 10_000
@@ -22,6 +23,9 @@ export interface EditableItem {
   carbG: string
   proteinG: string
   fatG: string
+  /** 섭취량 — 없을 수 있다(직접 입력). 영양값은 이미 이 수량이 반영된 총량 */
+  quantity: string
+  unit: string
   box: BoundingBox | null
   remember: boolean
   corrected: boolean
@@ -30,7 +34,18 @@ export interface EditableItem {
 export type ItemErrors = Partial<Record<'name' | 'kcal' | 'carbG' | 'proteinG' | 'fatG', string>>
 
 export function emptyItem(): EditableItem {
-  return { name: '', kcal: '', carbG: '', proteinG: '', fatG: '', box: null, remember: false, corrected: false }
+  return {
+    name: '',
+    kcal: '',
+    carbG: '',
+    proteinG: '',
+    fatG: '',
+    quantity: '',
+    unit: '',
+    box: null,
+    remember: false,
+    corrected: false,
+  }
 }
 
 /** 분석 결과 항목 → 편집 항목 (숫자를 문자열로). corrected는 개인 보정 적용 여부를 이어받는다 */
@@ -41,9 +56,31 @@ export function fromAnalyzed(item: AnalyzedItem): EditableItem {
     carbG: String(item.carbG),
     proteinG: String(item.proteinG),
     fatG: String(item.fatG),
+    quantity: item.amount === null ? '' : String(item.amount),
+    unit: item.unit ?? '',
     box: item.box,
     remember: false,
     corrected: item.corrected,
+  }
+}
+
+/** 카탈로그·즐겨찾기 항목을 선택 수량으로 담을 때의 편집 항목 */
+export function fromFood(
+  food: { name: string; unit: string },
+  quantity: number,
+  nutrition: { kcal: number; carbG: number; proteinG: number; fatG: number },
+): EditableItem {
+  return {
+    name: food.name,
+    kcal: String(nutrition.kcal),
+    carbG: String(nutrition.carbG),
+    proteinG: String(nutrition.proteinG),
+    fatG: String(nutrition.fatG),
+    quantity: String(quantity),
+    unit: food.unit,
+    box: null,
+    remember: false,
+    corrected: false,
   }
 }
 
@@ -55,6 +92,8 @@ export function fromSaved(item: MealItem): EditableItem {
     carbG: String(item.carbG),
     proteinG: String(item.proteinG),
     fatG: String(item.fatG),
+    quantity: item.quantity === null ? '' : String(item.quantity),
+    unit: item.unit ?? '',
     box: null,
     remember: false,
     corrected: false,
@@ -77,7 +116,6 @@ export function totals(items: EditableItem[]): { kcal: number; carbG: number; pr
     { kcal: 0, carbG: 0, proteinG: 0, fatG: 0 },
   )
   // 매크로 합산은 소수 1자리 반올림 — 0.1+0.2 같은 부동소수 잔차를 화면에 노출하지 않는다
-  const round1 = (x: number) => Math.round(x * 10) / 10
   return { kcal: raw.kcal, carbG: round1(raw.carbG), proteinG: round1(raw.proteinG), fatG: round1(raw.fatG) }
 }
 
@@ -150,12 +188,17 @@ export function validateItems(items: EditableItem[]): {
 
 /** 편집 항목 → 저장 요청 항목 (검증 통과 가정, box 제외). remember=true면 개인 보정 학습을 요청 */
 export function toSaveItems(items: EditableItem[]): MealItemInput[] {
-  return items.map((it) => ({
-    name: it.name.trim(),
-    kcal: toNumber(it.kcal)!,
-    carbG: toNumber(it.carbG)!,
-    proteinG: toNumber(it.proteinG)!,
-    fatG: toNumber(it.fatG)!,
-    ...(it.remember ? { remember: true } : {}),
-  }))
+  return items.map((it) => {
+    const quantity = toNumber(it.quantity)
+    const hasAmount = quantity !== null && quantity > 0 && it.unit.trim() !== ''
+    return {
+      name: it.name.trim(),
+      kcal: toNumber(it.kcal)!,
+      carbG: toNumber(it.carbG)!,
+      proteinG: toNumber(it.proteinG)!,
+      fatG: toNumber(it.fatG)!,
+      ...(hasAmount ? { quantity, unit: it.unit.trim() } : {}),
+      ...(it.remember ? { remember: true } : {}),
+    }
+  })
 }

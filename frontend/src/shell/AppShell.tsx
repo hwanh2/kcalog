@@ -40,9 +40,10 @@ export function AppShell() {
         <Outlet />
       </main>
 
-      {pathname !== '/meals/new' && (
+      {/* 등록 경로는 음식기록 탭 하나로 모은다 — FAB은 그 탭으로 보내며 촬영을 바로 연다(design D13) */}
+      {pathname !== '/records' && (
         <Link
-          to="/meals/new"
+          to="/records?camera=1"
           aria-label="식사 촬영"
           className="fixed bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl"
         >
@@ -50,9 +51,10 @@ export function AppShell() {
         </Link>
       )}
 
+      {/* 위쪽 모서리만 둥글게 — 아래는 화면 끝에 붙으므로 라운드가 필요 없다. 경계는 선 대신 그림자로 */}
       <nav
         aria-label="주요 메뉴"
-        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md items-stretch border-t border-border bg-surface/95"
+        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md items-stretch rounded-t-card bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(15,23,42,0.08)]"
       >
         {TABS.map((tab) => {
           const Icon = tab.icon
@@ -90,8 +92,12 @@ function HomeIcon() {
 function MealIcon() {
   return (
     <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 3v7M4 3v4a3 3 0 0 0 6 0V3M7 13v8" />
-      <path d="M17 3c-2 2-2.5 5-2.5 8H17v10" />
+      {/* 포크 — 바깥 두 갈래 + 가운데 갈래가 손잡이로 */}
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      {/* 나이프 — 칼날(닫힘) + 손잡이 */}
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z" />
+      <path d="M21 15v7" />
     </svg>
   )
 }
