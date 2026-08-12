@@ -20,7 +20,6 @@ function shellRoutes() {
           <Route path="/weight" element={<div>체중 화면</div>} />
           <Route path="/report" element={<div>리포트 화면</div>} />
           <Route path="/ai-pt" element={<div>AI PT 화면</div>} />
-          <Route path="/meals/new" element={<div>촬영 화면</div>} />
         </Route>
       </Route>
     </>
@@ -39,10 +38,10 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: /프로필/ })).toBeInTheDocument()
   })
 
-  it('촬영 화면에서는 카메라 FAB을 숨긴다', () => {
-    renderWithAuth(shellRoutes(), { state: completed, path: '/meals/new' })
+  it('음식기록 탭에서는 카메라 FAB을 숨긴다 — 등록은 그 화면 안에서 한다', () => {
+    renderWithAuth(shellRoutes(), { state: completed, path: '/records' })
 
-    expect(screen.getByText('촬영 화면')).toBeInTheDocument()
+    expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '식사 촬영' })).not.toBeInTheDocument()
   })
 
@@ -57,12 +56,15 @@ describe('AppShell', () => {
     expect(screen.getByText('체중 화면')).toBeInTheDocument()
   })
 
-  it('카메라 FAB을 누르면 식사 촬영 흐름으로 진입한다', async () => {
+  it('카메라 FAB을 누르면 음식기록 탭으로 이동한다(촬영 자동 열기 신호와 함께)', async () => {
     const user = userEvent.setup()
     renderWithAuth(shellRoutes(), { state: completed, path: '/weight' })
 
-    await user.click(screen.getByRole('link', { name: '식사 촬영' }))
-    expect(screen.getByText('촬영 화면')).toBeInTheDocument()
+    const fab = screen.getByRole('link', { name: '식사 촬영' })
+    expect(fab).toHaveAttribute('href', '/records?camera=1')
+
+    await user.click(fab)
+    expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
   })
 
   it('AI PT 탭으로 전환된다', async () => {

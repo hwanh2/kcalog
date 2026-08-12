@@ -44,7 +44,7 @@ const lunch: Meal = {
   proteinG: 30,
   fatG: 22,
   imageUrl: null,
-  items: [{ name: '김치찌개', kcal: 650, carbG: 75, proteinG: 30, fatG: 22 }],
+  items: [{ name: '김치찌개', kcal: 650, carbG: 75, proteinG: 30, fatG: 22, quantity: 1, unit: '인분' }],
 }
 
 function renderPage(memberOverrides: Partial<MemberResponse> = {}) {
