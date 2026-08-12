@@ -1,6 +1,7 @@
 package com.kcalog.domain.member.dto;
 
 import com.kcalog.domain.member.entity.ActivityLevel;
+import com.kcalog.domain.member.entity.Goal;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -20,6 +21,7 @@ public record UpdateMemberRequest(
         @DecimalMin(HEIGHT_CM_MIN) @DecimalMax(HEIGHT_CM_MAX) BigDecimal heightCm,
         @DecimalMin(WEIGHT_KG_MIN) @DecimalMax(WEIGHT_KG_MAX) BigDecimal targetWeightKg,
         ActivityLevel activityLevel,
+        Goal goal,
         @Min(DAILY_KCAL_MIN) @Max(DAILY_KCAL_MAX) Integer dailyKcalTarget
 ) {
 }

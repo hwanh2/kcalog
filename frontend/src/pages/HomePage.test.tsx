@@ -7,6 +7,7 @@ import type { Dashboard } from '../api/dashboard'
 import { getMeals } from '../api/meal'
 import type { Meal } from '../api/meal'
 import { getWeights } from '../api/weight'
+import type { MemberResponse } from '../api/member'
 import { getBriefing } from '../api/coach'
 import { AuthContext } from '../auth/context'
 import { makeMember } from '../test/utils'
@@ -46,12 +47,12 @@ const lunch: Meal = {
   items: [{ name: '김치찌개', kcal: 650, carbG: 75, proteinG: 30, fatG: 22 }],
 }
 
-function renderPage() {
+function renderPage(memberOverrides: Partial<MemberResponse> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <AuthContext
       value={{
-        state: { status: 'authed', member: makeMember({ nickname: '김지훈' }) },
+        state: { status: 'authed', member: makeMember({ nickname: '김지훈', ...memberOverrides }) },
         reloadMember: vi.fn(),
         signOut: vi.fn(),
       }}
@@ -127,7 +128,7 @@ describe('HomePage 대시보드', () => {
     expect(link).toHaveAttribute('href', '/records')
   })
 
-  it('체중 미니카드 — 최근 체중·변화량', async () => {
+  it('체중 추세 카드 — 최근 체중·7일 변화·목표까지 남은 양·그래프', async () => {
     getWeightsMock.mockResolvedValue([
       { logDate: '2026-08-01', weightKg: 68.7 },
       { logDate: '2026-08-08', weightKg: 68.4 },
@@ -135,7 +136,16 @@ describe('HomePage 대시보드', () => {
     renderPage()
 
     expect(await screen.findByText('68.4')).toBeInTheDocument()
-    expect(screen.getByText('-0.3kg')).toBeInTheDocument()
+    expect(screen.getByText('−0.3kg (7일)')).toBeInTheDocument()
+    // 목표 65kg(makeMember 기본 픽스처는 null이라 아래 테스트에서 별도 확인)
+    expect(screen.getByRole('img', { name: '체중 추세 그래프' })).toBeInTheDocument()
+  })
+
+  it('체중 추세 카드 — 목표 체중이 있으면 남은 양을 보여준다', async () => {
+    getWeightsMock.mockResolvedValue([{ logDate: '2026-08-08', weightKg: 68.5 }])
+    renderPage({ targetWeightKg: 65 })
+
+    expect(await screen.findByText('목표까지 3.5kg')).toBeInTheDocument()
   })
 
   it('날짜 선택 — 캘린더에서 날짜를 고르면 그 날짜로 다시 조회', async () => {

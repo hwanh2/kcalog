@@ -1,8 +1,7 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../api/client'
 import { completeOnboarding, getKcalSuggestion } from '../api/member'
 import { makeMember, renderWithAuth } from '../test/utils'
 import { OnboardingPage } from './OnboardingPage'
@@ -15,6 +14,14 @@ vi.mock('../api/member', () => ({
 const getKcalSuggestionMock = vi.mocked(getKcalSuggestion)
 const completeOnboardingMock = vi.mocked(completeOnboarding)
 
+const SUGGESTION = {
+  maintenanceKcal: 2430,
+  dailyKcalTarget: 1930,
+  carbTargetG: 241,
+  proteinTargetG: 145,
+  fatTargetG: 43,
+}
+
 function renderOnboarding() {
   return renderWithAuth(<Route path="/onboarding" element={<OnboardingPage />} />, {
     state: { status: 'authed', member: makeMember({ onboardingCompleted: false }) },
@@ -22,88 +29,130 @@ function renderOnboarding() {
   })
 }
 
-async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.selectOptions(screen.getByLabelText('성별'), 'MALE')
-  await user.type(screen.getByLabelText('출생연도'), '1990')
-  await user.type(screen.getByLabelText('키 (cm)'), '175')
-  await user.type(screen.getByLabelText('현재 체중 (kg)'), '70')
-  await user.type(screen.getByLabelText('목표 체중 (kg)'), '65')
-  await user.selectOptions(screen.getByLabelText('활동량'), 'MID')
+const next = () => screen.getByRole('button', { name: '다음' })
+
+/** 1~3단계를 기본값으로 통과해 목표 선택(4단계)까지 간다 */
+async function goToGoalStep(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /남성/ }))
+  await user.click(next())
+  await user.click(next()) // 키·몸무게·나이는 기본값 사용
+  await user.click(screen.getByRole('button', { name: /보통/ }))
+  await user.click(next())
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  getKcalSuggestionMock.mockResolvedValue(SUGGESTION)
+  completeOnboardingMock.mockResolvedValue(makeMember({ onboardingCompleted: true }))
 })
 
-describe('OnboardingPage', () => {
-  it('유효 범위 밖 입력이면 항목별 오류를 보여주고 제안을 조회하지 않는다', async () => {
+describe('OnboardingPage 위저드', () => {
+  it('성별을 고르기 전에는 다음으로 넘어갈 수 없다', async () => {
     const user = userEvent.setup()
     renderOnboarding()
 
-    await user.selectOptions(screen.getByLabelText('성별'), 'MALE')
-    await user.type(screen.getByLabelText('출생연도'), '1990')
-    await user.type(screen.getByLabelText('키 (cm)'), '90') // 범위 밖
-    await user.type(screen.getByLabelText('현재 체중 (kg)'), '70')
-    await user.type(screen.getByLabelText('목표 체중 (kg)'), '65')
-    await user.selectOptions(screen.getByLabelText('활동량'), 'MID')
-    await user.click(screen.getByRole('button', { name: '다음' }))
+    expect(screen.getByText('성별을 알려주세요')).toBeInTheDocument()
+    expect(next()).toBeDisabled()
 
+    await user.click(screen.getByRole('button', { name: /남성/ }))
+    expect(next()).toBeEnabled()
+  })
+
+  it('단계를 넘기면 진행 표시가 갱신되고 뒤로 가서 수정할 수 있다', async () => {
+    const user = userEvent.setup()
+    renderOnboarding()
+
+    await user.click(screen.getByRole('button', { name: /남성/ }))
+    await user.click(next())
+    expect(screen.getByText('키와 몸무게, 나이')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
+
+    await user.click(screen.getByRole('button', { name: '이전 단계' }))
+    expect(screen.getByText('성별을 알려주세요')).toBeInTheDocument()
+  })
+
+  it('범위 밖 키는 그 자리(2단계)에서 오류를 보여주고 다음 단계로 넘기지 않는다', async () => {
+    const user = userEvent.setup()
+    renderOnboarding()
+
+    await user.click(screen.getByRole('button', { name: /남성/ }))
+    await user.click(next())
+    await user.clear(screen.getByLabelText('키'))
+    await user.type(screen.getByLabelText('키'), '90') // 범위 밖
+    await user.click(next())
+
+    // 값이 보이는 화면에서 바로 알려주고, 단계는 그대로 머문다
     expect(screen.getByText('키는 100~230cm 범위여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('키와 몸무게, 나이')).toBeInTheDocument()
     expect(getKcalSuggestionMock).not.toHaveBeenCalled()
+
+    // 고치면 진행된다
+    await user.clear(screen.getByLabelText('키'))
+    await user.type(screen.getByLabelText('키'), '175')
+    await user.click(next())
+    expect(screen.getByText('평소 활동량은 어느 정도인가요?')).toBeInTheDocument()
   })
 
-  it('정상 입력 후 다음 — 제안 칼로리를 조회해 표시하고 입력값으로 채운다', async () => {
+  it('목표 체중 없이 방향만으로 제안을 받아 완료 화면을 보여준다', async () => {
     const user = userEvent.setup()
-    getKcalSuggestionMock.mockResolvedValue({ dailyKcalTarget: 1930 })
     renderOnboarding()
 
-    await fillValidForm(user)
-    await user.click(screen.getByRole('button', { name: '다음' }))
+    await goToGoalStep(user)
+    await user.click(screen.getByRole('button', { name: /체중 유지/ }))
+    await user.click(next())
 
-    expect(await screen.findByText('1930 kcal')).toBeInTheDocument()
-    expect(screen.getByLabelText('일일 칼로리 목표')).toHaveValue('1930')
-    expect(getKcalSuggestionMock).toHaveBeenCalledWith({
-      gender: 'MALE',
-      birthYear: 1990,
-      heightCm: 175,
-      weightKg: 70,
-      targetWeightKg: 65,
-      activityLevel: 'MID',
-    })
+    await waitFor(() =>
+      expect(getKcalSuggestionMock).toHaveBeenCalledWith(
+        expect.objectContaining({ gender: 'MALE', activityLevel: 'MID', goal: 'MAINTAIN' }),
+      ),
+    )
+    // 목표 체중은 보내지 않는다
+    expect(getKcalSuggestionMock.mock.calls[0][0]).not.toHaveProperty('targetWeightKg')
+
+    expect(await screen.findByText('2,430')).toBeInTheDocument() // 유지칼로리
+    expect(screen.getByText('241g')).toBeInTheDocument() // 탄수 목표
+    expect(screen.getByRole('button', { name: '홈으로 시작하기' })).toBeInTheDocument()
   })
 
-  it('제안값을 수정해 제출하면 수정한 값으로 저장하고 회원 상태를 갱신한다', async () => {
+  it('감량을 고르면 목표 체중(선택) 입력이 나타나고, 넣으면 제출에 포함된다', async () => {
     const user = userEvent.setup()
-    getKcalSuggestionMock.mockResolvedValue({ dailyKcalTarget: 1930 })
-    completeOnboardingMock.mockResolvedValue(makeMember({ onboardingCompleted: true }))
     const { reloadMember } = renderOnboarding()
 
-    await fillValidForm(user)
-    await user.click(screen.getByRole('button', { name: '다음' }))
-    const kcalField = await screen.findByLabelText('일일 칼로리 목표')
-    await user.clear(kcalField)
-    await user.type(kcalField, '2000')
-    await user.click(screen.getByRole('button', { name: '시작하기' }))
+    await goToGoalStep(user)
+    expect(screen.queryByLabelText(/목표 체중/)).not.toBeInTheDocument()
 
-    expect(completeOnboardingMock).toHaveBeenCalledWith(
-      expect.objectContaining({ dailyKcalTarget: 2000 }),
+    await user.click(screen.getByRole('button', { name: /체중 감량/ }))
+    await user.type(screen.getByLabelText(/목표 체중/), '65')
+    await user.click(next())
+
+    await screen.findByRole('button', { name: '홈으로 시작하기' })
+    await user.click(screen.getByRole('button', { name: '홈으로 시작하기' }))
+
+    await waitFor(() =>
+      expect(completeOnboardingMock).toHaveBeenCalledWith(
+        expect.objectContaining({ goal: 'CUT', targetWeightKg: 65, dailyKcalTarget: 1930 }),
+      ),
     )
-    expect(reloadMember).toHaveBeenCalled()
+    await waitFor(() => expect(reloadMember).toHaveBeenCalled())
   })
 
-  it('서버 검증 400이면 항목별 오류를 표시하고 입력 스텝으로 돌아간다', async () => {
+  it('목표 섭취량을 수정해 제출하면 수정값이 저장된다', async () => {
     const user = userEvent.setup()
-    getKcalSuggestionMock.mockResolvedValue({ dailyKcalTarget: 1930 })
-    completeOnboardingMock.mockRejectedValue(
-      new ApiError(400, { errors: { weightKg: '체중은 30~250 범위여야 합니다' } }),
-    )
     renderOnboarding()
 
-    await fillValidForm(user)
-    await user.click(screen.getByRole('button', { name: '다음' }))
-    await user.click(await screen.findByRole('button', { name: '시작하기' }))
+    await goToGoalStep(user)
+    await user.click(screen.getByRole('button', { name: /체중 유지/ }))
+    await user.click(next())
 
-    expect(await screen.findByText('체중은 30~250 범위여야 합니다')).toBeInTheDocument()
-    expect(screen.getByLabelText('키 (cm)')).toBeInTheDocument() // 입력 스텝 복귀
+    const kcal = await screen.findByLabelText(/목표 섭취량/)
+    await user.clear(kcal)
+    await user.type(kcal, '2000')
+    await user.click(screen.getByRole('button', { name: '홈으로 시작하기' }))
+
+    await waitFor(() =>
+      expect(completeOnboardingMock).toHaveBeenCalledWith(
+        expect.objectContaining({ dailyKcalTarget: 2000 }),
+      ),
+    )
   })
 })

@@ -9,6 +9,7 @@ import com.kcalog.domain.meal.entity.MealType;
 import com.kcalog.domain.meal.repository.MealRepository;
 import com.kcalog.domain.member.entity.ActivityLevel;
 import com.kcalog.domain.member.entity.Gender;
+import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.entity.Provider;
 import com.kcalog.domain.member.repository.MemberRepository;
@@ -53,7 +54,7 @@ class DashboardIntegrationTest {
     void setUp() {
         member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-dash", "d@kakao.com", "대시"));
         member.completeOnboarding(Gender.MALE, 1995, new BigDecimal("175.0"), ActivityLevel.MID,
-                new BigDecimal("70.0"), 2000);
+                Goal.MAINTAIN, new BigDecimal("70.0"), 2000);
         memberRepository.save(member);
         bearer = "Bearer " + jwtService.issueAccessToken(member.getId());
     }

@@ -13,6 +13,7 @@ import com.kcalog.domain.meal.repository.MealRepository;
 import com.kcalog.domain.meal.service.OpenAiClient;
 import com.kcalog.domain.member.entity.ActivityLevel;
 import com.kcalog.domain.member.entity.Gender;
+import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.entity.Provider;
 import com.kcalog.domain.member.repository.MemberRepository;
@@ -87,7 +88,7 @@ class CoachingIntegrationTest {
     void setUp() {
         member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-coach", "coach@kakao.com", "코치테스트"));
         member.completeOnboarding(Gender.MALE, 1996, new BigDecimal("175"),
-                ActivityLevel.MID, new BigDecimal("65"), 1900);
+                ActivityLevel.MID, Goal.CUT, new BigDecimal("65"), 1900);
         memberRepository.save(member);
         bearer = "Bearer " + jwtService.issueAccessToken(member.getId());
 

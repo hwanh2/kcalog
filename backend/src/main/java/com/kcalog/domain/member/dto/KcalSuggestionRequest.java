@@ -2,6 +2,7 @@ package com.kcalog.domain.member.dto;
 
 import com.kcalog.domain.member.entity.ActivityLevel;
 import com.kcalog.domain.member.entity.Gender;
+import com.kcalog.domain.member.entity.Goal;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -21,7 +22,7 @@ public record KcalSuggestionRequest(
         @NotNull @Min(BIRTH_YEAR_MIN) Integer birthYear,
         @NotNull @DecimalMin(HEIGHT_CM_MIN) @DecimalMax(HEIGHT_CM_MAX) BigDecimal heightCm,
         @NotNull @DecimalMin(WEIGHT_KG_MIN) @DecimalMax(WEIGHT_KG_MAX) BigDecimal weightKg,
-        @NotNull @DecimalMin(WEIGHT_KG_MIN) @DecimalMax(WEIGHT_KG_MAX) BigDecimal targetWeightKg,
-        @NotNull ActivityLevel activityLevel
+        @NotNull ActivityLevel activityLevel,
+        @NotNull Goal goal
 ) {
 }

@@ -1,5 +1,6 @@
 import type { WeightPoint } from '../../api/weight'
 import { koreanWeekday } from './estimator'
+import { trendScale } from './trendScale'
 
 /** 체중 추세선 — 원시 점(옅게) + EMA 추세선(진하게) + 축 라벨·범례. 경량 인라인 SVG. points 오름차순 가정 */
 export function WeightTrend({ points }: { points: WeightPoint[] }) {
@@ -11,12 +12,8 @@ export function WeightTrend({ points }: { points: WeightPoint[] }) {
   const H = 150
   const pad = 20
   const values = points.flatMap((p) => [p.weightKg, p.trendKg])
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const span = max - min || 1
   const n = points.length
-  const x = (i: number) => (n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad))
-  const y = (v: number) => H - pad - ((v - min) / span) * (H - 2 * pad)
+  const { x, y } = trendScale({ values, width: W, height: H, padX: pad, padY: pad })
   const trendLine = points.map((p, i) => `${x(i)},${y(p.trendKg)}`).join(' ')
   const latest = points[n - 1]
 

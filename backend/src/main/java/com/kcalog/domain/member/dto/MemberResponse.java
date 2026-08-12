@@ -2,6 +2,7 @@ package com.kcalog.domain.member.dto;
 
 import com.kcalog.domain.member.entity.ActivityLevel;
 import com.kcalog.domain.member.entity.Gender;
+import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.entity.Member;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ public record MemberResponse(
         Integer birthYear,
         BigDecimal heightCm,
         ActivityLevel activityLevel,
+        Goal goal,
         BigDecimal targetWeightKg,
         Integer dailyKcalTarget,
         BigDecimal latestWeightKg,
@@ -28,6 +30,7 @@ public record MemberResponse(
                 member.getBirthYear(),
                 member.getHeightCm(),
                 member.getActivityLevel(),
+                member.getGoal(),
                 member.getTargetWeightKg(),
                 member.getDailyKcalTarget(),
                 latestWeightKg,

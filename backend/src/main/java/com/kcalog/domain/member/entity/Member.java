@@ -52,7 +52,13 @@ public class Member extends BaseEntity {
     @Column(length = 10)
     private ActivityLevel activityLevel;
 
+    /** 선택 항목 — 감량·증량을 고른 회원만 입력한다(체중 탭 목표 달성 예상용) */
     private BigDecimal targetWeightKg;
+
+    /** 목표 방향 — 목표 체중이 없어도 목표 칼로리를 낼 수 있게 하는 기준 */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Goal goal;
 
     private Integer dailyKcalTarget;
 
@@ -65,25 +71,29 @@ public class Member extends BaseEntity {
         return member;
     }
 
-    /** 온보딩 제출: 프로필과 확정된 일일 칼로리 목표를 저장한다 */
-    public void completeOnboarding(Gender gender, int birthYear, BigDecimal heightCm,
-                                   ActivityLevel activityLevel, BigDecimal targetWeightKg, int dailyKcalTarget) {
+    /** 온보딩 제출: 프로필과 목표 방향, 확정된 일일 칼로리 목표를 저장한다. 목표 체중은 선택(null 허용) */
+    public void completeOnboarding(Gender gender, int birthYear, BigDecimal heightCm, ActivityLevel activityLevel,
+                                   Goal goal, BigDecimal targetWeightKg, int dailyKcalTarget) {
         this.gender = gender;
         this.birthYear = birthYear;
         this.heightCm = heightCm;
         this.activityLevel = activityLevel;
+        this.goal = goal;
         this.targetWeightKg = targetWeightKg;
         this.dailyKcalTarget = dailyKcalTarget;
     }
 
     /** 프로필 수정: null이 아닌 필드만 반영한다 */
     public void updateProfile(BigDecimal heightCm, ActivityLevel activityLevel,
-                              BigDecimal targetWeightKg, Integer dailyKcalTarget) {
+                              Goal goal, BigDecimal targetWeightKg, Integer dailyKcalTarget) {
         if (heightCm != null) {
             this.heightCm = heightCm;
         }
         if (activityLevel != null) {
             this.activityLevel = activityLevel;
+        }
+        if (goal != null) {
+            this.goal = goal;
         }
         if (targetWeightKg != null) {
             this.targetWeightKg = targetWeightKg;

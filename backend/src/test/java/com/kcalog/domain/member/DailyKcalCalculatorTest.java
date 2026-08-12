@@ -2,6 +2,7 @@ package com.kcalog.domain.member;
 
 import com.kcalog.domain.member.entity.ActivityLevel;
 import com.kcalog.domain.member.entity.Gender;
+import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.service.DailyKcalCalculator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,9 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * design D3 스펙 검증 (TDD):
- * BMR(Mifflin-St Jeor) × 활동계수(LOW 1.2 / MID 1.5 / HIGH 1.75)
- * + 목표 조정(감량 −500 / 증량 +300 / 유지 0), 하한선 클램프(남 1500 / 여 1200), 10 단위 반올림.
- * 나이 = 현재연도 − 출생연도.
+ * BMR(Mifflin-St Jeor) × 활동계수(LOW 1.2 / MID 1.5 / HIGH 1.75 / VERY_HIGH 1.9)
+ * + 목표 방향 조정(감량 −500 / 증량 +300 / 유지 0), 하한선 클램프(남 1500 / 여 1200), 10 단위 반올림.
+ * 나이 = 현재연도 − 출생연도. 목표 체중 없이 방향만으로 계산한다.
  */
 class DailyKcalCalculatorTest {
 
@@ -25,43 +26,69 @@ class DailyKcalCalculatorTest {
     private final DailyKcalCalculator calculator =
             new DailyKcalCalculator(Clock.fixed(Instant.parse("2026-07-23T00:00:00Z"), ZoneOffset.UTC));
 
-    private int suggest(Gender gender, int birthYear, String height, String weight, String target, ActivityLevel level) {
-        return calculator.suggest(gender, birthYear,
-                new BigDecimal(height), new BigDecimal(weight), new BigDecimal(target), level);
+    private int suggest(Gender gender, int birthYear, String height, String weight, Goal goal, ActivityLevel level) {
+        return calculator.suggest(gender, birthYear, new BigDecimal(height), new BigDecimal(weight), goal, level);
     }
 
     @Test
     @DisplayName("감량 목표(남) — TDEE에서 500을 빼고 10 단위로 반올림한다")
     void maleCut() {
         // BMR = 10×70 + 6.25×175 − 5×36 + 5 = 1618.75, TDEE(MID) = 2428.125, −500 = 1928.125 → 1930
-        assertThat(suggest(Gender.MALE, 1990, "175", "70", "65", ActivityLevel.MID)).isEqualTo(1930);
+        assertThat(suggest(Gender.MALE, 1990, "175", "70", Goal.CUT, ActivityLevel.MID)).isEqualTo(1930);
     }
 
     @Test
     @DisplayName("증량 목표(여) — TDEE에 300을 더한다")
     void femaleBulk() {
         // BMR = 10×50 + 6.25×162 − 5×31 − 161 = 1196.5, TDEE(LOW) = 1435.8, +300 = 1735.8 → 1740
-        assertThat(suggest(Gender.FEMALE, 1995, "162", "50", "55", ActivityLevel.LOW)).isEqualTo(1740);
+        assertThat(suggest(Gender.FEMALE, 1995, "162", "50", Goal.BULK, ActivityLevel.LOW)).isEqualTo(1740);
     }
 
     @Test
     @DisplayName("유지 목표 — 조정 없이 TDEE를 반올림한다")
     void maintain() {
         // BMR = 1618.75, TDEE(HIGH) = 2832.8125 → 2830
-        assertThat(suggest(Gender.MALE, 1990, "175", "70", "70", ActivityLevel.HIGH)).isEqualTo(2830);
+        assertThat(suggest(Gender.MALE, 1990, "175", "70", Goal.MAINTAIN, ActivityLevel.HIGH)).isEqualTo(2830);
+    }
+
+    @Test
+    @DisplayName("매우 활동적 — 계수 1.9를 적용한다")
+    void veryHighActivity() {
+        // BMR = 1618.75, TDEE(VERY_HIGH) = 3075.625 → 3080
+        assertThat(suggest(Gender.MALE, 1990, "175", "70", Goal.MAINTAIN, ActivityLevel.VERY_HIGH)).isEqualTo(3080);
     }
 
     @Test
     @DisplayName("하한선 클램프(여) — 계산값이 1200 미만이면 1200으로 올린다")
     void femaleFloor() {
         // BMR = 450 + 937.5 − 330 − 161 = 896.5, TDEE(LOW) = 1075.8, −500 = 575.8 → clamp 1200
-        assertThat(suggest(Gender.FEMALE, 1960, "150", "45", "40", ActivityLevel.LOW)).isEqualTo(1200);
+        assertThat(suggest(Gender.FEMALE, 1960, "150", "45", Goal.CUT, ActivityLevel.LOW)).isEqualTo(1200);
     }
 
     @Test
     @DisplayName("하한선 클램프(남) — 계산값이 1500 미만이면 1500으로 올린다")
     void maleFloor() {
         // BMR = 500 + 1000 − 380 + 5 = 1125, TDEE(LOW) = 1350, −500 = 850 → clamp 1500
-        assertThat(suggest(Gender.MALE, 1950, "160", "50", "45", ActivityLevel.LOW)).isEqualTo(1500);
+        assertThat(suggest(Gender.MALE, 1950, "160", "50", Goal.CUT, ActivityLevel.LOW)).isEqualTo(1500);
+    }
+
+    @Test
+    @DisplayName("목표 방향은 목표 체중 없이도 목표를 낸다 — 유지칼로리에서 방향만큼만 조정")
+    void goalWithoutTargetWeight() {
+        double maintenance = calculator.maintenance(Gender.MALE, 1990,
+                new BigDecimal("175"), new BigDecimal("70"), ActivityLevel.MID);
+        assertThat(maintenance).isEqualTo(2428.125);
+        assertThat(calculator.toTarget(maintenance, Gender.MALE, Goal.CUT)).isEqualTo(1930);
+        assertThat(calculator.toTarget(maintenance, Gender.MALE, Goal.MAINTAIN)).isEqualTo(2430);
+        assertThat(calculator.toTarget(maintenance, Gender.MALE, Goal.BULK)).isEqualTo(2730);
+    }
+
+    @Test
+    @DisplayName("방향이 없으면 목표 체중과 현재 체중 비교로 폴백한다")
+    void goalFromWeights() {
+        assertThat(Goal.fromWeights(new BigDecimal("70"), new BigDecimal("65"))).isEqualTo(Goal.CUT);
+        assertThat(Goal.fromWeights(new BigDecimal("70"), new BigDecimal("75"))).isEqualTo(Goal.BULK);
+        assertThat(Goal.fromWeights(new BigDecimal("70"), new BigDecimal("70"))).isEqualTo(Goal.MAINTAIN);
+        assertThat(Goal.fromWeights(new BigDecimal("70"), null)).isEqualTo(Goal.MAINTAIN);
     }
 }

@@ -1,90 +1,106 @@
 import { useState } from 'react'
 import { fieldErrorsFrom } from '../api/client'
 import { completeOnboarding, getKcalSuggestion } from '../api/member'
-import type { ActivityLevel, Gender, KcalSuggestionParams } from '../api/member'
-import { toNumber, validateProfileFields } from '../api/memberValidation'
+import type { ActivityLevel, Gender, Goal, KcalSuggestion } from '../api/member'
+import { validateProfileFields } from '../api/memberValidation'
 import type { FieldErrors } from '../api/memberValidation'
 import { useAuth } from '../auth/useAuth'
-import { Button, Card, Field, Select, TextInput } from '../ui/form'
+import { OptionCard, SliderField, WizardShell } from '../features/onboarding/WizardShell'
+import { ACTIVITY_OPTIONS, GOAL_OPTIONS } from '../features/onboarding/options'
+
+const TOTAL_STEPS = 5
+const CURRENT_YEAR = new Date().getFullYear()
 
 /**
- * 온보딩 2스텝: ① 프로필 입력 → ② 제안 칼로리 확인·수정 → 제출.
- * 제출 성공 시 reloadMember로 상태가 갱신되면 가드가 홈으로 보낸다 (직접 이동 없음).
+ * 온보딩 5단계 위저드: 성별 → 키·몸무게·나이 → 활동량 → 목표 → 완료 플랜.
+ * 목표 체중은 감량·증량을 고른 경우에만 선택 입력. 제출 성공 시 reloadMember로 가드가 홈으로 보낸다.
  */
 export function OnboardingPage() {
   const { reloadMember } = useAuth()
 
-  const [step, setStep] = useState<'input' | 'confirm'>('input')
-  const [gender, setGender] = useState('')
-  const [birthYear, setBirthYear] = useState('')
-  const [heightCm, setHeightCm] = useState('')
-  const [weightKg, setWeightKg] = useState('')
+  const [step, setStep] = useState(1)
+  const [gender, setGender] = useState<Gender | null>(null)
+  const [heightCm, setHeightCm] = useState(170)
+  const [weightKg, setWeightKg] = useState(65)
+  const [age, setAge] = useState(30)
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(null)
+  const [goal, setGoal] = useState<Goal | null>(null)
   const [targetWeightKg, setTargetWeightKg] = useState('')
-  const [activityLevel, setActivityLevel] = useState('')
+
+  const [suggestion, setSuggestion] = useState<KcalSuggestion | null>(null)
   const [kcalInput, setKcalInput] = useState('')
-  const [suggested, setSuggested] = useState<number | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  function parseParams(): { params: KcalSuggestionParams | null; errors: FieldErrors } {
-    const parsed = {
-      birthYear: toNumber(birthYear),
-      heightCm: toNumber(heightCm),
-      weightKg: toNumber(weightKg),
-      targetWeightKg: toNumber(targetWeightKg),
-    }
-    const fieldErrors = validateProfileFields(parsed)
-    if (!gender) fieldErrors.gender = '성별을 선택해주세요'
-    if (!activityLevel) fieldErrors.activityLevel = '활동량을 선택해주세요'
-    if (Object.keys(fieldErrors).length > 0) return { params: null, errors: fieldErrors }
-    return {
-      params: {
-        gender: gender as Gender,
-        birthYear: parsed.birthYear!,
-        heightCm: parsed.heightCm!,
-        weightKg: parsed.weightKg!,
-        targetWeightKg: parsed.targetWeightKg!,
-        activityLevel: activityLevel as ActivityLevel,
-      },
-      errors: {},
-    }
+  const birthYear = CURRENT_YEAR - age
+
+  /**
+   * 2단계 확정 — 값이 보이는 이 화면에서 범위를 검증한다.
+   * 뒤 단계로 미루면 오류 문구가 없는 화면에서 '다음'이 죽은 것처럼 막힌다.
+   */
+  function confirmBody() {
+    const fieldErrors = validateProfileFields({ birthYear, heightCm, weightKg })
+    setErrors(fieldErrors)
+    if (Object.keys(fieldErrors).length > 0) return
+    setStep(3)
   }
 
-  async function goConfirm() {
+  /** 4단계 → 5단계로 넘어갈 때 제안 칼로리를 받아온다 */
+  async function loadSuggestion() {
+    if (!gender || !activityLevel || !goal) return
     setGlobalError(null)
-    const { params, errors: fieldErrors } = parseParams()
+    const fieldErrors = validateProfileFields({ birthYear, heightCm, weightKg })
+    if (targetWeightKg.trim() !== '') {
+      Object.assign(fieldErrors, validateProfileFields({ targetWeightKg: Number(targetWeightKg) }))
+    }
     setErrors(fieldErrors)
-    if (!params) return
+    if (Object.keys(fieldErrors).length > 0) {
+      // 신체 정보 오류는 2단계에만 문구가 있으므로 그 화면으로 되돌려 보여준다
+      if (fieldErrors.heightCm || fieldErrors.weightKg || fieldErrors.birthYear) {
+        setStep(2)
+      }
+      return
+    }
+
     setBusy(true)
     try {
-      const { dailyKcalTarget } = await getKcalSuggestion(params)
-      setSuggested(dailyKcalTarget)
-      setKcalInput(String(dailyKcalTarget))
-      setStep('confirm')
+      const result = await getKcalSuggestion({ gender, birthYear, heightCm, weightKg, activityLevel, goal })
+      setSuggestion(result)
+      setKcalInput(String(result.dailyKcalTarget))
+      setStep(5)
     } catch {
-      setGlobalError('제안 칼로리를 불러오지 못했어요. 잠시 후 다시 시도해주세요.')
+      setGlobalError('계산에 실패했어요. 잠시 후 다시 시도해주세요.')
     } finally {
       setBusy(false)
     }
   }
 
   async function submit() {
+    if (!gender || !activityLevel || !goal) return
     setGlobalError(null)
-    const { params } = parseParams()
-    const kcal = toNumber(kcalInput)
-    const kcalErrors = validateProfileFields({ dailyKcalTarget: kcal })
-    setErrors(kcalErrors)
-    if (!params || Object.keys(kcalErrors).length > 0) return
+    const target = Number(kcalInput)
+    const fieldErrors = validateProfileFields({ dailyKcalTarget: Number.isFinite(target) ? target : null })
+    setErrors(fieldErrors)
+    if (Object.keys(fieldErrors).length > 0) return
+
     setBusy(true)
     try {
-      await completeOnboarding({ ...params, dailyKcalTarget: kcal! })
-      await reloadMember() // onboardingCompleted=true → 가드가 홈으로 이동시킨다
+      await completeOnboarding({
+        gender,
+        birthYear,
+        heightCm,
+        weightKg,
+        activityLevel,
+        goal,
+        ...(targetWeightKg.trim() !== '' ? { targetWeightKg: Number(targetWeightKg) } : {}),
+        dailyKcalTarget: target,
+      })
+      await reloadMember()
     } catch (error) {
-      const serverErrors = fieldErrorsFrom(error)
-      if (serverErrors) {
-        setErrors(serverErrors)
-        setStep('input')
+      const fields = fieldErrorsFrom(error)
+      if (fields) {
+        setErrors(fields)
       } else {
         setGlobalError('저장에 실패했어요. 잠시 후 다시 시도해주세요.')
       }
@@ -92,79 +108,199 @@ export function OnboardingPage() {
     }
   }
 
-  return (
-    <main className="mx-auto max-w-md px-4 py-6">
-      <h1 className="text-xl font-semibold">온보딩</h1>
-      {globalError && (
-        <p role="alert" className="mt-2 text-sm text-danger">
-          {globalError}
-        </p>
-      )}
+  const notice = globalError && (
+    <p role="alert" className="mb-3 text-sm text-danger">
+      {globalError}
+    </p>
+  )
 
-      {step === 'input' && (
-        <Card className="mt-4">
-          <p className="mb-4 text-muted">목표 계산을 위해 기본 정보를 입력해주세요.</p>
+  if (step === 1) {
+    return (
+      <WizardShell
+        step={1}
+        total={TOTAL_STEPS}
+        title="성별을 알려주세요"
+        description="기초대사량 계산에 사용돼요."
+        onNext={() => setStep(2)}
+        nextDisabled={gender === null}
+      >
+        {notice}
+        <div className="flex gap-3">
+          <OptionCard layout="tile" icon="♂" label="남성" selected={gender === 'MALE'} onSelect={() => setGender('MALE')} />
+          <OptionCard layout="tile" icon="♀" label="여성" selected={gender === 'FEMALE'} onSelect={() => setGender('FEMALE')} />
+        </div>
+      </WizardShell>
+    )
+  }
 
-          <Field id="gender" label="성별" error={errors.gender}>
-            <Select id="gender" value={gender} onChange={(e) => setGender(e.target.value)}>
-              <option value="">선택</option>
-              <option value="MALE">남성</option>
-              <option value="FEMALE">여성</option>
-            </Select>
-          </Field>
+  if (step === 2) {
+    return (
+      <WizardShell
+        step={2}
+        total={TOTAL_STEPS}
+        title="키와 몸무게, 나이"
+        description="정확할수록 계산이 잘 맞아요."
+        onBack={() => setStep(1)}
+        onNext={confirmBody}
+      >
+        {notice}
+        <div className="space-y-3">
+          <SliderField label="키" unit="cm" value={heightCm} min={100} max={230} onChange={setHeightCm} />
+          <SliderField label="몸무게" unit="kg" value={weightKg} min={30} max={250} onChange={setWeightKg} />
+          <SliderField label="나이" unit="세" value={age} min={10} max={100} onChange={setAge} />
+        </div>
+        <FieldErrorList errors={errors} keys={['heightCm', 'weightKg', 'birthYear']} />
+      </WizardShell>
+    )
+  }
 
-          <Field id="birthYear" label="출생연도" error={errors.birthYear}>
-            <TextInput id="birthYear" inputMode="numeric" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
-          </Field>
+  if (step === 3) {
+    return (
+      <WizardShell
+        step={3}
+        total={TOTAL_STEPS}
+        title="평소 활동량은 어느 정도인가요?"
+        onBack={() => setStep(2)}
+        onNext={() => setStep(4)}
+        nextDisabled={activityLevel === null}
+      >
+        {notice}
+        <div className="space-y-2">
+          {ACTIVITY_OPTIONS.map((option) => (
+            <OptionCard
+              key={option.value}
+              label={option.label}
+              description={option.description}
+              selected={activityLevel === option.value}
+              onSelect={() => setActivityLevel(option.value)}
+            />
+          ))}
+        </div>
+      </WizardShell>
+    )
+  }
 
-          <Field id="heightCm" label="키 (cm)" error={errors.heightCm}>
-            <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-          </Field>
+  if (step === 4) {
+    const wantsTargetWeight = goal === 'CUT' || goal === 'BULK'
+    return (
+      <WizardShell
+        step={4}
+        total={TOTAL_STEPS}
+        title="목표를 선택해주세요"
+        onBack={() => setStep(3)}
+        onNext={() => void loadSuggestion()}
+        nextDisabled={goal === null || busy}
+      >
+        {notice}
+        <div className="space-y-2">
+          {GOAL_OPTIONS.map((option) => (
+            <OptionCard
+              key={option.value}
+              icon={option.icon}
+              label={option.label}
+              description={option.description}
+              selected={goal === option.value}
+              onSelect={() => setGoal(option.value)}
+            />
+          ))}
+        </div>
 
-          <Field id="weightKg" label="현재 체중 (kg)" error={errors.weightKg}>
-            <TextInput id="weightKg" inputMode="decimal" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
-          </Field>
-
-          <Field id="targetWeightKg" label="목표 체중 (kg)" error={errors.targetWeightKg}>
-            <TextInput id="targetWeightKg" inputMode="decimal" value={targetWeightKg} onChange={(e) => setTargetWeightKg(e.target.value)} />
-          </Field>
-
-          <Field id="activityLevel" label="활동량" error={errors.activityLevel}>
-            <Select id="activityLevel" value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
-              <option value="">선택</option>
-              <option value="LOW">낮음 (좌식 위주)</option>
-              <option value="MID">보통 (가벼운 활동)</option>
-              <option value="HIGH">높음 (활동적)</option>
-            </Select>
-          </Field>
-
-          <Button type="button" onClick={goConfirm} disabled={busy} className="w-full">
-            다음
-          </Button>
-        </Card>
-      )}
-
-      {step === 'confirm' && (
-        <Card className="mt-4">
-          <p>
-            제안 일일 칼로리: <strong className="text-brand">{suggested} kcal</strong>
-          </p>
-          <p className="mb-4 text-muted">그대로 쓰거나 원하는 값으로 수정할 수 있어요.</p>
-
-          <Field id="dailyKcalTarget" label="일일 칼로리 목표" error={errors.dailyKcalTarget}>
-            <TextInput id="dailyKcalTarget" inputMode="numeric" value={kcalInput} onChange={(e) => setKcalInput(e.target.value)} />
-          </Field>
-
-          <div className="flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setStep('input')} disabled={busy} className="flex-1">
-              이전
-            </Button>
-            <Button type="button" onClick={submit} disabled={busy} className="flex-1">
-              시작하기
-            </Button>
+        {wantsTargetWeight && (
+          <div className="mt-4 rounded-2xl border border-border bg-surface p-4">
+            <label htmlFor="targetWeightKg" className="block text-sm font-medium text-ink">
+              목표 체중 <span className="text-muted">(선택)</span>
+            </label>
+            <p className="mt-0.5 text-xs text-muted">넣어두면 목표 달성 예상일을 알려드려요. 비워도 괜찮아요.</p>
+            <div className="mt-2 flex items-baseline gap-1">
+              <input
+                id="targetWeightKg"
+                inputMode="decimal"
+                value={targetWeightKg}
+                onChange={(e) => setTargetWeightKg(e.target.value)}
+                placeholder="예: 65"
+                className="w-24 border-b border-border bg-transparent text-2xl font-bold text-ink outline-none"
+              />
+              <span className="text-sm text-muted">kg</span>
+            </div>
+            {errors.targetWeightKg && <p className="mt-1 text-sm text-danger">{errors.targetWeightKg}</p>}
           </div>
-        </Card>
+        )}
+      </WizardShell>
+    )
+  }
+
+  return (
+    <WizardShell
+      step={5}
+      total={TOTAL_STEPS}
+      title="맞춤 플랜이 준비됐어요"
+      onBack={() => setStep(4)}
+      onNext={() => void submit()}
+      nextLabel="홈으로 시작하기"
+      nextDisabled={busy}
+    >
+      {notice}
+      {suggestion && (
+        <div className="space-y-3">
+          <div className="rounded-2xl bg-brand p-4 text-on-brand">
+            <p className="text-xs font-semibold text-on-brand/80">일일 유지 칼로리 (TDEE)</p>
+            <p className="mt-1 text-3xl font-black">
+              {suggestion.maintenanceKcal.toLocaleString()}
+              <span className="ml-1 text-base font-bold">kcal</span>
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <label htmlFor="dailyKcalTarget" className="text-xs text-muted">
+              목표 섭취량 (수정할 수 있어요)
+            </label>
+            <div className="flex items-baseline gap-1">
+              <input
+                id="dailyKcalTarget"
+                inputMode="numeric"
+                value={kcalInput}
+                onChange={(e) => setKcalInput(e.target.value)}
+                className="w-32 bg-transparent text-3xl font-black text-ink outline-none"
+              />
+              <span className="text-base font-bold text-muted">kcal</span>
+            </div>
+            {errors.dailyKcalTarget && <p className="mt-1 text-sm text-danger">{errors.dailyKcalTarget}</p>}
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <MacroCell label="탄" grams={suggestion.carbTargetG} className="bg-carb-soft text-carb" />
+              <MacroCell label="단" grams={suggestion.proteinTargetG} className="bg-protein-soft text-protein" />
+              <MacroCell label="지" grams={suggestion.fatTargetG} className="bg-fat-soft text-fat" />
+            </div>
+          </div>
+
+          <p className="rounded-2xl bg-success-soft px-4 py-3 text-sm text-ink">
+            💡 목표는 언제든 프로필에서 바꿀 수 있어요. 기록이 쌓이면 실제 데이터로 유지 칼로리를 다시 계산해드려요.
+          </p>
+        </div>
       )}
-    </main>
+    </WizardShell>
+  )
+}
+
+function MacroCell({ label, grams, className }: { label: string; grams: number; className: string }) {
+  return (
+    <div className={`rounded-xl py-2 ${className}`}>
+      <p className="text-xs font-bold">{label}</p>
+      <p className="text-base font-black">{grams}g</p>
+    </div>
+  )
+}
+
+function FieldErrorList({ errors, keys }: { errors: FieldErrors; keys: string[] }) {
+  const messages = keys.map((key) => errors[key]).filter(Boolean)
+  if (messages.length === 0) return null
+  return (
+    <div role="alert" className="mt-3 space-y-1">
+      {messages.map((message) => (
+        <p key={message} className="text-sm text-danger">
+          {message}
+        </p>
+      ))}
+    </div>
   )
 }

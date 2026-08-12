@@ -88,10 +88,49 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
     // 박스는 탭 가능한 버튼(aria-label)로 렌더
     expect(await screen.findByRole('button', { name: '김치찌개 편집' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '공기밥 편집' })).toBeInTheDocument()
-    // 합계 = 400 + 250
-    expect(screen.getByText('650 kcal')).toBeInTheDocument()
+    // 요약 합계 = 400 + 250
+    expect(screen.getByText('650')).toBeInTheDocument()
+    // 항목 리스트도 함께 표시된다
+    expect(screen.getByRole('button', { name: '김치찌개 항목 편집' })).toBeInTheDocument()
     // 편집 필드는 시트를 열기 전까진 인라인에 없음
     expect(screen.queryByLabelText('이름')).not.toBeInTheDocument()
+  })
+
+  it('오버레이 모드에서도 요약(음식 수·탄단지)과 항목 리스트를 함께 보여준다', async () => {
+    mockAnalysis('COMPLETED', overlayResult)
+    renderPage()
+    await pickPhoto()
+
+    expect(await screen.findByText('분석 결과 · 2개 음식')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '김치찌개 항목 편집' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '공기밥 항목 편집' })).toBeInTheDocument()
+  })
+
+  it('값이 범위를 벗어난 항목은 리스트에 "확인 필요" 배지로 표시된다', async () => {
+    const user = userEvent.setup()
+    mockAnalysis('COMPLETED', overlayResult)
+    renderPage()
+    await pickPhoto()
+
+    // 첫 항목 칼로리를 범위 밖으로 바꾸고 저장을 시도해 오류 상태를 만든다
+    await user.click(await screen.findByRole('button', { name: '김치찌개 항목 편집' }))
+    const kcal = screen.getByLabelText('칼로리 (kcal)')
+    await user.clear(kcal)
+    await user.type(kcal, '99999')
+    await user.click(screen.getByRole('button', { name: '완료' }))
+    await user.click(screen.getByRole('button', { name: /저장하기/ }))
+
+    expect(await screen.findByText('확인 필요')).toBeInTheDocument()
+  })
+
+  it('항목 리스트 행을 누르면 편집 시트가 열린다', async () => {
+    const user = userEvent.setup()
+    mockAnalysis('COMPLETED', overlayResult)
+    renderPage()
+    await pickPhoto()
+
+    await user.click(await screen.findByRole('button', { name: '공기밥 항목 편집' }))
+    expect(screen.getByRole('dialog', { name: '음식 편집' })).toBeInTheDocument()
   })
 
   it('박스 탭 → 편집 시트에서 값을 바꾸면 합계가 재계산된다', async () => {
@@ -106,13 +145,13 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
     const kcal = screen.getByLabelText('칼로리 (kcal)')
     await user.clear(kcal)
     await user.type(kcal, '500')
-    expect(screen.getByText('750 kcal')).toBeInTheDocument() // 500 + 250
+    expect(screen.getByText('750')).toBeInTheDocument() // 500 + 250
 
     await user.click(screen.getByRole('button', { name: '완료' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('오버레이에서 "+ 음식 추가" → 위치 없는 항목 칩으로 편집·추가된다', async () => {
+  it('오버레이에서 "+ 음식 추가" → 항목 리스트에 추가되어 편집할 수 있다', async () => {
     const user = userEvent.setup()
     mockAnalysis('COMPLETED', overlayResult)
     renderPage()
@@ -124,10 +163,9 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
     await user.type(screen.getByLabelText('칼로리 (kcal)'), '100')
     await user.click(screen.getByRole('button', { name: '완료' }))
 
-    // 위치 없는 항목 칩 영역에 추가되고 합계 반영(650 + 100)
-    expect(screen.getByText('위치 없는 항목')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '된장국 편집' })).toBeInTheDocument()
-    expect(screen.getByText('750 kcal')).toBeInTheDocument()
+    // 항목 리스트에 추가되고 요약 합계 반영(650 + 100)
+    expect(screen.getByRole('button', { name: '된장국 항목 편집' })).toBeInTheDocument()
+    expect(screen.getByText('750')).toBeInTheDocument()
   })
 
   it('오버레이 모드에서 저장 — items로 saveMeal 호출 후 홈으로', async () => {
@@ -139,7 +177,7 @@ describe('MealRecordPage — 오버레이-편집 모드', () => {
     renderPage()
     await pickPhoto()
 
-    await user.click(await screen.findByRole('button', { name: '저장' }))
+    await user.click(await screen.findByRole('button', { name: /저장하기/ }))
 
     await waitFor(() => expect(screen.getByText('홈 화면')).toBeInTheDocument())
     expect(saveMealMock).toHaveBeenCalledWith(
@@ -210,7 +248,7 @@ describe('MealRecordPage — 리스트 폴백/수동', () => {
     await user.type(screen.getByLabelText('탄 (g)'), '60')
     await user.type(screen.getByLabelText('단 (g)'), '20')
     await user.type(screen.getByLabelText('지 (g)'), '15')
-    await user.click(screen.getByRole('button', { name: '저장' }))
+    await user.click(screen.getByRole('button', { name: /저장하기/ }))
 
     await waitFor(() => expect(screen.getByText('홈 화면')).toBeInTheDocument())
     expect(saveMealMock).toHaveBeenCalledWith(
@@ -228,7 +266,7 @@ describe('MealRecordPage — 리스트 폴백/수동', () => {
     await user.click(screen.getByRole('button', { name: '직접 입력' }))
     await user.type(screen.getByLabelText('이름'), '음식')
     await user.type(screen.getByLabelText('칼로리 (kcal)'), '99999')
-    await user.click(screen.getByRole('button', { name: '저장' }))
+    await user.click(screen.getByRole('button', { name: /저장하기/ }))
 
     expect(screen.getByText('0~10000 정수여야 합니다')).toBeInTheDocument()
     expect(saveMealMock).not.toHaveBeenCalled()

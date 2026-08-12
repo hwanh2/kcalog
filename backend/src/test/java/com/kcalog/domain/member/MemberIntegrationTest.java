@@ -50,6 +50,7 @@ class MemberIntegrationTest {
               "weightKg": 70,
               "targetWeightKg": 65,
               "activityLevel": "MID",
+              "goal": "CUT",
               "dailyKcalTarget": 1930
             }
             """;
@@ -138,19 +139,48 @@ class MemberIntegrationTest {
         mockMvc.perform(get("/api/members/me/kcal-suggestion").header("Authorization", bearer)
                         .param("gender", "MALE").param("birthYear", "3000")
                         .param("heightCm", "175").param("weightKg", "70")
-                        .param("targetWeightKg", "65").param("activityLevel", "MID"))
+                        .param("activityLevel", "MID").param("goal", "CUT"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("제안 칼로리 조회 — 계산기 결과와 일치 (배선 검증)")
+    @DisplayName("제안 칼로리 조회 — 목표 체중 없이 방향만으로 계산, 유지칼로리·탄단지 근거 포함")
     void kcalSuggestion() throws Exception {
+        // BMR = 1618.75(1990년생 기준 나이에 따라 변동), TDEE(MID) = BMR×1.5, CUT이면 −500
         mockMvc.perform(get("/api/members/me/kcal-suggestion").header("Authorization", bearer)
                         .param("gender", "MALE").param("birthYear", "1990")
                         .param("heightCm", "175").param("weightKg", "70")
-                        .param("targetWeightKg", "65").param("activityLevel", "MID"))
+                        .param("activityLevel", "MID").param("goal", "CUT"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.dailyKcalTarget").isNumber());
+                .andExpect(jsonPath("$.maintenanceKcal").isNumber())
+                .andExpect(jsonPath("$.dailyKcalTarget").isNumber())
+                .andExpect(jsonPath("$.carbTargetG").isNumber())
+                .andExpect(jsonPath("$.proteinTargetG").isNumber())
+                .andExpect(jsonPath("$.fatTargetG").isNumber());
+    }
+
+    @Test
+    @DisplayName("온보딩 — 목표 체중 없이도 방향만으로 완료된다")
+    void onboardingWithoutTargetWeight() throws Exception {
+        String body = """
+                {
+                  "gender": "MALE",
+                  "birthYear": 1990,
+                  "heightCm": 175,
+                  "weightKg": 70,
+                  "activityLevel": "MID",
+                  "goal": "MAINTAIN",
+                  "dailyKcalTarget": 2430
+                }
+                """;
+
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.onboardingCompleted").value(true))
+                .andExpect(jsonPath("$.goal").value("MAINTAIN"))
+                .andExpect(jsonPath("$.targetWeightKg").isEmpty())
+                .andExpect(jsonPath("$.dailyKcalTarget").value(2430));
     }
 
     @Test
