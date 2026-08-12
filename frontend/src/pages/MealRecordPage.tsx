@@ -8,7 +8,8 @@ import type { MealSource, MealType } from '../api/meal'
 import { pollAnalysis } from '../features/meal/pollAnalysis'
 import { resizeImage } from '../features/meal/imageResize'
 import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
-import { MealItemsEditor, TotalsLine } from '../features/meal/MealItemsEditor'
+import { AnalysisSummary, AnalyzedItemList } from '../features/meal/AnalysisSummary'
+import { MealItemsEditor } from '../features/meal/MealItemsEditor'
 import { PhotoOverlay } from '../features/meal/PhotoOverlay'
 import { ItemEditSheet } from '../features/meal/ItemEditSheet'
 import {
@@ -16,7 +17,6 @@ import {
   MAX_ITEMS,
   emptyItem,
   fromAnalyzed,
-  isValidBox,
   shouldOverlay,
   toSaveItems,
   validateItems,
@@ -74,7 +74,6 @@ export function MealRecordPage() {
 
   const hasError = (i: number) => (itemErrors[i] ? Object.keys(itemErrors[i]).length > 0 : false)
   const errorIndices = items.map((_, i) => i).filter(hasError)
-  const boxless = items.map((it, i) => ({ it, i })).filter(({ it }) => !isValidBox(it.box))
 
   function manualFallback(msg: string) {
     setSource('MANUAL')
@@ -229,33 +228,16 @@ export function MealRecordPage() {
           </Field>
 
           {photoUrl && overlayMode ? (
-            // 오버레이-편집 모드: 사진 위 박스 탭 편집 + 총량 + 위치 없는 항목 칩
+            // 오버레이-편집 모드: 사진 위 박스 탭 편집 + 요약 + 항목 리스트(위치 없는 항목까지 포함)
             <>
               <div className="mb-3">
                 <PhotoOverlay src={photoUrl} items={items} onSelect={setEditingIndex} errorIndices={errorIndices} />
               </div>
-              <TotalsLine items={items} />
+              <AnalysisSummary items={items} />
 
-              {boxless.length > 0 && (
-                <div className="mt-3">
-                  <p className="mb-1 text-xs text-muted">위치 없는 항목</p>
-                  <div className="flex flex-wrap gap-2">
-                    {boxless.map(({ it, i }) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setEditingIndex(i)}
-                        aria-label={`${it.name || '이름 없음'} 편집`}
-                        className={`rounded-full border px-3 py-1 text-sm ${
-                          hasError(i) ? 'border-danger text-danger' : 'border-border text-ink'
-                        }`}
-                      >
-                        {it.name || '이름 없음'} {it.kcal || 0}kcal
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="mt-3">
+                <AnalyzedItemList items={items} onSelect={setEditingIndex} errorIndices={errorIndices} />
+              </div>
 
               {formError && (
                 <p role="alert" className="mt-2 text-sm text-danger">
@@ -288,7 +270,7 @@ export function MealRecordPage() {
           )}
 
           <Button type="button" onClick={save} disabled={busy} className="mt-4 w-full">
-            저장
+            {MEAL_TYPE_LABELS[mealType]}으로 저장하기
           </Button>
         </Card>
       )}
