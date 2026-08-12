@@ -38,6 +38,12 @@ openspec/  스펙·변경 관리
 - **REST 경로**: `/api/{domain}` (예: `/api/auth`, `/api/members`).
 - **커밋 메시지**: `<타입>: <한국어 요약>` — feat / fix / refactor / test / docs / chore / review.
 
+## 프론트엔드 디자인
+
+화면을 만들거나 고치기 전에 **`frontend/DESIGN.md`를 먼저 읽는다** — 면의 3층 구조(canvas/surface/track), 라운드 3단계, 테두리·글자 두께·아이콘 규칙, 접근성 최소선이 있다. 색·라운드 토큰은 `frontend/src/index.css`의 `@theme` 한 곳에만 정의한다.
+
+UI 접근성 검토는 `/web-design-guidelines <파일>` 스킬로 돌린다(Vercel Web Interface Guidelines).
+
 ## 테스트
 
 - 순수 도메인 로직(계산·판정 등 Spring 불필요)은 **TDD**: 스펙 시나리오를 실패하는 테스트로 먼저 옮긴 뒤 구현한다. 프레임워크 배선 코드는 test-after 허용.
