@@ -18,9 +18,9 @@
 
 ## Impact
 
-- Affected specs: `food-catalog` (신규), `favorite-food` (신규), `service-day` (신규), `meal-logging` (수정), `async-food-analysis` (수정), `meal-item-analysis` (수정)
+- Affected specs: `food-catalog` (신규), `favorite-food` (신규), `service-day` (신규), `meal-logging` (수정), `async-food-analysis` (수정), `meal-item-analysis` (수정), `nutrition-correction` (수정 — 보정치에 기준 섭취량 도입)
 - Affected code (backend): `MealType.LATE_NIGHT`, `MealItem`에 수량·단위, `FoodCatalog`·`MemberFavoriteFood` 도메인 신설, `AnalysisJob`에 설명·재분석 횟수, `AnalysisController`/`AnalysisService` 입력 확장, `MealAnalysisPrompt` 텍스트 분기·양 스키마, `ServiceDay` 신설 후 `DayRange`·`MealDailyIntake`·대시보드·리포트·TDEE·코칭 이관
 - Affected code (frontend): `RecordsPage` 전면 재작성, 등록 존 3탭·바텀시트 신설, `MealRecordPage` 폐기(구성 요소는 결과 시트로 재사용), `AppShell` FAB 동작, `mealDefaults` 5끼니
-- 마이그레이션: **V13**(meal_item 수량·단위) · **V14**(food_catalog + 시드 30) · **V15**(member_favorite_food) · **V16**(analysis_job 확장)
+- 마이그레이션: **V13**(meal_item 수량·단위) · **V14**(food_catalog + 시드 30) · **V15**(member_favorite_food) · **V16**(analysis_job 확장) · **V17**(food_correction 기준 섭취량)
 - PR 분할: **PR1 = 서버 전부**, **PR2 = 프론트 전부**
 - 스코프 밖: 즐겨찾기 **세트(조합)** 등록, 기록 카드에서 즐겨찾기 담기, 초성 검색, 체중·일일 분석 제한의 05시 경계 적용(달력 날짜 유지), 새벽 기록의 자동 이동(과거 데이터 보정)

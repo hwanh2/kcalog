@@ -1,6 +1,7 @@
 package com.kcalog.global.common;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -19,9 +20,13 @@ public final class ServiceDay {
     /** 하루가 바뀌는 시각 */
     public static final LocalTime BOUNDARY = LocalTime.of(5, 0);
 
-    /** 그 순간이 속한 서비스 날짜 — 05:00 이전이면 전날 */
+    // 경계를 한 곳에서만 해석한다 — 날짜 귀속(of)과 구간(startOf/endOf)이 따로 계산하면
+    // 경계를 비정시(예: 05:30)로 옮길 때 소리 없이 하루씩 어긋난다
+    private static final Duration OFFSET = Duration.between(LocalTime.MIDNIGHT, BOUNDARY);
+
+    /** 그 순간이 속한 서비스 날짜 — 경계 이전이면 전날 */
     public static LocalDate of(Instant instant, ZoneId zone) {
-        return instant.atZone(zone).minusHours(BOUNDARY.getHour()).toLocalDate();
+        return instant.atZone(zone).minus(OFFSET).toLocalDate();
     }
 
     /** 현재 시각 기준의 "오늘" */

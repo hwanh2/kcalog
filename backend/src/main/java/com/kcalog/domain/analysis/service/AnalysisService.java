@@ -1,6 +1,7 @@
 package com.kcalog.domain.analysis.service;
 
 import com.kcalog.domain.analysis.entity.AnalysisJob;
+import com.kcalog.domain.analysis.entity.AnalysisStatus;
 import com.kcalog.domain.analysis.repository.AnalysisJobRepository;
 import com.kcalog.domain.meal.service.MealAnalysisService;
 import com.kcalog.global.storage.StorageService;
@@ -46,6 +47,10 @@ public class AnalysisService {
     @Transactional
     public void reanalyze(Long memberId, Long jobId, String note) {
         AnalysisJob job = owned(memberId, jobId);
+        // 진행 중인 작업을 되돌리면 워커가 둘 뜨고 일일 횟수도 두 번 깎인다
+        if (job.getStatus() == AnalysisStatus.ANALYZING) {
+            throw new IllegalArgumentException("분석이 끝난 뒤에 다시 시도할 수 있어요");
+        }
         if (!job.canReanalyze()) {
             throw new IllegalArgumentException(
                     "재분석은 %d회까지 할 수 있어요".formatted(AnalysisJob.MAX_REANALYSIS));

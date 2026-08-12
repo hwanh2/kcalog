@@ -54,7 +54,7 @@ public class MealService {
         items.stream()
                 .filter(MealItemRequest::shouldRemember)
                 .forEach(i -> foodCorrectionService.upsert(
-                        memberId, i.name(), i.kcal(), i.carbG(), i.proteinG(), i.fatG()));
+                        memberId, i.name(), i.kcal(), i.carbG(), i.proteinG(), i.fatG(), i.quantity(), i.unit()));
     }
 
     /** 날짜별 조회 — 해당 날짜의 현지 시간대 하루 구간 [00:00, 다음날 00:00)의 식사를 시각 순으로 */

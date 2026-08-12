@@ -140,12 +140,21 @@ final class MealAnalysisPrompt {
             return "";
         }
         StringBuilder sb = new StringBuilder(
-                "참고: 이 사용자가 직접 정정한 음식별 영양값입니다. 같은/유사한 음식이 보이면 이 값을 우선 반영해 추정하세요.\n");
+                "참고: 이 사용자가 직접 정정한 음식별 영양값입니다. 같은/유사한 음식이 보이면 이 값을 우선 반영해 추정하세요.\n"
+                        + "괄호 안은 그 값의 기준 섭취량이며, 양이 다르면 비례해 조정하세요.\n");
         for (PersonalCorrection c : corrections) {
-            sb.append("- %s: %dkcal, 탄 %sg, 단 %sg, 지 %sg%n"
-                    .formatted(c.displayName(), c.kcal(), c.carbG(), c.proteinG(), c.fatG()));
+            sb.append("- %s%s: %dkcal, 탄 %sg, 단 %sg, 지 %sg%n"
+                    .formatted(c.displayName(), basis(c), c.kcal(), c.carbG(), c.proteinG(), c.fatG()));
         }
         return sb.toString();
+    }
+
+    /** 보정치의 기준 섭취량 표기 — 모르면 생략한다(예전에 수량 없이 저장된 값) */
+    private static String basis(PersonalCorrection c) {
+        if (c.baseQuantity() == null || c.unit() == null || c.unit().isBlank()) {
+            return "";
+        }
+        return "(%s%s 기준)".formatted(c.baseQuantity().stripTrailingZeros().toPlainString(), c.unit());
     }
 
     private MealAnalysisPrompt() {

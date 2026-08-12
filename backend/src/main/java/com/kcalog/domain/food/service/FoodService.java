@@ -76,21 +76,13 @@ public class FoodService {
         favoriteRepository.delete(favorite);
     }
 
-    /** 보정치는 1단위 기준값이라, 저장 수량으로 나눠서 넘긴다(수량이 1이면 그대로) */
+    /**
+     * 보정치는 "그 섭취량 기준의 총량"으로 저장한다 — 나누지 않고 수량·단위를 함께 넘긴다.
+     * 분석에 반영할 때 AI가 찾아낸 양에 맞춰 비례 조정된다(PersonalCorrection.scaledTo).
+     */
     private void rememberAsCorrection(Long memberId, SaveFavoriteRequest request) {
-        BigDecimal qty = request.quantity();
         correctionService.upsert(memberId, request.name(),
-                perUnitKcal(request.kcal(), qty),
-                perUnit(request.carbG(), qty),
-                perUnit(request.proteinG(), qty),
-                perUnit(request.fatG(), qty));
-    }
-
-    private int perUnitKcal(int total, BigDecimal quantity) {
-        return BigDecimal.valueOf(total).divide(quantity, 0, RoundingMode.HALF_UP).intValue();
-    }
-
-    private BigDecimal perUnit(BigDecimal total, BigDecimal quantity) {
-        return total.divide(quantity, 1, RoundingMode.HALF_UP);
+                request.kcal(), request.carbG(), request.proteinG(), request.fatG(),
+                request.quantity(), request.unit());
     }
 }

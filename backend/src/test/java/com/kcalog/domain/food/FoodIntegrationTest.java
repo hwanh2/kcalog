@@ -117,18 +117,21 @@ class FoodIntegrationTest {
     }
 
     @Test
-    @DisplayName("AI 분석에도 반영 — 보정치는 1단위 기준값으로 환산해 저장된다")
-    void remembersAsCorrectionPerUnit() throws Exception {
+    @DisplayName("AI 분석에도 반영 — 보정치는 총량 + 기준 섭취량으로 저장된다")
+    void remembersAsCorrectionWithQuantity() throws Exception {
         mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(EGG_FAVORITE.replace("\"fatG\": 9.6", "\"fatG\": 9.6, \"rememberForAnalysis\": true")))
                 .andExpect(status().isOk());
 
-        // 2개 140kcal로 저장했으므로 보정치는 1개 기준 70kcal
+        // 저장 시점의 값을 그대로 두고, "2개 기준"이라는 사실을 함께 남긴다.
+        // 분석에 반영할 때 AI가 찾아낸 양에 맞춰 비례 조정된다.
         assertThat(correctionRepository.findByMemberIdAndFoodNameNormalized(member.getId(), "삶은달걀"))
                 .hasValueSatisfying(c -> {
-                    assertThat(c.getKcal()).isEqualTo(70);
-                    assertThat(c.getProteinG()).isEqualByComparingTo("6.3");
+                    assertThat(c.getKcal()).isEqualTo(140);
+                    assertThat(c.getProteinG()).isEqualByComparingTo("12.6");
+                    assertThat(c.getBaseQuantity()).isEqualByComparingTo("2");
+                    assertThat(c.getUnit()).isEqualTo("개");
                 });
     }
 

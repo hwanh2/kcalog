@@ -304,6 +304,27 @@ class AnalysisIntegrationTest {
     }
 
     @Test
+    @DisplayName("분석 진행 중 재분석 — 400 (워커 중복·횟수 이중 차감 방지)")
+    void reanalyzeWhileAnalyzing() throws Exception {
+        // 워커가 붙들려 있는 동안 작업은 ANALYZING에 머문다
+        java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        when(openAiClient.complete(any())).thenAnswer(invocation -> {
+            release.await();
+            return FOUND_JSON;
+        });
+        Long id = createJob();
+
+        try {
+            await().atMost(Duration.ofSeconds(5)).until(() ->
+                    jobRepository.findById(id).orElseThrow().getStatus()
+                            == com.kcalog.domain.analysis.entity.AnalysisStatus.ANALYZING);
+            reanalyze(id, "아직 분석 중", 400);
+        } finally {
+            release.countDown(); // 워커를 풀어 @AfterEach가 정리할 수 있게
+        }
+    }
+
+    @Test
     @DisplayName("타인 작업 재분석 — 404")
     void reanalyzeOtherBlocked() throws Exception {
         when(openAiClient.complete(any())).thenReturn(FOUND_JSON);
