@@ -100,7 +100,8 @@ class NutritionCorrectionIntegrationTest {
         return new SaveMealRequest(
                 Instant.parse("2026-08-10T03:30:00Z"), MealType.LUNCH, MealSource.MANUAL,
                 List.of(new MealItemRequest(name, kcal,
-                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"), remember)),
+                        new BigDecimal("30.0"), new BigDecimal("20.0"), new BigDecimal("18.0"),
+                        null, null, remember)),
                 null);
     }
 
@@ -136,7 +137,7 @@ class NutritionCorrectionIntegrationTest {
     void analysisOverridesWithCorrection() throws Exception {
         // 보정치 선등록(김치찌개 = 520)
         correctionRepository.save(FoodCorrection.of(member.getId(), "김치찌개", 520,
-                new BigDecimal("15.0"), new BigDecimal("32.0"), new BigDecimal("30.0")));
+                new BigDecimal("15.0"), new BigDecimal("32.0"), new BigDecimal("30.0"), null, null));
         when(openAiClient.complete(any())).thenReturn(FOUND_JSON);
 
         MockMultipartFile image = new MockMultipartFile("image", "food.jpg", "image/jpeg", "bytes".getBytes());
@@ -152,5 +153,82 @@ class NutritionCorrectionIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.items[0].kcal").value(520))       // AI 400 → 보정 520
                 .andExpect(jsonPath("$.result.items[0].corrected").value(true));
+    }
+
+    @Test
+    @DisplayName("보정치의 기준 섭취량과 AI가 찾은 양이 다르면 비례 조정된다")
+    void scalesCorrectionToDetectedAmount() throws Exception {
+        // "삶은달걀 2개 = 140kcal"로 기억해둔 회원
+        correctionRepository.save(FoodCorrection.of(member.getId(), "삶은달걀", 140,
+                new BigDecimal("0.8"), new BigDecimal("12.6"), new BigDecimal("9.6"),
+                new BigDecimal("2"), "개"));
+        // 사진에는 달걀이 1개만 있다
+        when(openAiClient.complete(any())).thenReturn("""
+                {"foodFound":true,"items":[
+                  {"name":"삶은달걀","kcal":80,"amount":1,"unit":"개","carbG":0.5,"proteinG":6.0,"fatG":5.0,
+                   "box":{"x":0.1,"y":0.2,"w":0.3,"h":0.3}}
+                ],"overallConfidence":0.8,"notes":""}
+                """);
+
+        MockMultipartFile image = new MockMultipartFile("image", "food.jpg", "image/jpeg", "bytes".getBytes());
+        String body = mockMvc.perform(multipart("/api/analyses").file(image).header("Authorization", bearer))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        Long jobId = com.jayway.jsonpath.JsonPath.parse(body).read("$.id", Long.class);
+
+        await().atMost(Duration.ofSeconds(5)).until(() ->
+                jobRepository.findById(jobId).orElseThrow().getStatus() == AnalysisStatus.COMPLETED);
+
+        mockMvc.perform(get("/api/analyses/{id}", jobId).header("Authorization", bearer))
+                .andExpect(jsonPath("$.result.items[0].kcal").value(70))        // 140 × (1/2)
+                .andExpect(jsonPath("$.result.items[0].proteinG").value(6.3))
+                .andExpect(jsonPath("$.result.items[0].corrected").value(true));
+    }
+
+    @Test
+    @DisplayName("단위가 다르면 조정하지 않고 저장값을 그대로 쓴다")
+    void keepsStoredValueWhenUnitDiffers() throws Exception {
+        correctionRepository.save(FoodCorrection.of(member.getId(), "삶은달걀", 140,
+                new BigDecimal("0.8"), new BigDecimal("12.6"), new BigDecimal("9.6"),
+                new BigDecimal("2"), "개"));
+        when(openAiClient.complete(any())).thenReturn("""
+                {"foodFound":true,"items":[
+                  {"name":"삶은달걀","kcal":80,"amount":50,"unit":"g","carbG":0.5,"proteinG":6.0,"fatG":5.0,
+                   "box":{"x":0.1,"y":0.2,"w":0.3,"h":0.3}}
+                ],"overallConfidence":0.8,"notes":""}
+                """);
+
+        MockMultipartFile image = new MockMultipartFile("image", "food.jpg", "image/jpeg", "bytes".getBytes());
+        String body = mockMvc.perform(multipart("/api/analyses").file(image).header("Authorization", bearer))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        Long jobId = com.jayway.jsonpath.JsonPath.parse(body).read("$.id", Long.class);
+
+        await().atMost(Duration.ofSeconds(5)).until(() ->
+                jobRepository.findById(jobId).orElseThrow().getStatus() == AnalysisStatus.COMPLETED);
+
+        mockMvc.perform(get("/api/analyses/{id}", jobId).header("Authorization", bearer))
+                .andExpect(jsonPath("$.result.items[0].kcal").value(140));
+    }
+
+    @Test
+    @DisplayName("기억하기 저장 — 영양값은 총량 그대로, 수량·단위가 함께 남는다")
+    void remembersTotalWithQuantity() {
+        SaveMealRequest request = new SaveMealRequest(
+                Instant.parse("2026-08-10T03:30:00Z"), MealType.BREAKFAST, MealSource.MANUAL,
+                List.of(new MealItemRequest("삶은달걀", 140,
+                        new BigDecimal("0.8"), new BigDecimal("12.6"), new BigDecimal("9.6"),
+                        new BigDecimal("2"), "개", true)),
+                null);
+
+        mealService.save(member.getId(), request);
+
+        assertThat(correctionRepository.findByMemberIdAndFoodNameNormalized(
+                member.getId(), FoodNames.normalize("삶은달걀")))
+                .hasValueSatisfying(c -> {
+                    assertThat(c.getKcal()).isEqualTo(140);              // 나누지 않는다
+                    assertThat(c.getBaseQuantity()).isEqualByComparingTo("2");
+                    assertThat(c.getUnit()).isEqualTo("개");
+                });
     }
 }

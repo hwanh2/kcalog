@@ -13,6 +13,7 @@ import com.kcalog.domain.weight.entity.WeightLog;
 import com.kcalog.domain.weight.repository.WeightLogRepository;
 import com.kcalog.domain.weight.service.WeightStats;
 import com.kcalog.domain.weight.service.WeightTrend;
+import com.kcalog.global.common.ServiceDay;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,7 @@ public class CoachingSignalsCollector {
     public CoachingSignals collect(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다"));
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = ServiceDay.today(clock);
         ZoneId zone = clock.getZone();
 
         ReportResponse week = reportService.get(memberId, Period.WEEK, null);

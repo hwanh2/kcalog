@@ -171,15 +171,88 @@ class MealIntegrationTest {
     }
 
     @Test
-    @DisplayName("자정 경계 — 다음날 00:00 KST 식사는 오늘 조회에 잡히지 않는다")
-    void midnightBoundary() throws Exception {
+    @DisplayName("섭취량 저장 — 수량·단위가 함께 남고, 없는 항목도 허용된다")
+    void saveWithQuantity() throws Exception {
+        String body = """
+                {
+                  "eatenAt": "2026-08-06T03:30:00Z",
+                  "mealType": "BREAKFAST",
+                  "source": "MANUAL",
+                  "items": [
+                    {"name": "삶은달걀", "kcal": 140, "carbG": 0.8, "proteinG": 12.6, "fatG": 9.6,
+                     "quantity": 2, "unit": "개"},
+                    {"name": "아메리카노", "kcal": 10, "carbG": 1.5, "proteinG": 0.3, "fatG": 0.0}
+                  ]
+                }
+                """;
+
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalKcal").value(150))
+                .andExpect(jsonPath("$.items[0].quantity").value(2))
+                .andExpect(jsonPath("$.items[0].unit").value("개"))
+                .andExpect(jsonPath("$.items[1].quantity").doesNotExist())
+                .andExpect(jsonPath("$.items[1].unit").doesNotExist());
+
+        mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
+                .andExpect(jsonPath("$[0].items[0].quantity").value(2))
+                .andExpect(jsonPath("$[0].items[0].unit").value("개"));
+    }
+
+    @Test
+    @DisplayName("수량이 0 이하면 400 — 먹지 않은 항목은 기록하지 않는다")
+    void rejectsNonPositiveQuantity() throws Exception {
+        String body = LUNCH.replace("\"fatG\": 18.0", "\"fatG\": 18.0, \"quantity\": 0, \"unit\": \"개\"");
+
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("야식 저장 — 다섯 번째 끼니로 저장·조회된다")
+    void saveLateNight() throws Exception {
+        String body = LUNCH.replace("\"mealType\": \"LUNCH\"", "\"mealType\": \"LATE_NIGHT\"")
+                .replace("2026-08-06T03:30:00Z", "2026-08-06T16:00:00Z"); // 2026-08-07 01:00 KST
+
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealType").value("LATE_NIGHT"));
+
+        // 새벽 1시 야식이므로 전날(8/6)의 기록이다
+        mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].mealType").value("LATE_NIGHT"));
+    }
+
+    @Test
+    @DisplayName("같은 끼니에 여러 건 — 담을 때마다 기록이 하나씩 늘어난다")
+    void multipleMealsPerType() throws Exception {
+        saveLunch();
+        saveLunch();
+
+        mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("하루 경계 — 다음날 새벽 식사는 전날에, 05:00부터 새 날에 잡힌다")
+    void dayBoundary() throws Exception {
+        // 2026-08-06T19:59Z = 2026-08-07 04:59 KST → 아직 8/6의 기록(야식)
         mockMvc.perform(post("/api/meals").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(LUNCH.replace("2026-08-06T03:30:00Z", "2026-08-06T15:00:00Z")))
+                        .content(LUNCH.replace("2026-08-06T03:30:00Z", "2026-08-06T19:59:00Z")))
+                .andExpect(status().isOk());
+        // 2026-08-06T20:00Z = 2026-08-07 05:00 KST → 8/7의 기록
+        mockMvc.perform(post("/api/meals").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LUNCH.replace("2026-08-06T03:30:00Z", "2026-08-06T20:00:00Z")))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-06"))
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.length()").value(1));
         mockMvc.perform(get("/api/meals").header("Authorization", bearer).param("date", "2026-08-07"))
                 .andExpect(jsonPath("$.length()").value(1));
     }

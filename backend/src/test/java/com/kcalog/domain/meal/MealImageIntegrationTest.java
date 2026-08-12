@@ -65,7 +65,7 @@ class MealImageIntegrationTest {
 
     private AnalysisJob storedJob() {
         String key = storageService.put(member.getId(), "jpeg".getBytes(), "image/jpeg");
-        return jobRepository.save(AnalysisJob.analyzing(member.getId(), key));
+        return jobRepository.save(AnalysisJob.analyzing(member.getId(), key, null));
     }
 
     @Test
@@ -125,7 +125,7 @@ class MealImageIntegrationTest {
     void otherJobBlocked() throws Exception {
         Member other = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-o2", "o2@kakao.com", "타인"));
         String otherKey = storageService.put(other.getId(), "jpeg".getBytes(), "image/jpeg");
-        AnalysisJob otherJob = jobRepository.save(AnalysisJob.analyzing(other.getId(), otherKey));
+        AnalysisJob otherJob = jobRepository.save(AnalysisJob.analyzing(other.getId(), otherKey, null));
 
         mockMvc.perform(post("/api/meals").header("Authorization", bearer)
                         .contentType(MediaType.APPLICATION_JSON).content(saveBody(otherJob.getId())))

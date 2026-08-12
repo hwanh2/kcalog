@@ -15,6 +15,7 @@ import com.kcalog.domain.coaching.repository.CoachingChatUsageRepository;
 import com.kcalog.domain.coaching.repository.CoachingMessageRepository;
 import com.kcalog.domain.meal.service.OpenAiClient;
 import com.kcalog.global.common.AppProperties;
+import com.kcalog.global.common.ServiceDay;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.task.TaskExecutor;
@@ -68,7 +69,7 @@ public class CoachingService {
      * 500이 된다. 저장은 리포지토리 자체 트랜잭션에 맡기고, 동시 최초 조회 경쟁은 아래에서 처리한다.
      */
     public CoachingBriefingResponse briefing(Long memberId) {
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = ServiceDay.today(clock);
 
         CoachingMessage cached = briefingRepository.findByMemberIdAndCoachDate(memberId, today).orElse(null);
         if (cached != null) {
@@ -172,6 +173,7 @@ public class CoachingService {
      * 워커 스레드가 아직 커밋되지 않은 선점을 되돌리려다(release) 빗나갈 수 있다.
      */
     public SseEmitter chatStream(Long memberId, String question) {
+        // 대화 상한은 비용 통제 카운터라 달력 날짜를 쓴다(분석 횟수 제한과 동일 — ServiceDay 미적용)
         LocalDate today = LocalDate.now(clock);
         // 검사와 증가를 한 연산으로 — 스트리밍이 끝날 때까지 창이 열려 동시 요청이 상한을 넘는 걸 막는다
         if (!chatUsageRepository.tryReserve(memberId, today, props.openai().dailyCoachChatLimit())) {

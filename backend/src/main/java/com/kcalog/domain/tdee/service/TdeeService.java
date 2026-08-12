@@ -10,6 +10,7 @@ import com.kcalog.domain.tdee.dto.TdeeResponse;
 import com.kcalog.domain.weight.entity.WeightLog;
 import com.kcalog.domain.weight.repository.WeightLogRepository;
 import com.kcalog.domain.weight.service.WeightTrend;
+import com.kcalog.global.common.ServiceDay;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,7 @@ public class TdeeService {
 
     @Transactional(readOnly = true)
     public TdeeResponse get(Long memberId) {
-        return get(memberId, LocalDate.now(clock));
+        return get(memberId, ServiceDay.today(clock));
     }
 
     /** asOf 날짜 기준 트레일링 창으로 유지칼로리 계산 — 주간 리포트의 일별 시리즈가 임의 날짜로 호출 */

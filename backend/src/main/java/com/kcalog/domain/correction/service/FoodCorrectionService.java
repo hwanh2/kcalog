@@ -27,15 +27,21 @@ public class FoodCorrectionService {
     private final FoodCorrectionRepository repository;
     private final AppProperties props;
 
-    /** 정정값 저장 — 정규화명으로 매칭해 없으면 생성, 있으면 최신값 덮어쓰기(design D2). 호출자 트랜잭션에 참여. */
+    /**
+     * 정정값 저장 — 정규화명으로 매칭해 없으면 생성, 있으면 최신값 덮어쓰기(design D2). 호출자 트랜잭션에 참여.
+     * 영양값은 baseQuantity·unit 기준 총량으로 저장한다(나누지 않는다) — 조정은 분석에 반영할 때 한다.
+     * 섭취량을 모르는 항목은 baseQuantity·unit을 null로 넘긴다.
+     */
     @Transactional
     public void upsert(Long memberId, String name, int kcal,
-                       BigDecimal carbG, BigDecimal proteinG, BigDecimal fatG) {
+                       BigDecimal carbG, BigDecimal proteinG, BigDecimal fatG,
+                       BigDecimal baseQuantity, String unit) {
         String normalized = FoodNames.normalize(name);
         repository.findByMemberIdAndFoodNameNormalized(memberId, normalized)
                 .ifPresentOrElse(
-                        existing -> existing.updateNutrition(name, kcal, carbG, proteinG, fatG),
-                        () -> repository.save(FoodCorrection.of(memberId, name, kcal, carbG, proteinG, fatG)));
+                        existing -> existing.updateNutrition(name, kcal, carbG, proteinG, fatG, baseQuantity, unit),
+                        () -> repository.save(FoodCorrection.of(
+                                memberId, name, kcal, carbG, proteinG, fatG, baseQuantity, unit)));
     }
 
     /** 분석 주입·덮어쓰기용 — 최근 갱신 순 상한 개수. 상한 0이면 빈 목록. */
@@ -54,6 +60,9 @@ public class FoodCorrectionService {
     /**
      * 코드 결정적 덮어쓰기(A) — 응답 항목 중 정규화 이름이 보정치와 일치하면 저장값으로 대체하고 corrected 표시.
      * AI 추정값이 달라도 명시적으로 고친 값의 정확 재현을 보장한다. 보정치가 없으면 원본 그대로.
+     * <p>
+     * 보정치는 저장 당시 섭취량 기준의 총량이므로, AI가 찾아낸 양이 다르면 같은 단위일 때 비례 조정한다
+     * (달걀 2개로 기억한 값이 1개짜리 사진에 그대로 붙지 않게). 단위가 다르거나 양을 모르면 저장값 그대로.
      */
     public MealAnalysisResponse applyOverride(MealAnalysisResponse result, List<PersonalCorrection> corrections) {
         if (corrections.isEmpty() || !result.foodFound()) {
@@ -65,7 +74,11 @@ public class FoodCorrectionService {
         List<AnalyzedItem> items = result.items().stream()
                 .map(item -> {
                     PersonalCorrection c = byName.get(FoodNames.normalize(item.name()));
-                    return c == null ? item : item.overriddenWith(c.kcal(), c.carbG(), c.proteinG(), c.fatG());
+                    if (c == null) {
+                        return item;
+                    }
+                    PersonalCorrection.Scaled s = c.scaledTo(item.amount(), item.unit());
+                    return item.overriddenWith(s.kcal(), s.carbG(), s.proteinG(), s.fatG());
                 })
                 .toList();
         return new MealAnalysisResponse(result.foodFound(), items, result.overallConfidence(), result.notes());

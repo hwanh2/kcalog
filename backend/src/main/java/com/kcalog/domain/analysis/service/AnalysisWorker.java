@@ -42,11 +42,9 @@ public class AnalysisWorker {
             return; // 이미 처리됐거나 정리됨
         }
         try {
-            StorageService.StoredImage image = storageService.get(job.getImageKey());
             // 개인 보정: 이력을 프롬프트에 주입(B)해 분석하고, 정규화 이름 일치 항목은 저장값으로 덮어쓰기(A)
             List<PersonalCorrection> corrections = foodCorrectionService.recentFor(job.getMemberId());
-            MealAnalysisResponse result = mealAnalysisService.analyzeImage(
-                    image.bytes(), image.contentType(), corrections);
+            MealAnalysisResponse result = analyze(job, corrections);
             result = foodCorrectionService.applyOverride(result, corrections);
             String json = objectMapper.writeValueAsString(result);
             if (result.foodFound()) {
@@ -61,5 +59,14 @@ public class AnalysisWorker {
             log.warn("분석 작업 {} 처리 오류: {}", jobId, e.getMessage());
             job.fail("ANALYSIS_ERROR");
         }
+    }
+
+    /** 사진이 있으면 사진+설명으로, 없으면 설명만으로 분석한다(입력 검증은 작업 생성 시점에 끝났다) */
+    private MealAnalysisResponse analyze(AnalysisJob job, List<PersonalCorrection> corrections) {
+        if (!job.hasImage()) {
+            return mealAnalysisService.analyzeText(job.getNote(), corrections);
+        }
+        StorageService.StoredImage image = storageService.get(job.getImageKey());
+        return mealAnalysisService.analyzeImage(image.bytes(), image.contentType(), job.getNote(), corrections);
     }
 }

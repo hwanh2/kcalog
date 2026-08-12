@@ -15,6 +15,7 @@ import com.kcalog.domain.tdee.dto.TdeeResponse;
 import com.kcalog.domain.tdee.service.TdeeService;
 import com.kcalog.domain.weight.entity.WeightLog;
 import com.kcalog.domain.weight.repository.WeightLogRepository;
+import com.kcalog.global.common.ServiceDay;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +52,7 @@ public class ReportService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다"));
         ZoneId zone = clock.getZone();
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = ServiceDay.today(clock);
         LocalDate a = anchor != null ? anchor : today;
 
         Range range = resolveRange(period, a, memberId, zone);
@@ -105,7 +106,7 @@ public class ReportService {
             }
             case TOTAL -> {
                 LocalDate first = mealDailyIntake.earliestDate(memberId, zone);
-                LocalDate today = LocalDate.now(clock);
+                LocalDate today = ServiceDay.today(clock);
                 yield new Range(first != null ? first.withDayOfMonth(1) : today.withDayOfMonth(1), today);
             }
         };

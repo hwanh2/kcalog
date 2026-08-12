@@ -19,12 +19,15 @@ class FoodCorrectionServiceTest {
 
     private AnalyzedItem item(String name, int kcal) {
         return new AnalyzedItem(name, kcal,
-                new BigDecimal("10.0"), new BigDecimal("10.0"), new BigDecimal("10.0"), null, false);
+                new BigDecimal("10.0"), new BigDecimal("10.0"), new BigDecimal("10.0"),
+                new BigDecimal("100"), "g", null, false);
     }
 
+    /** 수량 없이 저장된 보정치 — 스케일 근거가 없어 저장값이 그대로 적용된다 */
     private PersonalCorrection correction(String display, int kcal) {
         return PersonalCorrection.from(com.kcalog.domain.correction.entity.FoodCorrection.of(
-                1L, display, kcal, new BigDecimal("15.0"), new BigDecimal("32.0"), new BigDecimal("30.0")));
+                1L, display, kcal, new BigDecimal("15.0"), new BigDecimal("32.0"), new BigDecimal("30.0"),
+                null, null));
     }
 
     @Test

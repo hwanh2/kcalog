@@ -50,7 +50,8 @@ class AnalysisMaintenanceTest {
     @Test
     @DisplayName("기동 복구 — ANALYZING 고아 작업을 FAILED(INTERRUPTED)로 정리")
     void startupRecovery() {
-        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), member.getId() + "/orphan"));
+        AnalysisJob job = jobRepository.save(
+                AnalysisJob.analyzing(member.getId(), member.getId() + "/orphan", null));
 
         recovery.run(null);
 
@@ -63,7 +64,7 @@ class AnalysisMaintenanceTest {
     @DisplayName("미확인 작업 정리 — 보존 기간 지난 작업과 사진 삭제")
     void cleanupExpired() {
         String key = storageService.put(member.getId(), "bytes".getBytes(), "image/jpeg");
-        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), key));
+        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), key, null));
         // created_at을 보존 기간보다 훨씬 이전으로 백데이트 (감사값을 우회)
         JdbcClient.create(dataSource)
                 .sql("UPDATE analysis_job SET created_at = TIMESTAMP '2000-01-01 00:00:00+00' WHERE id = :id")
@@ -76,10 +77,23 @@ class AnalysisMaintenanceTest {
     }
 
     @Test
+    @DisplayName("사진 없는(설명만) 작업 정리 — 작업 행만 삭제된다")
+    void cleanupTextOnlyJob() {
+        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), null, "김밥 한 줄"));
+        JdbcClient.create(dataSource)
+                .sql("UPDATE analysis_job SET created_at = TIMESTAMP '2000-01-01 00:00:00+00' WHERE id = :id")
+                .param("id", job.getId()).update();
+
+        cleanup.cleanupExpired();
+
+        assertThat(jobRepository.findById(job.getId())).isEmpty();
+    }
+
+    @Test
     @DisplayName("최근 작업은 정리에서 제외")
     void keepsRecent() {
         String key = storageService.put(member.getId(), "bytes".getBytes(), "image/jpeg");
-        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), key));
+        AnalysisJob job = jobRepository.save(AnalysisJob.analyzing(member.getId(), key, null));
 
         cleanup.cleanupExpired();
 
