@@ -53,7 +53,8 @@ export function AnalysisResultSheet({
   const [favoriteIndex, setFavoriteIndex] = useState<number | null>(null)
   const [note, setNote] = useState('')
   const [reanalyzing, setReanalyzing] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
+  // 성공 안내와 실패 안내는 알리는 방식이 달라야 한다(status vs alert) — 종류를 함께 담는다
+  const [notice, setNotice] = useState<{ text: string; kind: 'info' | 'error' } | null>(null)
 
   const confidence = analysis.result?.overallConfidence ?? 0
   // 오버레이 여부는 분석 결과를 받은 시점에 한 번 정하고 고정한다 —
@@ -105,17 +106,22 @@ export function AnalysisResultSheet({
         onAnalysisChange(done)
       } else {
         setItems(previous) // 실패·미검출이면 직전 결과를 되돌린다
-        setNotice(done.status === 'NO_FOOD' ? '설명에서 음식을 찾지 못했어요.' : '다시 분석하지 못했어요.')
+        setNotice({
+          text: done.status === 'NO_FOOD' ? '설명에서 음식을 찾지 못했어요.' : '다시 분석하지 못했어요.',
+          kind: 'error',
+        })
       }
     } catch (error) {
       setItems(previous)
-      setNotice(
-        error instanceof ApiError && error.status === 429
-          ? '오늘 분석 횟수를 초과했어요.'
-          : error instanceof ApiError && error.status === 400
-            ? `재분석은 ${MAX_REANALYSIS}회까지 할 수 있어요.`
-            : '다시 분석하지 못했어요.',
-      )
+      setNotice({
+        text:
+          error instanceof ApiError && error.status === 429
+            ? '오늘 분석 횟수를 초과했어요.'
+            : error instanceof ApiError && error.status === 400
+              ? `재분석은 ${MAX_REANALYSIS}회까지 할 수 있어요.`
+              : '다시 분석하지 못했어요.',
+        kind: 'error',
+      })
     }
     setReanalyzing(false)
   }
@@ -123,9 +129,9 @@ export function AnalysisResultSheet({
   async function storeFavorite(values: DraftValues, remember: boolean) {
     try {
       await saveFavorite({ ...values, rememberForAnalysis: remember })
-      setNotice(`'${values.name}'을(를) 즐겨찾기에 저장했어요.`)
+      setNotice({ text: `'${values.name}'을(를) 즐겨찾기에 저장했어요.`, kind: 'info' })
     } catch {
-      setNotice('즐겨찾기 저장에 실패했어요.')
+      setNotice({ text: '즐겨찾기 저장에 실패했어요.', kind: 'error' })
     }
     setFavoriteIndex(null)
   }
@@ -134,20 +140,19 @@ export function AnalysisResultSheet({
 
   return (
     <Sheet label="분석 결과 확인" onClose={onClose} full>
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-lg font-bold text-ink">분석 결과 확인</p>
-        <Button type="button" variant="ghost" onClick={onClose}>
-          닫기
-        </Button>
-      </div>
+      {/* 닫기는 Sheet가 오른쪽 위에 제공한다 — 여기서 또 두면 같은 동작이 두 개가 된다 */}
+      <p className="mb-3 pr-12 text-lg font-bold text-ink">분석 결과 확인</p>
 
       {notice && (
-        <p role="status" className="mb-3 text-sm text-muted">
-          {notice}
+        <p
+          role={notice.kind === 'error' ? 'alert' : 'status'}
+          className={`mb-3 text-sm ${notice.kind === 'error' ? 'font-medium text-danger' : 'text-muted'}`}
+        >
+          {notice.text}
         </p>
       )}
       {needsReview && (
-        <p role="status" className="mb-3 inline-block rounded-full bg-carb-soft px-2 py-0.5 text-xs text-carb">
+        <p role="status" className="mb-3 inline-block rounded-full bg-carb-soft px-2 py-0.5 text-xs text-carb-ink">
           확인 필요 — 인식 신뢰도가 낮아요. 값을 확인·수정해주세요.
         </p>
       )}
@@ -215,7 +220,7 @@ export function AnalysisResultSheet({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="예: 드레싱은 절반만 뿌렸어요"
-            className="w-full rounded-full border border-border bg-surface px-4 py-2 text-sm text-ink outline-none focus:border-brand"
+            className="w-full rounded-full border border-border bg-surface px-4 py-2 text-sm text-ink outline-none focus-visible:border-brand-ink focus-visible:ring-2 focus-visible:ring-brand-ink/40"
           />
           <Button
             type="button"

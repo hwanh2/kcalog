@@ -55,7 +55,7 @@ function DeltaText({ delta }: { delta: number }) {
   if (delta === 0) return <span className="text-sm font-bold text-muted">변화 없음 (7일)</span>
   const down = delta < 0
   return (
-    <span className={`text-sm font-bold ${down ? 'text-success' : 'text-protein'}`}>
+    <span className={`text-sm font-bold ${down ? 'text-success' : 'text-protein-ink'}`}>
       {down ? '−' : '+'}
       {Math.abs(delta)}kg (7일)
     </span>
@@ -80,6 +80,7 @@ function TrendChart({ entries }: { entries: WeightEntry[] }) {
   const line = values.map((v, i) => `${x(i)},${y(v)}`).join(' ')
   const area = `${padX},${H} ${line} ${x(n - 1)},${H}`
 
+  // 스파크라인은 글씨가 아니라 면 — 밝은 brand를 그대로 쓴다
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}

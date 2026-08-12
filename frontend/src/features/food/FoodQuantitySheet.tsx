@@ -32,7 +32,8 @@ export function FoodQuantitySheet({
 
   return (
     <Sheet label={`${food.name} 담기`} onClose={onClose}>
-      <div className="min-w-0">
+      {/* pr-12 — 시트 오른쪽 위 닫기 버튼 자리(긴 이름이 밑으로 파고들지 않게) */}
+      <div className="min-w-0 pr-12">
         <p className="truncate text-lg font-bold text-ink">{food.name}</p>
         <p className="text-xs text-muted">
           기준 {formatQuantity(food.quantity)}

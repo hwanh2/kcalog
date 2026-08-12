@@ -65,7 +65,7 @@ export function FoodList({
                     aria-label={saved ? `${food.name} 즐겨찾기 해제` : `${food.name} 즐겨찾기에 저장`}
                     aria-pressed={saved}
                     onClick={() => onToggleFavorite(food, saved)}
-                    className={`shrink-0 text-lg ${saved ? 'text-brand' : 'text-border'}`}
+                    className={`shrink-0 text-lg ${saved ? 'text-brand-ink' : 'text-border'}`}
                   >
                     ★
                   </button>
@@ -88,7 +88,7 @@ export function FoodList({
                     type="button"
                     aria-label={`${food.name} 담기`}
                     onClick={() => onPick(food)}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-tile bg-brand-soft text-lg font-bold text-brand"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-tile bg-brand-soft text-lg font-bold text-brand-ink"
                   >
                     +
                   </button>

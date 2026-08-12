@@ -25,14 +25,18 @@ export function SearchField({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-full bg-track py-2.5 pl-11 pr-4 text-sm text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-brand/40 [&::-webkit-search-cancel-button]:hidden"
+          name="foodSearch"
+          autoComplete="off"
+          enterKeyHint="search"
+          className="w-full rounded-full bg-track py-2.5 pl-11 pr-4 text-sm text-ink outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-brand-ink/50 [&::-webkit-search-cancel-button]:hidden"
         />
       </div>
       {value !== '' && (
         <button
           type="button"
           onClick={() => onChange('')}
-          className="shrink-0 px-1 text-sm font-semibold text-muted"
+          // 시각 크기는 그대로 두고 히트 영역만 44px로 넓힌다
+          className="-my-2 shrink-0 rounded-full px-3 py-2 text-sm font-semibold text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
         >
           취소
         </button>

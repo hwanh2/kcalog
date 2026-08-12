@@ -95,7 +95,7 @@ export function RecordsPage() {
           <div className="flex items-center justify-between gap-2 border-t border-brand/10 bg-brand-soft px-4 py-3">
             <span className="text-[13px] font-bold text-ink">{MEAL_TYPE_LABELS[mealType]} 합계</span>
             <span className="flex items-center gap-2">
-              <span className="text-base font-black text-brand">{totals.kcal.toLocaleString()} kcal</span>
+              <span className="text-base font-black text-brand-ink">{totals.kcal.toLocaleString()} kcal</span>
               <MacroChips carbG={totals.carbG} proteinG={totals.proteinG} fatG={totals.fatG} />
             </span>
           </div>

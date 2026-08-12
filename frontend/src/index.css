@@ -1,31 +1,51 @@
 @import 'tailwindcss';
 
 /* 디자인 토큰 — Tailwind v4 CSS-first(@theme). 유틸리티(bg-brand, text-muted 등)로 노출된다.
-   v2 디자인 목업(docs/design-mockup-v2.html, 로컬 전용)의 색 정의를 그대로 사용 —
-   slate 캔버스·비비드 오렌지 primary·매크로 3색(앰버/로즈/시안) + 각 soft 배경 */
+   v2 디자인 목업(docs/design-mockup-v2.html, 로컬 전용)의 색 정의를 기준으로 하되,
+   글씨로 쓰이는 색은 WCAG AA(4.5:1)를 만족하도록 어두운 짝을 따로 둔다.
+
+   ▸ 면(bg-*)과 글씨(text-*)를 나눈 이유 —
+     대비 기준은 텍스트에만 걸린다. 진행 막대·버튼 바탕·아이콘 면은 목업의 밝은 값을
+     그대로 쓰고, 같은 색 계열을 글씨로 쓸 때만 `-ink` 짝을 쓴다.
+     ⚠️ `text-carb`(면용)를 글씨에 쓰면 2.15:1로 미달이다. 글씨에는 반드시 `text-carb-ink`.
+
+   ▸ 값은 src/theme/tokens.ts와 **같아야 한다** — 대비 검증이 거기서 돈다.
+     한쪽만 고치면 검증이 실제 화면과 어긋난다. */
 @theme {
+  /* 면 — 목업 v2 값 그대로 */
   --color-brand: #ff6b00;
   --color-brand-dark: #e55a00;
   --color-brand-soft: #fff5ed;
   --color-ink: #0f172a;
-  --color-muted: #94a3b8;
   --color-surface: #ffffff;
   --color-canvas: #f8fafc;
   /* 페이지 배경(canvas) 위에 얹는 눌린 면 — 세그먼트 트랙·합계 바처럼 테두리만으로는 구분되지 않는 곳에 쓴다 */
   --color-track: #eef1f6;
-  --color-danger: #ef4444;
   --color-border: #e2e8f0;
   --color-on-brand: #ffffff;
 
-  /* 매크로 색 — 탄(앰버)·단(로즈)·지(시안) + 칩/카드용 soft 배경, 상태 배지용 그린 */
+  /* 매크로 면 — 탄(앰버)·단(로즈)·지(시안) + 칩/카드용 soft 배경 */
   --color-carb: #f59e0b;
   --color-carb-soft: #fef3c7;
   --color-protein: #ef4444;
   --color-protein-soft: #fee2e2;
   --color-fat: #06b6d4;
   --color-fat-soft: #cffafe;
-  --color-success: #059669;
   --color-success-soft: #ecfdf5;
+
+  /* 글씨 — 매크로는 Tailwind 700 단계(앰버·로즈·시안) */
+  /* 브랜드 글씨·포커스 링 — brand의 색조를 유지한 채 명도만 12% 내린 값.
+     ⚠️ 흰 배경 3.64:1로 본문 기준(4.5)에는 미달이며 의도된 예외다(tokens.ts KNOWN_EXCEPTIONS).
+     AA를 지키려면 #b84d00까지 내려가야 하는데 눈에 띄게 칙칙해져 여기서 멈췄다 */
+  --color-brand-ink: #e05e00;
+  --color-carb-ink: #b45309;
+  --color-protein-ink: #b91c1c;
+  --color-fat-ink: #0e7490;
+  --color-success: #047857;
+  --color-danger: #b91c1c;
+  /* slate-500(#64748b)과 600(#475569) 사이 — 500은 track 위에서 4.20으로 미달하고(비활성
+     세그먼트 라벨이 여기 올라간다), 600은 본문 먹색과 가까워져 1·2차 텍스트 위계가 무너진다 */
+  --color-muted: #5b6878;
 
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 

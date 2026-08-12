@@ -37,6 +37,7 @@ export function WeightTrend({ points }: { points: WeightPoint[] }) {
             strokeWidth={1}
           />
         ))}
+        {/* 추세선은 글씨가 아니라 면 — 밝은 brand를 그대로 쓴다(굵기로 읽히지, 대비로 읽히지 않는다) */}
         {n > 1 && (
           <polyline points={trendLine} fill="none" stroke="currentColor" strokeWidth={2.5} className="text-brand" />
         )}

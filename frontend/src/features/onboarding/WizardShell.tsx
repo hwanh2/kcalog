@@ -47,7 +47,7 @@ export function WizardShell({
       </div>
 
       <div className="mt-5">
-        <p className="text-xs font-bold text-brand">STEP {step}</p>
+        <p className="text-xs font-bold text-brand-ink">STEP {step}</p>
         <h1 className="mt-1 text-2xl font-bold text-ink">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
@@ -181,7 +181,7 @@ export function SliderField({
           const parsed = Number(e.target.value)
           if (e.target.value !== '' && Number.isFinite(parsed)) onChange(parsed)
         }}
-        className="mt-1 w-full bg-transparent text-4xl font-black text-ink outline-none"
+        className="mt-1 w-full rounded bg-transparent text-4xl font-black text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
       />
       <input
         type="range"

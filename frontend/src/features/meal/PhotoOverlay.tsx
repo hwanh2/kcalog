@@ -40,7 +40,9 @@ export function PhotoOverlay({
             aria-label={`${item.name || '음식'} 편집`}
             aria-pressed={selected}
             style={{ left: `${centerX}%`, top: `${centerY}%` }}
-            className={`absolute -translate-x-1/2 ${below ? 'translate-y-2' : '-translate-y-[calc(100%+0.5rem)]'}`}
+            className={`absolute -translate-x-1/2 touch-manipulation rounded-tile focus-visible:ring-2 focus-visible:ring-on-brand ${
+              below ? 'translate-y-2' : '-translate-y-[calc(100%+0.5rem)]'
+            }`}
           >
             <span className={`relative block rounded-tile px-2.5 py-1.5 text-left shadow-lg ${surface}`}>
               <span
@@ -49,12 +51,12 @@ export function PhotoOverlay({
                 {item.name || '음식'}
               </span>
               <span className="mt-0.5 flex gap-1.5 whitespace-nowrap text-[11px] font-semibold">
-                <span className={selected ? 'text-on-brand/90' : 'text-carb'}>탄{item.carbG || 0}</span>
-                <span className={selected ? 'text-on-brand/90' : 'text-protein'}>단{item.proteinG || 0}</span>
-                <span className={selected ? 'text-on-brand/90' : 'text-fat'}>지{item.fatG || 0}</span>
+                <span className={selected ? 'text-on-brand/90' : 'text-carb-ink'}>탄{item.carbG || 0}</span>
+                <span className={selected ? 'text-on-brand/90' : 'text-protein-ink'}>단{item.proteinG || 0}</span>
+                <span className={selected ? 'text-on-brand/90' : 'text-fat-ink'}>지{item.fatG || 0}</span>
               </span>
               {hasError && (
-                <span className={`mt-1 block text-[10px] font-bold ${selected ? 'text-on-brand' : 'text-carb'}`}>
+                <span className={`mt-1 block text-[10px] font-bold ${selected ? 'text-on-brand' : 'text-carb-ink'}`}>
                   확인 필요
                 </span>
               )}

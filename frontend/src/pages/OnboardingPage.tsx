@@ -218,7 +218,7 @@ export function OnboardingPage() {
                 value={targetWeightKg}
                 onChange={(e) => setTargetWeightKg(e.target.value)}
                 placeholder="예: 65"
-                className="w-24 border-b border-border bg-transparent text-2xl font-bold text-ink outline-none"
+                className="w-24 rounded border-b border-border bg-transparent text-2xl font-bold text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
               />
               <span className="text-sm text-muted">kg</span>
             </div>
@@ -260,16 +260,16 @@ export function OnboardingPage() {
                 inputMode="numeric"
                 value={kcalInput}
                 onChange={(e) => setKcalInput(e.target.value)}
-                className="w-32 bg-transparent text-3xl font-black text-ink outline-none"
+                className="w-32 rounded bg-transparent text-3xl font-black text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
               />
               <span className="text-base font-bold text-muted">kcal</span>
             </div>
             {errors.dailyKcalTarget && <p className="mt-1 text-sm text-danger">{errors.dailyKcalTarget}</p>}
 
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <MacroCell label="탄" grams={suggestion.carbTargetG} className="bg-carb-soft text-carb" />
-              <MacroCell label="단" grams={suggestion.proteinTargetG} className="bg-protein-soft text-protein" />
-              <MacroCell label="지" grams={suggestion.fatTargetG} className="bg-fat-soft text-fat" />
+              <MacroCell label="탄" grams={suggestion.carbTargetG} className="bg-carb-soft text-carb-ink" />
+              <MacroCell label="단" grams={suggestion.proteinTargetG} className="bg-protein-soft text-protein-ink" />
+              <MacroCell label="지" grams={suggestion.fatTargetG} className="bg-fat-soft text-fat-ink" />
             </div>
           </div>
 

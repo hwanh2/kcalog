@@ -91,7 +91,7 @@ describe('RecordsPage — 끼니 세그먼트', () => {
     renderPage()
 
     // 기본 선택 끼니가 무엇이든, 점심을 고르면 점심 기록만 보인다
-    await user().click(await screen.findByRole('tab', { name: /점심/ }))
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
 
     expect(screen.getByText('김치찌개 1인분 & 공기밥')).toBeInTheDocument()
     expect(screen.queryByText(/그릭요거트/)).not.toBeInTheDocument()
@@ -104,7 +104,7 @@ describe('RecordsPage — 끼니 세그먼트', () => {
     renderPage()
 
     // 배지는 조회가 끝나야 붙으므로 이름에 숫자가 들어오는 것으로 기다린다
-    const lunchTab = await screen.findByRole('tab', { name: /점심\s*2/ })
+    const lunchTab = await screen.findByRole('button', { name: /점심\s*2/ })
     expect(within(lunchTab).getByText('2')).toBeInTheDocument()
   })
 
@@ -118,7 +118,7 @@ describe('RecordsPage — 끼니 세그먼트', () => {
   it('섭취량이 있는 항목만 수량을 함께 보여준다', async () => {
     getMealsMock.mockResolvedValue([lunch])
     renderPage()
-    await user().click(await screen.findByRole('tab', { name: /점심/ }))
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
 
     // 김치찌개는 수량이 붙고, 수량 없는 공기밥은 이름만
     expect(screen.getByText('김치찌개 1인분 & 공기밥')).toBeInTheDocument()
@@ -130,7 +130,7 @@ describe('RecordsPage — 담기', () => {
     getMealsMock.mockResolvedValue([])
     renderPage()
 
-    await user().click(await screen.findByRole('tab', { name: /저녁/ }))
+    await user().click(await screen.findByRole('button', { name: /저녁/ }))
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(await screen.findByRole('button', { name: '저녁에 기록하기' }))
 
@@ -187,7 +187,7 @@ describe('RecordsPage — 기록 수정·삭제', () => {
     deleteMealMock.mockResolvedValue(undefined)
     renderPage()
 
-    await user().click(await screen.findByRole('tab', { name: /점심/ }))
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
     await user().click(screen.getByRole('button', { name: /삭제$/ }))
 
     expect(deleteMealMock).toHaveBeenCalledWith(1)
@@ -198,7 +198,7 @@ describe('RecordsPage — 기록 수정·삭제', () => {
     updateMealMock.mockResolvedValue({ ...lunch, totalKcal: 750 })
     renderPage()
 
-    await user().click(await screen.findByRole('tab', { name: /점심/ }))
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
     await user().click(screen.getByRole('button', { name: /수정$/ }))
     const kcalField = screen.getAllByLabelText('칼로리 (kcal)')[0]
     await user().clear(kcalField)
@@ -219,7 +219,7 @@ describe('RecordsPage — 기록 수정·삭제', () => {
     getMealsMock.mockResolvedValue([lunch])
     renderPage()
 
-    await user().click(await screen.findByRole('tab', { name: /점심/ }))
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
     await user().click(screen.getByRole('button', { name: /수정$/ }))
     const kcalField = screen.getAllByLabelText('칼로리 (kcal)')[0]
     await user().clear(kcalField)
@@ -236,7 +236,8 @@ describe('RecordsPage — FAB 진입', () => {
     getMealsMock.mockResolvedValue([])
     renderPage('/records?camera=1')
 
-    expect(await screen.findByRole('tab', { name: 'AI 입력', selected: true })).toBeInTheDocument()
+    // 세그먼트는 tabs가 아니라 눌림 상태를 가진 버튼이다(design D3)
+    expect(await screen.findByRole('button', { name: 'AI 입력', pressed: true })).toBeInTheDocument()
     expect(screen.getByLabelText(/무엇을 드셨나요/)).toBeInTheDocument()
   })
 })

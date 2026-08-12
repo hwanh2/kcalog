@@ -126,6 +126,7 @@ function TdeeTrend({ series }: { series: TdeePoint[] }) {
         <span className="text-sm font-medium text-brand">{latest.toLocaleString()} kcal</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="유지칼로리 변화 그래프">
+        {/* 추세선은 면 — 밝은 brand 유지 */}
         <polyline points={line} fill="none" stroke="currentColor" strokeWidth={2} className="text-brand" />
       </svg>
     </Card>

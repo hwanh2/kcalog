@@ -13,6 +13,7 @@ export function CalorieRing({
   const hasTarget = dailyKcalTarget !== null && remainingKcal !== null
   const over = hasTarget && remainingKcal < 0
   const pct = hasTarget ? Math.min(100, Math.max(0, (totalKcal / dailyKcalTarget) * 100)) : 0
+  // 링 호는 글씨가 아니라 면 — 밝은 brand를 그대로 쓴다(가운데 숫자만 글씨용 ink)
   const arcClass = over ? 'text-danger' : 'text-brand'
 
   return (
@@ -45,7 +46,7 @@ export function CalorieRing({
                 <span className="block text-[11px] font-bold text-muted">
                   {over ? '목표 초과' : '남은 칼로리'}
                 </span>
-                <span className={`text-3xl font-black leading-none ${over ? 'text-danger' : 'text-brand'}`}>
+                <span className={`text-3xl font-black leading-none ${over ? 'text-danger' : 'text-brand-ink'}`}>
                   {Math.abs(remainingKcal)}
                 </span>
                 <span className="mt-1 block text-[11px] font-semibold text-muted">
@@ -55,7 +56,7 @@ export function CalorieRing({
             ) : (
               <>
                 <span className="block text-[11px] font-bold text-muted">오늘 섭취</span>
-                <span className="text-3xl font-black leading-none text-brand">{totalKcal}</span>
+                <span className="text-3xl font-black leading-none text-brand-ink">{totalKcal}</span>
                 <span className="mt-1 block text-[11px] font-semibold text-muted">kcal</span>
               </>
             )}
