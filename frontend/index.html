@@ -5,6 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- iOS는 홈 화면 아이콘에 manifest의 icons를 쓰지 않는다 — 이게 없으면 페이지 스크린샷이 들어간다 -->
     <link rel="apple-touch-icon" href="/icon-180.png" />
+    <!-- iOS 15.4 미만은 manifest의 display를 보지 않는다 — 없으면 홈 화면에서 열어도 주소창이 남는다 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <!-- viewport-fit=cover — 없으면 env(safe-area-inset-*)이 항상 0이라 노치 대응이 무효가 된다 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- 페이지 배경(--color-canvas)과 같은 값 — 어긋나면 PWA 상태 표시줄에 다른 색 띠가 생긴다 -->
