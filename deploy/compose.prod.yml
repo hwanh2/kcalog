@@ -17,8 +17,6 @@ x-logging: &default-logging
 
 services:
   traefik:
-    # v3.6.1 미만은 도커 API를 1.24로 고정 호출해 Docker 29 데몬(최소 1.44)에 거부당한다.
-    # 그러면 라벨을 못 읽어 라우터가 생기지 않는다. 3.6.1부터 데몬과 버전을 협상한다.
     image: traefik:v3.6.1
     container_name: kcalog-traefik
     restart: unless-stopped
