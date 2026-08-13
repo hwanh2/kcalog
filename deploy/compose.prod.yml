@@ -20,6 +20,9 @@ services:
     image: traefik:v3.3
     container_name: kcalog-traefik
     restart: unless-stopped
+    environment:
+      # 기본값(1.24)은 최신 도커 데몬이 거부한다 — provider가 죽어 라벨을 못 읽는다
+      - DOCKER_API_VERSION=1.44
     command:
       # 도커 컨테이너의 라벨을 읽어 라우팅을 구성한다
       - --providers.docker=true
