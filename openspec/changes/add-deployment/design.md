@@ -42,7 +42,7 @@ api.kcalog.site   → AWS EC2 t3.small
 git checkout release && git merge main && git push origin release
    → GitHub Actions
        ├ 백엔드: 이미지 빌드 → ghcr.io push → SSH로 VM 접속 → .env 갱신 → pull → up -d
-       └ 프론트: Vercel 운영 배포 (main 자동배포는 프리뷰 전용)
+       └ 프론트: Vercel Git 연동이 직접 배포 (Production Branch = release)
 ```
 
 - **release 브랜치 트리거**로 프론트·백엔드를 묶는다. main 머지마다 프론트만 배포되면 아직 없는 API를 부르는 화면이 운영에 뜬다.

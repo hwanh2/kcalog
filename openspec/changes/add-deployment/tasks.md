@@ -29,8 +29,7 @@
   - 앱: `FRONTEND_BASE_URL`(`https://kcalog.site`), `CORS_ALLOWED_ORIGINS`(`https://kcalog.site`), `DB_PASSWORD`, `JWT_SECRET`(32바이트 이상 랜덤), `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`, `OPENAI_API_KEY`
   - 스토리지: `STORAGE_BUCKET`, `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`
   - 백업: `BACKUP_BUCKET`, `BACKUP_ENDPOINT`, `BACKUP_ACCESS_KEY`, `BACKUP_SECRET_KEY`
-  - 프론트: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
-- [ ] 0.13 👤 Vercel 프로젝트 연결 — 루트 디렉터리 `frontend`, Git 자동배포는 프리뷰만(운영은 배포 워크플로우가 담당), 환경변수 `VITE_API_BASE_URL=https://api.kcalog.site`
+- [ ] 0.13 👤 Vercel 프로젝트 연결 — 루트 디렉터리 **`frontend`**, 환경변수 `VITE_API_BASE_URL=https://api.kcalog.site`(Production), **Production Branch를 `release`로 지정**(Git 연동이 프론트 운영 배포를 담당한다 — 워크플로우는 백엔드만 다룬다), 도메인 `kcalog.site`·`www` 연결
 
 ## 1. 백엔드 코드 (운영에서 깨지는 것 수정)
 
@@ -56,7 +55,7 @@
 - [x] 3.2 백엔드 잡 — 이미지 빌드 → `ghcr.io`에 커밋 SHA + `latest`로 push (서드파티 액션은 SHA 핀 고정)
 - [x] 3.3 배포 스텝 — SSH로 VM 접속 → Secrets로 `.env` 생성(권한 0600, 로그에 값 미출력) → SHA 이미지 pull → `compose up -d`
 - [x] 3.4 배포 확인 스텝 — 공개 주소 `/actuator/health`가 정상을 응답할 때까지 재시도, 실패 시 워크플로우 실패 처리
-- [x] 3.5 프론트 잡 — 같은 커밋에서 Vercel 운영 배포
+- [x] 3.5 프론트는 Vercel Git 연동에 위임 — Production Branch를 `release`로 두면 트리거가 같아 동작은 동일하고, 토큰 3개와 잡 하나가 준다
 - [x] 3.6 워크플로우 권한 최소화 (`packages: write`는 이미지 잡에만)
 - [x] 3.7 배포 커밋을 실행 요약에 기록 (release는 계속 움직이므로 무엇이 나갔는지 남긴다)
 

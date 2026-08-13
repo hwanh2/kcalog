@@ -14,7 +14,7 @@
 - **CORS 신설** — 허용 출처(`kcalog.site`)의 자격증명 포함 요청만 통과. 지금은 설정 자체가 없어 분리 배포 시 모든 API 호출이 브라우저에서 차단된다.
 - **프록시 헤더 신뢰** — `forward-headers-strategy`로 `X-Forwarded-Proto`를 반영해 OAuth 리다이렉트 URI가 `https`로 생성되게 한다.
 - **헬스체크** — actuator 추가, `/actuator/health`를 인증 없이 공개하고 DB 연결 상태를 포함한다.
-- **컨테이너화·배포 파이프라인** — 백엔드 Dockerfile, 운영용 compose(Traefik 라우팅 라벨 포함). `release` 브랜치에 들어오면 GitHub Actions가 이미지를 ghcr.io에 올리고 SSH로 VM에 배포한다. 프론트도 같은 커밋으로 Vercel 운영 배포.
+- **컨테이너화·배포 파이프라인** — 백엔드 Dockerfile, 운영용 compose(Traefik 라우팅 라벨 포함). `release` 브랜치에 들어오면 GitHub Actions가 이미지를 ghcr.io에 올리고 SSH로 VM에 배포한다. 프론트는 Vercel Git 연동이 같은 브랜치를 보고 배포한다.
 - **SPA 라우트 폴백** — `vercel.json` rewrite. 없으면 `/weight` 같은 경로로 직접 진입할 때 404가 난다.
 - **DB 백업** — 매일 `pg_dump` → R2 업로드, 보관 기간 후 정리. 관리형 DB를 쓰지 않으므로 자동 백업이 없다.
 - **문서** — README에 운영 구성·배포 절차, AGENTS.md의 서비스명 확정 반영.
