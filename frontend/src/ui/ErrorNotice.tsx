@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 /**
- * 실패 안내 — `useSafeMutation`의 `error`를 화면에 붙일 때 쓴다.
+ * 실패 안내 — `useMutationWithError`의 `error`를 화면에 붙일 때 쓴다.
  * 모양과 role을 한 곳에 둬서, 화면마다 오류가 다르게 생기거나
  * `role="status"`로 잘못 알려지는 일이 없게 한다.
  */

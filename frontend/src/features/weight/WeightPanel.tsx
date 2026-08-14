@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getWeightSummary, recordWeight } from '../../api/weight'
 import { addDays } from '../../lib/date'
-import { useSafeMutation } from '../../lib/useSafeMutation'
+import { useMutationWithError } from '../../lib/useMutationWithError'
 import { Card } from '../../ui/form'
 import { WeightTrend } from './WeightTrend'
 import { GoalEstimator } from './GoalEstimator'
@@ -31,7 +31,7 @@ export function WeightPanel({ date }: { date: string }) {
     setError(null)
   }, [date, existingKg])
 
-  const mutation = useSafeMutation((weightKg: number) => recordWeight({ weightKg, logDate: date }), {
+  const mutation = useMutationWithError((weightKg: number) => recordWeight({ weightKg, logDate: date }), {
     errorMessage: '체중을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['weightSummary'] })
@@ -50,11 +50,13 @@ export function WeightPanel({ date }: { date: string }) {
   function save() {
     const result = validateWeight(input)
     if ('error' in result) {
+      // 직전 저장 실패 문구를 함께 지운다 — 안 지우면 그게 남아 검증 오류를 가린다
+      mutation.clearError()
       setError(result.error)
       return
     }
     setError(null)
-    mutation.mutate(result.value)
+    mutation.mutate(result.value) // 실패 문구는 useMutationWithError가 재시도 때 비운다
   }
 
   const [, m, d] = date.split('-')
@@ -98,7 +100,11 @@ export function WeightPanel({ date }: { date: string }) {
             </span>
           </p>
         )}
-        {/* 입력 검증 오류와 저장 실패를 같은 자리에 — 색은 브랜드 배경 위라 흰색을 쓴다 */}
+        {/*
+          입력 검증 오류와 저장 실패를 같은 자리에 보여준다. save()가 한쪽을 세울 때 다른 쪽을
+          비우므로 둘이 동시에 남지 않는다 — 뒤늦은 실패가 옛 검증 오류에 가려지지 않는다.
+          색은 오렌지 히어로 카드 위라 text-danger가 오히려 안 읽혀 흰색을 쓴다(design "구현 이탈").
+        */}
         {(error ?? mutation.error) && (
           <p role="alert" className="mt-1 text-sm font-medium text-white">
             {error ?? mutation.error}

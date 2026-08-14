@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteFavorite, getFoods, saveFavorite } from '../../api/food'
 import type { Food } from '../../api/food'
 import type { MealType } from '../../api/meal'
-import { useSafeMutation } from '../../lib/useSafeMutation'
+import { useMutationWithError } from '../../lib/useMutationWithError'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { ListSkeleton } from '../../ui/ListSkeleton'
 import { SegmentedTabs } from '../../ui/SegmentedTabs'
@@ -53,7 +53,7 @@ export function AddFoodPanel({
   const refreshFoods = () => void queryClient.invalidateQueries({ queryKey: ['foods'] })
   // 성공 안내는 두지 않는다 — ★이 채워지고 비워지는 것 자체가 결과다(design D4).
   // 실패만 알린다.
-  const favoriteMutation = useSafeMutation(saveFavorite, {
+  const favoriteMutation = useMutationWithError(saveFavorite, {
     errorMessage: '즐겨찾기에 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => {
       refreshFoods()
@@ -61,7 +61,7 @@ export function AddFoodPanel({
       setDraft(null)
     },
   })
-  const removeFavoriteMutation = useSafeMutation(deleteFavorite, {
+  const removeFavoriteMutation = useMutationWithError(deleteFavorite, {
     errorMessage: '즐겨찾기에서 빼지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: refreshFoods,
   })

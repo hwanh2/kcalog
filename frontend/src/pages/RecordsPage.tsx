@@ -12,7 +12,7 @@ import { toSaveItems } from '../features/meal/mealItems'
 import type { EditableItem } from '../features/meal/mealItems'
 import { eatenAtFor, todayServiceDate } from '../lib/date'
 import { round1 } from '../lib/number'
-import { useSafeMutation } from '../lib/useSafeMutation'
+import { useMutationWithError } from '../lib/useMutationWithError'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { ListSkeleton } from '../ui/ListSkeleton'
 import { Card } from '../ui/form'
@@ -48,7 +48,7 @@ export function RecordsPage() {
   // 담기 시트는 이미 닫혀 항목이 화면에서 사라졌으므로, 여기서 안 들고 있으면 처음부터 다시 입력해야 한다.
   const [failed, setFailed] = useState<Parameters<typeof saveMeal>[0] | null>(null)
 
-  const saveMutation = useSafeMutation(saveMeal, {
+  const saveMutation = useMutationWithError(saveMeal, {
     errorMessage: '기록을 저장하지 못했어요.',
     onSuccess: () => {
       setFailed(null)

@@ -151,6 +151,43 @@ describe('재분석', () => {
   })
 })
 
+describe('성공은 조용히, 실패만 알린다', () => {
+  it('즐겨찾기에 저장해도 안내 문구가 남지 않는다 — 항목의 ★이 결과다', async () => {
+    const user = userEvent.setup()
+    saveFavoriteMock.mockResolvedValue({
+      id: 1,
+      source: 'FAVORITE',
+      name: '김치찌개',
+      emoji: null,
+      aliases: [],
+      quantity: 1,
+      unit: '인분',
+      kcal: 400,
+      carbG: 30,
+      proteinG: 20,
+      fatG: 18,
+    })
+    renderSheet()
+
+    await user.click(screen.getByRole('button', { name: /김치찌개 즐겨찾기에 저장/ }))
+    await user.click(screen.getByRole('button', { name: '즐겨찾기에 저장' }))
+
+    await waitFor(() => expect(saveFavoriteMock).toHaveBeenCalled())
+    expect(screen.queryByText(/즐겨찾기에 저장했어요/)).not.toBeInTheDocument()
+  })
+
+  it('즐겨찾기 저장이 실패하면 알린다', async () => {
+    const user = userEvent.setup()
+    saveFavoriteMock.mockRejectedValue(new Error('network'))
+    renderSheet()
+
+    await user.click(screen.getByRole('button', { name: /김치찌개 즐겨찾기에 저장/ }))
+    await user.click(screen.getByRole('button', { name: '즐겨찾기에 저장' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/저장하지 못했어요/)
+  })
+})
+
 describe('즐겨찾기 저장', () => {
   it('항목의 ★로 그 값을 즐겨찾기에 담는다', async () => {
     const user = userEvent.setup()

@@ -5,6 +5,7 @@ import { ApiError } from '../../api/client'
 import { saveFavorite } from '../../api/food'
 import type { MealType } from '../../api/meal'
 import { Button } from '../../ui/form'
+import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Sheet } from '../../ui/Sheet'
 import { FoodDraftSheet } from '../food/FoodDraftSheet'
 import type { DraftValues } from '../food/FoodDraftSheet'
@@ -53,8 +54,12 @@ export function AnalysisResultSheet({
   const [favoriteIndex, setFavoriteIndex] = useState<number | null>(null)
   const [note, setNote] = useState('')
   const [reanalyzing, setReanalyzing] = useState(false)
-  // 성공 안내와 실패 안내는 알리는 방식이 달라야 한다(status vs alert) — 종류를 함께 담는다
-  const [notice, setNotice] = useState<{ text: string; kind: 'info' | 'error' } | null>(null)
+  /**
+   * 실패 안내 전용. 성공은 알리지 않는다 — 즐겨찾기는 ★로, 재분석은 목록이 바뀌는 것으로
+   * 결과가 이미 드러난다(design D4). 문구를 띄우면 자동으로 사라지지 않아 다음 동작의
+   * 결과처럼 읽힌다.
+   */
+  const [error, setError] = useState<string | null>(null)
 
   const confidence = analysis.result?.overallConfidence ?? 0
   // 오버레이 여부는 분석 결과를 받은 시점에 한 번 정하고 고정한다 —
@@ -92,7 +97,7 @@ export function AnalysisResultSheet({
 
     const previous = items
     setReanalyzing(true)
-    setNotice(null)
+    setError(null)
     try {
       const started = await reanalyze(analysis.id, note.trim())
       const done = await pollAnalysis(started.id)
@@ -106,22 +111,17 @@ export function AnalysisResultSheet({
         onAnalysisChange(done)
       } else {
         setItems(previous) // 실패·미검출이면 직전 결과를 되돌린다
-        setNotice({
-          text: done.status === 'NO_FOOD' ? '설명에서 음식을 찾지 못했어요.' : '다시 분석하지 못했어요.',
-          kind: 'error',
-        })
+        setError(done.status === 'NO_FOOD' ? '설명에서 음식을 찾지 못했어요.' : '다시 분석하지 못했어요.')
       }
-    } catch (error) {
+    } catch (e) {
       setItems(previous)
-      setNotice({
-        text:
-          error instanceof ApiError && error.status === 429
-            ? '오늘 분석 횟수를 초과했어요.'
-            : error instanceof ApiError && error.status === 400
-              ? `재분석은 ${MAX_REANALYSIS}회까지 할 수 있어요.`
-              : '다시 분석하지 못했어요.',
-        kind: 'error',
-      })
+      setError(
+        e instanceof ApiError && e.status === 429
+          ? '오늘 분석 횟수를 초과했어요.'
+          : e instanceof ApiError && e.status === 400
+            ? `재분석은 ${MAX_REANALYSIS}회까지 할 수 있어요.`
+            : '다시 분석하지 못했어요.',
+      )
     }
     setReanalyzing(false)
   }
@@ -129,9 +129,9 @@ export function AnalysisResultSheet({
   async function storeFavorite(values: DraftValues, remember: boolean) {
     try {
       await saveFavorite({ ...values, rememberForAnalysis: remember })
-      setNotice({ text: `'${values.name}'을(를) 즐겨찾기에 저장했어요.`, kind: 'info' })
+      // 성공 안내 없음 — 항목의 ★이 채워지는 것으로 결과가 드러난다(AddFoodPanel과 동일)
     } catch {
-      setNotice({ text: '즐겨찾기 저장에 실패했어요.', kind: 'error' })
+      setError('즐겨찾기에 저장하지 못했어요. 잠시 후 다시 시도해주세요.')
     }
     setFavoriteIndex(null)
   }
@@ -143,14 +143,7 @@ export function AnalysisResultSheet({
       {/* 닫기는 Sheet가 오른쪽 위에 제공한다 — 여기서 또 두면 같은 동작이 두 개가 된다 */}
       <p className="mb-3 pr-12 text-lg font-bold text-ink">분석 결과 확인</p>
 
-      {notice && (
-        <p
-          role={notice.kind === 'error' ? 'alert' : 'status'}
-          className={`mb-3 text-sm ${notice.kind === 'error' ? 'font-medium text-danger' : 'text-muted'}`}
-        >
-          {notice.text}
-        </p>
-      )}
+      <ErrorNotice message={error} className="mb-3" />
       {needsReview && (
         <p role="status" className="mb-3 inline-block rounded-full bg-carb-soft px-2 py-0.5 text-xs text-carb-ink">
           확인 필요 — 인식 신뢰도가 낮아요. 값을 확인·수정해주세요.

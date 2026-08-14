@@ -4,7 +4,7 @@ import { deleteMeal, updateMeal } from '../../api/meal'
 import type { Meal } from '../../api/meal'
 import { AuthImage } from '../../ui/AuthImage'
 import { formatQuantity } from '../../lib/number'
-import { useSafeMutation } from '../../lib/useSafeMutation'
+import { useMutationWithError } from '../../lib/useMutationWithError'
 import { ConfirmSheet } from '../../ui/ConfirmSheet'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { MacroChips } from '../../ui/MacroChips'
@@ -31,14 +31,14 @@ export function MealCard({ meal }: { meal: Meal }) {
     void queryClient.invalidateQueries({ queryKey: ['meals'] })
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // 홈 집계도 갱신
   }
-  const removeMutation = useSafeMutation<void, void>(() => deleteMeal(meal.id), {
+  const removeMutation = useMutationWithError<void, void>(() => deleteMeal(meal.id), {
     errorMessage: '기록을 지우지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => {
       setConfirmingDelete(false)
       invalidate()
     },
   })
-  const updateMutation = useSafeMutation(
+  const updateMutation = useMutationWithError(
     (body: Parameters<typeof updateMeal>[1]) => updateMeal(meal.id, body),
     {
       errorMessage: '수정한 내용을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',

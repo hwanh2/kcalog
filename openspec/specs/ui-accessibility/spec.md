@@ -1,7 +1,13 @@
 # ui-accessibility Specification
 
 ## Purpose
-TBD - created by archiving change improve-ui-accessibility. Update Purpose after archive.
+화면이 **눈으로 보는 것 말고도 쓰일 수 있게** 하는 공통 규범. 색 대비·키보드 조작·포커스 표시·
+다이얼로그 규약·ARIA·터치 대상·모션 축소를 한곳에 모아, 화면마다 흩어져 어긋나는 것을 막는다.
+
+여기 있는 규칙은 **특정 화면이 아니라 모든 화면에 적용된다** — 새로 만드는 화면도 자동으로 대상이다.
+색 대비는 `frontend/src/theme/tokens.ts`의 테스트가 강제하며, 브랜드 색처럼 의도적으로 기준을
+지키지 않는 조합은 `KNOWN_EXCEPTIONS`에 수치와 함께 남겨 리뷰에 드러나게 한다.
+
 ## Requirements
 ### Requirement: 텍스트 색 대비
 

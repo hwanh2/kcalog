@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getTdee } from '../../api/tdee'
 import { updateMember } from '../../api/member'
-import { useSafeMutation } from '../../lib/useSafeMutation'
+import { useMutationWithError } from '../../lib/useMutationWithError'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Button, Card } from '../../ui/form'
 
@@ -10,7 +10,7 @@ export function TdeeCard() {
   const queryClient = useQueryClient()
   const { data: tdee } = useQuery({ queryKey: ['tdee'], queryFn: getTdee })
 
-  const apply = useSafeMutation((kcal: number) => updateMember({ dailyKcalTarget: kcal }), {
+  const apply = useMutationWithError((kcal: number) => updateMember({ dailyKcalTarget: kcal }), {
     errorMessage: '목표 칼로리를 적용하지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['tdee'] })

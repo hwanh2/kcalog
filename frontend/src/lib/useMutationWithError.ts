@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query'
-import type { UseMutationOptions } from '@tanstack/react-query'
 import { useState } from 'react'
 
 const DEFAULT_MESSAGE = '요청에 실패했어요. 잠시 후 다시 시도해주세요.'
@@ -17,7 +16,7 @@ const DEFAULT_MESSAGE = '요청에 실패했어요. 잠시 후 다시 시도해�
  * QueryClient 전역 `onError`를 쓰지 않은 이유: 안내가 들어설 자리가 화면마다 달라
  * 전역에서 어디에 띄울지 결정할 수 없다.
  */
-export function useSafeMutation<TData, TVariables>(
+export function useMutationWithError<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   options: {
     /** 실패했을 때 보여줄 문구. 없으면 기본 문구를 쓴다 */
@@ -38,7 +37,7 @@ export function useSafeMutation<TData, TVariables>(
       setError(null)
       options.onSuccess?.(data, variables)
     },
-  } as UseMutationOptions<TData, unknown, TVariables>)
+  })
 
   return {
     mutate: mutation.mutate,

@@ -14,7 +14,7 @@ import type {
   RecommendationCategory,
 } from '../api/coach'
 import { CoachMarkdown } from '../features/coach/CoachMarkdown'
-import { useSafeMutation } from '../lib/useSafeMutation'
+import { useMutationWithError } from '../lib/useMutationWithError'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { Card } from '../ui/form'
 
@@ -137,7 +137,7 @@ function Chat() {
 
   const { data: messages = [] } = useQuery({ queryKey: ['coachMessages'], queryFn: getMessages })
 
-  const clear = useSafeMutation<void, void>(clearMessages, {
+  const clear = useMutationWithError<void, void>(clearMessages, {
     errorMessage: '대화를 지우지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['coachMessages'] }),
   })
