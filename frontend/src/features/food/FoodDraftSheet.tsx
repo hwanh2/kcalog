@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { MealType } from '../../api/meal'
 import { MEAL_TYPE_LABELS } from '../meal/mealDefaults'
+import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Button } from '../../ui/form'
 import { Sheet } from '../../ui/Sheet'
 import { FoodForm, draftValues, emptyDraft, validateDraft } from './FoodForm'
@@ -19,6 +20,7 @@ export function FoodDraftSheet({
   mealType,
   initial,
   busy,
+  error = null,
   onSubmit,
   onClose,
 }: {
@@ -26,6 +28,8 @@ export function FoodDraftSheet({
   mealType?: MealType
   initial?: Partial<FoodDraft>
   busy?: boolean
+  /** 저장 실패 안내 — 시트를 닫지 않고 여기 보여줘야 입력한 값이 살아 있다 */
+  error?: string | null
   onSubmit: (values: DraftValues, rememberForAnalysis: boolean) => void
   onClose: () => void
 }) {
@@ -71,6 +75,8 @@ export function FoodDraftSheet({
           </span>
         </label>
       )}
+
+      <ErrorNotice message={error} className="mt-3" />
 
       <Button type="button" onClick={submit} disabled={busy} className="mt-4 w-full py-3">
         {submitLabel}

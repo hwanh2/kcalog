@@ -21,7 +21,9 @@ export function PhotoOverlay({
 }) {
   return (
     <div className="relative">
-      <img src={src} alt="식사 사진" className="block w-full rounded-2xl" />
+      {/* 종횡비로 자리를 미리 잡는다 — 사진이 뜨며 아래 항목·버튼이 밀리면 누르려던 것이 움직인다.
+          찍은 사진이라 실제 크기를 모르므로 픽셀 대신 비율로 잡고 object-cover로 채운다(design D5) */}
+      <img src={src} alt="식사 사진" className="block aspect-[4/3] w-full rounded-2xl object-cover" />
 
       {items.map((item, index) => {
         if (!isValidBox(item.box)) return null

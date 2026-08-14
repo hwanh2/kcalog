@@ -103,7 +103,8 @@ export function AiRecordPanel({
       <label className="relative block cursor-pointer rounded-2xl bg-track px-4 py-8 text-center">
         {photoUrl ? (
           <>
-            <img src={photoUrl} alt="선택한 사진" className="mx-auto max-h-56 rounded-2xl" />
+            {/* max-h가 아니라 고정 높이 — max-h는 사진 비율에 따라 높이가 달라져 분석 버튼이 움직인다 */}
+            <img src={photoUrl} alt="선택한 사진" className="mx-auto h-56 rounded-2xl object-contain" />
             <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-bold text-on-brand">
               <CameraIcon />
               사진 변경

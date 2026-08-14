@@ -1,3 +1,4 @@
+import { ListSkeleton } from '../../ui/ListSkeleton'
 import { SparklesIcon } from '../../ui/icons'
 
 /**
@@ -10,7 +11,7 @@ export function AnalyzingView({ photoUrl }: { photoUrl: string | null }) {
     <div className="py-4">
       {photoUrl ? (
         <div className="relative mx-auto w-52 overflow-hidden rounded-2xl">
-          <img src={photoUrl} alt="분석 중인 사진" className="w-full" />
+          <img src={photoUrl} alt="분석 중인 사진" className="aspect-[4/3] w-full object-cover" />
           <div aria-hidden className="absolute inset-0 bg-ink/25" />
           <div
             aria-hidden
@@ -37,22 +38,7 @@ export function AnalyzingView({ photoUrl }: { photoUrl: string | null }) {
       <p className="mt-1 text-center text-xs text-muted">보통 5~10초 걸려요</p>
 
       {/* 결과가 들어설 자리 */}
-      <ul aria-hidden className="mt-5 space-y-2">
-        {[0, 1, 2].map((index) => (
-          <li
-            key={index}
-            className="flex animate-pulse items-center gap-3 rounded-tile border border-border bg-surface p-3"
-            style={{ animationDelay: `${index * 150}ms` }}
-          >
-            <span className="h-9 w-9 shrink-0 rounded-tile bg-track" />
-            <span className="flex-1">
-              <span className="block h-3 w-2/5 rounded-full bg-track" />
-              <span className="mt-1.5 block h-2.5 w-3/5 rounded-full bg-track" />
-            </span>
-            <span className="h-3 w-10 rounded-full bg-track" />
-          </li>
-        ))}
-      </ul>
+      <ListSkeleton rows={3} className="mt-5" />
     </div>
   )
 }

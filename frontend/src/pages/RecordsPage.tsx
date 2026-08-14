@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { getMeals, saveMeal } from '../api/meal'
 import type { Meal, MealType } from '../api/meal'
@@ -12,6 +12,9 @@ import { toSaveItems } from '../features/meal/mealItems'
 import type { EditableItem } from '../features/meal/mealItems'
 import { eatenAtFor, todayServiceDate } from '../lib/date'
 import { round1 } from '../lib/number'
+import { useMutationWithError } from '../lib/useMutationWithError'
+import { ErrorNotice } from '../ui/ErrorNotice'
+import { ListSkeleton } from '../ui/ListSkeleton'
 import { Card } from '../ui/form'
 
 /**
@@ -41,14 +44,24 @@ export function RecordsPage() {
     queryFn: () => getMeals(date),
   })
 
-  const saveMutation = useMutation({
-    mutationFn: saveMeal,
+  // 실패한 저장 요청을 들고 있다가 "다시 시도"로 그대로 재전송한다(design D3).
+  // 담기 시트는 이미 닫혀 항목이 화면에서 사라졌으므로, 여기서 안 들고 있으면 처음부터 다시 입력해야 한다.
+  const [failed, setFailed] = useState<Parameters<typeof saveMeal>[0] | null>(null)
+
+  const saveMutation = useMutationWithError(saveMeal, {
+    errorMessage: '기록을 저장하지 못했어요.',
     onSuccess: () => {
+      setFailed(null)
       void queryClient.invalidateQueries({ queryKey: ['meals'] })
       void queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // 홈 집계도 갱신
       if (autoCamera) setSearchParams({}, { replace: true }) // 촬영이 끝나면 자동 열기 신호를 지운다
     },
   })
+
+  function submitSave(body: Parameters<typeof saveMeal>[0]) {
+    setFailed(body) // 성공하면 onSuccess가 비운다
+    saveMutation.mutate(body)
+  }
 
   const all = meals ?? []
   const counts = countByMealType(all)
@@ -59,7 +72,7 @@ export function RecordsPage() {
     // 담는 순간의 "오늘"을 다시 읽는다 — 04:59에 연 화면으로 05:01에 담아도 오늘로 들어가게
     const target = todayServiceDate()
     if (target !== date) setDate(target)
-    saveMutation.mutate({
+    submitSave({
       eatenAt: eatenAtFor(target),
       mealType,
       source: analysisJobId ? 'AI' : 'MANUAL',
@@ -74,7 +87,7 @@ export function RecordsPage() {
       <MealTypeSegments selected={mealType} counts={counts} onSelect={setMealType} />
 
       {isPending ? (
-        <p className="mt-4 text-muted">불러오는 중…</p>
+        <ListSkeleton rows={2} className="mt-3" />
       ) : selected.length === 0 ? (
         <Card className="mt-3">
           <p className="text-center text-sm text-muted">
@@ -95,18 +108,33 @@ export function RecordsPage() {
           <div className="flex items-center justify-between gap-2 border-t border-brand/10 bg-brand-soft px-4 py-3">
             <span className="text-[13px] font-bold text-ink">{MEAL_TYPE_LABELS[mealType]} 합계</span>
             <span className="flex items-center gap-2">
-              <span className="text-base font-black text-brand-ink">{totals.kcal.toLocaleString()} kcal</span>
+              <span className="text-base font-black tabular-nums text-brand-ink">
+                {totals.kcal.toLocaleString()} kcal
+              </span>
               <MacroChips carbG={totals.carbG} proteinG={totals.proteinG} fatG={totals.fatG} />
             </span>
           </div>
         </div>
       )}
 
-      {saveMutation.isError && (
-        <p role="alert" className="mt-2 text-sm text-danger">
-          저장에 실패했어요. 잠시 후 다시 시도해주세요.
-        </p>
-      )}
+      {/* 담은 항목을 들고 있으므로 한 번에 다시 보낼 수 있다 — 분석 결과면 analysisJobId도 그대로라
+          재분석 없이 저장되어 일일 분석 횟수를 다시 쓰지 않는다 */}
+      <ErrorNotice
+        message={saveMutation.error}
+        className="mt-2"
+        action={
+          failed && (
+            <button
+              type="button"
+              onClick={() => submitSave(failed)}
+              disabled={saveMutation.isPending}
+              className="rounded-tile px-2 py-1 font-bold underline underline-offset-2 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-danger"
+            >
+              다시 시도
+            </button>
+          )
+        }
+      />
 
       <AddFoodPanel
         mealType={mealType}

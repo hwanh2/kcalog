@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
 import {
   clearMessages,
@@ -14,6 +14,8 @@ import type {
   RecommendationCategory,
 } from '../api/coach'
 import { CoachMarkdown } from '../features/coach/CoachMarkdown'
+import { useMutationWithError } from '../lib/useMutationWithError'
+import { ErrorNotice } from '../ui/ErrorNotice'
 import { Card } from '../ui/form'
 
 const QUICK_PROMPTS = [
@@ -135,8 +137,8 @@ function Chat() {
 
   const { data: messages = [] } = useQuery({ queryKey: ['coachMessages'], queryFn: getMessages })
 
-  const clear = useMutation({
-    mutationFn: clearMessages,
+  const clear = useMutationWithError<void, void>(clearMessages, {
+    errorMessage: '대화를 지우지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['coachMessages'] }),
   })
 
@@ -229,6 +231,8 @@ function Chat() {
           </button>
         )}
       </div>
+
+      <ErrorNotice message={clear.error} className="mt-2" />
 
       <div
         ref={listRef}

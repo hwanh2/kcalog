@@ -90,6 +90,42 @@ describe('즐겨찾기 저장', () => {
   })
 })
 
+describe('성공은 조용히, 실패만 알린다', () => {
+  it('즐겨찾기에 저장해도 안내 문구가 뜨지 않는다 — ★ 변화가 곧 결과다', async () => {
+    const user = userEvent.setup()
+    renderPanel()
+
+    await user.click(await screen.findByRole('button', { name: '삶은달걀 즐겨찾기에 저장' }))
+    await user.click(screen.getByRole('button', { name: '즐겨찾기에 저장' }))
+
+    await waitFor(() => expect(saveFavoriteMock).toHaveBeenCalled())
+    expect(screen.queryByText(/즐겨찾기에 저장했어요/)).not.toBeInTheDocument()
+  })
+
+  it('저장이 실패하면 시트를 닫지 않고 알린다 — 입력한 값이 살아 있어야 한다', async () => {
+    const user = userEvent.setup()
+    saveFavoriteMock.mockRejectedValue(new Error('network'))
+    renderPanel()
+
+    await user.click(await screen.findByRole('button', { name: '삶은달걀 즐겨찾기에 저장' }))
+    await user.click(screen.getByRole('button', { name: '즐겨찾기에 저장' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/저장하지 못했어요/)
+    expect(screen.getByRole('button', { name: '즐겨찾기에 저장' })).toBeInTheDocument()
+  })
+
+  it('해제가 실패하면 알린다 — ★이 그대로인 이유를 알 수 있어야 한다', async () => {
+    const user = userEvent.setup()
+    getFoodsMock.mockResolvedValue([savedEgg])
+    deleteFavoriteMock.mockRejectedValue(new Error('network'))
+    renderPanel()
+
+    await user.click(await screen.findByRole('button', { name: /즐겨찾기 해제/ }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/빼지 못했어요/)
+  })
+})
+
 describe('즐겨찾기 해제', () => {
   it('이미 저장된 음식의 ★을 누르면 그 즐겨찾기를 삭제한다(띄어쓰기 차이 흡수)', async () => {
     const user = userEvent.setup()

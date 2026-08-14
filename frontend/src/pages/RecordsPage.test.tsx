@@ -181,8 +181,37 @@ describe('RecordsPage — 담기', () => {
   })
 })
 
+describe('RecordsPage — 저장 실패 복구', () => {
+  it('저장이 실패하면 알리고 "다시 시도"를 준다', async () => {
+    getMealsMock.mockResolvedValue([])
+    saveMealMock.mockRejectedValue(new Error('network'))
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /저녁/ }))
+    await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
+    await user().click(await screen.findByRole('button', { name: '저녁에 기록하기' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/저장하지 못했어요/)
+    expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
+  })
+
+  it('다시 시도하면 같은 항목을 그대로 보낸다 — 처음부터 다시 입력하지 않아도 된다', async () => {
+    getMealsMock.mockResolvedValue([])
+    saveMealMock.mockRejectedValue(new Error('network'))
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /저녁/ }))
+    await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
+    await user().click(await screen.findByRole('button', { name: '저녁에 기록하기' }))
+    await user().click(await screen.findByRole('button', { name: '다시 시도' }))
+
+    await waitFor(() => expect(saveMealMock).toHaveBeenCalledTimes(2))
+    expect(saveMealMock.mock.calls[1][0]).toEqual(saveMealMock.mock.calls[0][0])
+  })
+})
+
 describe('RecordsPage — 기록 수정·삭제', () => {
-  it('삭제 — deleteMeal 호출', async () => {
+  it('삭제 — 확인까지 해야 deleteMeal이 호출된다', async () => {
     getMealsMock.mockResolvedValue([lunch])
     deleteMealMock.mockResolvedValue(undefined)
     renderPage()
@@ -190,7 +219,36 @@ describe('RecordsPage — 기록 수정·삭제', () => {
     await user().click(await screen.findByRole('button', { name: /점심/ }))
     await user().click(screen.getByRole('button', { name: /삭제$/ }))
 
+    // 휴지통만 눌렀을 때는 아직 지우지 않는다
+    expect(deleteMealMock).not.toHaveBeenCalled()
+
+    await user().click(await screen.findByRole('button', { name: '삭제' }))
+
     expect(deleteMealMock).toHaveBeenCalledWith(1)
+  })
+
+  it('삭제 확인에서 취소하면 지우지 않는다', async () => {
+    getMealsMock.mockResolvedValue([lunch])
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
+    await user().click(screen.getByRole('button', { name: /삭제$/ }))
+    await user().click(await screen.findByRole('button', { name: '취소' }))
+
+    expect(deleteMealMock).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('삭제가 실패하면 확인 시트에 알리고 기록을 남겨둔다', async () => {
+    getMealsMock.mockResolvedValue([lunch])
+    deleteMealMock.mockRejectedValue(new Error('network'))
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
+    await user().click(screen.getByRole('button', { name: /삭제$/ }))
+    await user().click(await screen.findByRole('button', { name: '삭제' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/지우지 못했어요/)
   })
 
   it('수정 — 항목 값을 바꿔 items로 updateMeal 호출', async () => {
