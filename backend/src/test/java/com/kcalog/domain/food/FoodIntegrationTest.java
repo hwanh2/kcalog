@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,10 +85,72 @@ class FoodIntegrationTest {
                 .andExpect(jsonPath("$.source").value("FAVORITE"))
                 .andExpect(jsonPath("$.kcal").value(140));
 
+        // 카탈로그의 삶은달걀은 즐겨찾기 사본으로 대체되므로 개수는 그대로 30이다
         mockMvc.perform(get("/api/foods").header("Authorization", bearer))
-                .andExpect(jsonPath("$.length()").value(31))
+                .andExpect(jsonPath("$.length()").value(30))
                 .andExpect(jsonPath("$[0].source").value("FAVORITE"))
                 .andExpect(jsonPath("$[0].name").value("삶은달걀"));
+    }
+
+    /** 통합 목록의 이름들 — 필터 JSONPath는 결과가 비면 예외가 나서 개수 검증에 쓰기 나쁘다 */
+    private List<String> foodNames() throws Exception {
+        String body = mockMvc.perform(get("/api/foods").header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return com.jayway.jsonpath.JsonPath.parse(body).read("$[*].name");
+    }
+
+    @Test
+    @DisplayName("카탈로그 음식을 즐겨찾기에 담아도 목록에 두 번 나오지 않는다")
+    void favoriteReplacesCatalogEntry() throws Exception {
+        mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(EGG_FAVORITE))
+                .andExpect(status().isOk());
+
+        assertThat(foodNames()).filteredOn("삶은달걀"::equals).hasSize(1);
+        // 남은 하나는 회원이 저장한 값이어야 한다(카탈로그 70이 아니라 140)
+        mockMvc.perform(get("/api/foods").header("Authorization", bearer))
+                .andExpect(jsonPath("$[0].name").value("삶은달걀"))
+                .andExpect(jsonPath("$[0].source").value("FAVORITE"))
+                .andExpect(jsonPath("$[0].kcal").value(140));
+    }
+
+    @Test
+    @DisplayName("띄어쓰기만 다르게 저장해도 카탈로그 원본이 남지 않는다")
+    void dedupesIgnoringSpacing() throws Exception {
+        mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(EGG_FAVORITE.replace("\"삶은달걀\"", "\"삶은 달걀\"")))
+                .andExpect(status().isOk());
+
+        assertThat(foodNames()).hasSize(30).contains("삶은 달걀").doesNotContain("삶은달걀");
+    }
+
+    @Test
+    @DisplayName("카탈로그에 없는 음식을 저장하면 목록이 하나 늘 뿐 아무것도 사라지지 않는다")
+    void keepsCatalogWhenFavoriteIsNew() throws Exception {
+        mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(EGG_FAVORITE.replace("\"삶은달걀\"", "\"할머니표 김치전\"")))
+                .andExpect(status().isOk());
+
+        assertThat(foodNames()).hasSize(31).contains("할머니표 김치전", "삶은달걀");
+    }
+
+    @Test
+    @DisplayName("즐겨찾기를 지우면 카탈로그 원본이 다시 나온다")
+    void restoresCatalogEntryAfterDelete() throws Exception {
+        String body = mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(EGG_FAVORITE))
+                .andReturn().getResponse().getContentAsString();
+        Long id = com.jayway.jsonpath.JsonPath.parse(body).read("$.id", Long.class);
+
+        mockMvc.perform(delete("/api/favorites/" + id).header("Authorization", bearer))
+                .andExpect(status().isNoContent());
+
+        assertThat(foodNames()).hasSize(30).filteredOn("삶은달걀"::equals).hasSize(1);
+        mockMvc.perform(get("/api/foods").header("Authorization", bearer))
+                .andExpect(jsonPath("$[0].source").value("CATALOG"));
     }
 
     @Test

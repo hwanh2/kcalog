@@ -25,8 +25,8 @@ export function MacroChips({
           key={macro.label}
           className={
             tone === 'chip'
-              ? `rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${macro.chip}`
-              : `text-[11px] font-semibold ${macro.text}`
+              ? `rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${macro.chip}`
+              : `text-[11px] font-semibold tabular-nums ${macro.text}`
           }
         >
           {macro.label} {macro.value}

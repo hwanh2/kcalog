@@ -174,7 +174,13 @@ export function AnalysisResultSheet({
         </div>
       )}
       {photoUrl && !overlay && (
-        <img src={photoUrl} alt="식사 사진" className="mb-3 block w-full rounded-2xl" />
+        // 배지 오버레이를 쓰지 않을 때의 사진 — 오버레이 쪽과 같은 비율로 자리를 잡아
+        // 두 경로 사이에서 아래 내용의 위치가 달라지지 않게 한다
+        <img
+          src={photoUrl}
+          alt="식사 사진"
+          className="mb-3 block aspect-[4/3] w-full rounded-2xl object-cover"
+        />
       )}
 
       <AnalysisSummary items={items} />

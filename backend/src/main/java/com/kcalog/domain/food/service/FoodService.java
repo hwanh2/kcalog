@@ -16,6 +16,8 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 담을 수 있는 음식 — 공통 카탈로그와 회원 즐겨찾기를 한 목록으로 제공하고, 즐겨찾기를 관리한다.
@@ -29,12 +31,25 @@ public class FoodService {
     private final MemberFavoriteFoodRepository favoriteRepository;
     private final FoodCorrectionService correctionService;
 
-    /** 즐겨찾기(최근 갱신 순) + 카탈로그(정렬 순) — 즐겨찾기를 앞에 둬 자주 쓰는 것이 먼저 보이게 한다 */
+    /**
+     * 즐겨찾기(최근 갱신 순) + 카탈로그(정렬 순) — 즐겨찾기를 앞에 둬 자주 쓰는 것이 먼저 보이게 한다.
+     *
+     * 카탈로그 음식을 즐겨찾기에 저장하면 같은 음식이 사본과 원본으로 두 번 들어오므로,
+     * **이름이 겹치는 카탈로그 항목은 제외한다**(회원이 저장한 값이 우선). 판정은 즐겨찾기 저장·조회와
+     * 같은 정규화 규칙(FoodNames.normalize)을 쓴다 — 여기서만 다르면 "저장했는데 또 뜬다"가 된다.
+     */
     @Transactional(readOnly = true)
     public List<FoodResponse> findAll(Long memberId) {
+        List<MemberFavoriteFood> favorites = favoriteRepository.findByMemberIdOrderByUpdatedAtDesc(memberId);
+        Set<String> favoriteNames = favorites.stream()
+                .map(MemberFavoriteFood::getNameNormalized)
+                .collect(Collectors.toSet());
+
         List<FoodResponse> foods = new ArrayList<>();
-        favoriteRepository.findByMemberIdOrderByUpdatedAtDesc(memberId).forEach(f -> foods.add(FoodResponse.of(f)));
-        catalogRepository.findAllByOrderBySortOrderAsc().forEach(c -> foods.add(FoodResponse.of(c)));
+        favorites.forEach(f -> foods.add(FoodResponse.of(f)));
+        catalogRepository.findAllByOrderBySortOrderAsc().stream()
+                .filter(c -> !favoriteNames.contains(FoodNames.normalize(c.getName())))
+                .forEach(c -> foods.add(FoodResponse.of(c)));
         return foods;
     }
 

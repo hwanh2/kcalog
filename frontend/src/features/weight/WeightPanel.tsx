@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getWeightSummary, recordWeight } from '../../api/weight'
 import { addDays } from '../../lib/date'
+import { useSafeMutation } from '../../lib/useSafeMutation'
 import { Card } from '../../ui/form'
 import { WeightTrend } from './WeightTrend'
 import { GoalEstimator } from './GoalEstimator'
@@ -30,8 +31,8 @@ export function WeightPanel({ date }: { date: string }) {
     setError(null)
   }, [date, existingKg])
 
-  const mutation = useMutation({
-    mutationFn: (weightKg: number) => recordWeight({ weightKg, logDate: date }),
+  const mutation = useSafeMutation((weightKg: number) => recordWeight({ weightKg, logDate: date }), {
+    errorMessage: '체중을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['weightSummary'] })
       void queryClient.invalidateQueries({ queryKey: ['weights'] }) // 대시보드 미니카드 갱신
@@ -97,9 +98,10 @@ export function WeightPanel({ date }: { date: string }) {
             </span>
           </p>
         )}
-        {error && (
-          <p role="alert" className="mt-1 text-sm text-white">
-            {error}
+        {/* 입력 검증 오류와 저장 실패를 같은 자리에 — 색은 브랜드 배경 위라 흰색을 쓴다 */}
+        {(error ?? mutation.error) && (
+          <p role="alert" className="mt-1 text-sm font-medium text-white">
+            {error ?? mutation.error}
           </p>
         )}
 

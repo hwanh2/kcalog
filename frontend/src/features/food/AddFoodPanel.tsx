@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteFavorite, getFoods, saveFavorite } from '../../api/food'
 import type { Food } from '../../api/food'
 import type { MealType } from '../../api/meal'
+import { useSafeMutation } from '../../lib/useSafeMutation'
+import { ErrorNotice } from '../../ui/ErrorNotice'
+import { ListSkeleton } from '../../ui/ListSkeleton'
 import { SegmentedTabs } from '../../ui/SegmentedTabs'
 import { ClockIcon, SparklesIcon, StarIcon } from '../../ui/icons'
 import { AiRecordPanel } from '../meal/AiRecordPanel'
@@ -44,26 +47,23 @@ export function AddFoodPanel({
   const [picked, setPicked] = useState<Food | null>(null)
   const [draft, setDraft] = useState<{ mode: 'record' | 'favorite'; name: string } | null>(null)
   const [starred, setStarred] = useState<Food | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
 
   const { data: foods, isPending } = useQuery({ queryKey: ['foods'], queryFn: getFoods })
 
   const refreshFoods = () => void queryClient.invalidateQueries({ queryKey: ['foods'] })
-  const favoriteMutation = useMutation({
-    mutationFn: saveFavorite,
-    onSuccess: (saved) => {
+  // 성공 안내는 두지 않는다 — ★이 채워지고 비워지는 것 자체가 결과다(design D4).
+  // 실패만 알린다.
+  const favoriteMutation = useSafeMutation(saveFavorite, {
+    errorMessage: '즐겨찾기에 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
+    onSuccess: () => {
       refreshFoods()
-      setNotice(`'${saved.name}'을(를) 즐겨찾기에 저장했어요.`)
       setStarred(null)
       setDraft(null)
     },
   })
-  const removeFavoriteMutation = useMutation({
-    mutationFn: deleteFavorite,
-    onSuccess: () => {
-      refreshFoods()
-      setNotice('즐겨찾기에서 뺐어요.')
-    },
+  const removeFavoriteMutation = useSafeMutation(deleteFavorite, {
+    errorMessage: '즐겨찾기에서 빼지 못했어요. 잠시 후 다시 시도해주세요.',
+    onSuccess: refreshFoods,
   })
 
   const all = foods ?? []
@@ -104,16 +104,14 @@ export function AddFoodPanel({
         onSelect={(next) => {
           setTab(next)
           setQuery('')
-          setNotice(null)
+          favoriteMutation.clearError()
+          removeFavoriteMutation.clearError()
         }}
       />
 
       <div className="mt-3">
-        {notice && (
-          <p role="status" className="mb-2 text-sm text-muted">
-            {notice}
-          </p>
-        )}
+        {/* 즐겨찾기 해제 실패는 목록 위에 — ★이 그대로인 이유를 여기서 알려준다 */}
+        <ErrorNotice message={removeFavoriteMutation.error} className="mb-2" />
 
         {tab === 'ai' ? (
           <AiRecordPanel
@@ -124,7 +122,7 @@ export function AddFoodPanel({
             onManual={() => setDraft({ mode: 'record', name: '' })}
           />
         ) : isPending ? (
-          <p className="text-muted">불러오는 중…</p>
+          <ListSkeleton rows={4} />
         ) : (
           <FoodList
             foods={visible}
@@ -171,6 +169,7 @@ export function AddFoodPanel({
             fatG: String(starred.fatG),
           }}
           busy={favoriteMutation.isPending}
+          error={favoriteMutation.error}
           onSubmit={(values, remember) =>
             favoriteMutation.mutate({ ...values, rememberForAnalysis: remember })
           }
@@ -184,6 +183,7 @@ export function AddFoodPanel({
           mealType={mealType}
           initial={{ name: draft.name }}
           busy={saving || favoriteMutation.isPending}
+          error={draft.mode === 'favorite' ? favoriteMutation.error : null}
           onSubmit={(values, remember) => {
             if (draft.mode === 'favorite') {
               favoriteMutation.mutate({ ...values, rememberForAnalysis: remember })

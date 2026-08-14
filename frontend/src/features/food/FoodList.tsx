@@ -80,7 +80,7 @@ export function FoodList({
                     </p>
                     <div className="mt-0.5 flex items-center gap-2">
                       <MacroChips carbG={food.carbG} proteinG={food.proteinG} fatG={food.fatG} tone="text" />
-                      <span className="text-[11px] font-medium text-muted">{food.kcal}kcal</span>
+                      <span className="text-[11px] font-medium tabular-nums text-muted">{food.kcal}kcal</span>
                     </div>
                   </div>
 
