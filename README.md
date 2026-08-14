@@ -65,7 +65,7 @@ api.kcalog.site   → AWS EC2 (t3.small)
 git checkout release && git merge main && git push origin release
 ```
 
-`.github/workflows/deploy.yml`이 백엔드 이미지를 ghcr.io에 올리고 SSH로 VM에 배포한 뒤 `https://api.kcalog.site/actuator/health`로 기동을 확인하며, 같은 커밋으로 Vercel 운영 배포를 진행한다. 실패하면 워크플로우가 실패한다.
+`.github/workflows/deploy.yml`이 백엔드 이미지를 ghcr.io에 올리고 SSH로 VM에 배포한 뒤 `https://api.kcalog.site/actuator/health`로 기동을 확인한다. 실패하면 워크플로우가 실패한다. 프론트는 Vercel의 Production Branch가 `release`라 Git 연동이 같은 시점에 배포한다.
 
 - **`release` 브랜치 = 지금 운영에 떠 있는 코드.** 이미지는 커밋 SHA로 태깅되고, 배포 커밋은 워크플로우 실행 요약에 남는다.
 - **롤백**: 되돌릴 커밋을 `release`에 올린다 (`git revert` 후 push, 또는 이전 커밋으로 되돌려 push).

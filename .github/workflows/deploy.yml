@@ -168,28 +168,7 @@ jobs:
           echo "헬스체크가 정상을 응답하지 않았다"
           exit 1
 
-  frontend-deploy:
-    name: 프론트 운영 배포
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - name: Vercel 운영 배포
-        # 토큰을 --token= 인자로 넘기면 러너의 프로세스 목록에 노출된다. 다른 스텝과 같이 env로 받는다.
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          npx vercel pull --yes --environment=production
-          npx vercel build --prod
-          npx vercel deploy --prebuilt --prod
+# 프론트(Vercel)는 여기서 배포하지 않는다.
+# Vercel의 Production Branch를 release로 지정해 Git 연동이 직접 배포한다 —
+# 같은 트리거(release 푸시)라 동작은 동일하면서 토큰 3개와 잡 하나가 줄어든다.
+# main·PR 푸시는 Vercel 프리뷰로만 나간다.

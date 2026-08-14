@@ -17,7 +17,7 @@ x-logging: &default-logging
 
 services:
   traefik:
-    image: traefik:v3.3
+    image: traefik:v3.6.1
     container_name: kcalog-traefik
     restart: unless-stopped
     command:

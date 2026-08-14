@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,7 +59,14 @@ public class S3StorageService implements StorageService {
         }
     }
 
-    /** 로컬 MinIO 편의 — 버킷이 없으면 만든다. 운영은 사전 생성돼 head가 통과한다. */
+    /**
+     * 로컬 MinIO 편의 — 버킷이 없으면 만든다.
+     * <p>
+     * 운영 버킷은 미리 만들어 두고, 토큰에는 객체 권한만 준다(버킷을 지울 수 있는 권한을 앱에 주지 않기 위해).
+     * 그러면 버킷 조회 자체가 거부될 수 있는데, 그건 설정이 잘못됐다는 뜻이 아니라 <b>의도한 최소 권한</b>이다.
+     * 여기서 예외를 터뜨리면 사진 저장이 통째로 실패하므로, 확인만 건너뛰고 진행한다 —
+     * 버킷이나 자격증명에 진짜 문제가 있으면 이어지는 put에서 그대로 드러난다.
+     */
     private void ensureBucket() {
         if (bucketEnsured.get()) return;
         try {
@@ -66,6 +74,8 @@ public class S3StorageService implements StorageService {
         } catch (NoSuchBucketException e) {
             log.info("버킷 생성: {}", bucket);
             s3.createBucket(b -> b.bucket(bucket));
+        } catch (S3Exception e) {
+            log.debug("버킷 확인 생략(권한 없음 등): {}", e.getMessage());
         }
         bucketEnsured.set(true);
     }
