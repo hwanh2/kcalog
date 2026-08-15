@@ -289,10 +289,10 @@ export function LandingPage() {
               </p>
             </Reveal>
 
-            <ul
-              data-lenis-prevent
-              className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 lg:justify-center lg:overflow-visible"
-            >
+            {/* data-lenis-prevent를 붙이지 않는다 — 이 목록이 실제로 스크롤되는 건 좁은 화면뿐이고,
+                거기서는 관성 스크롤 자체를 걸지 않는다. 붙이면 넓은 화면에서 세로 스크롤이
+                네이티브로 새어 나가 관성 위치와 어긋나며 화면이 떨린다. */}
+            <ul className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 lg:justify-center lg:overflow-visible">
               {SCREENS.map((item, i) => (
                 <Reveal key={item.screen} delayMs={i * 120} as="li" className="snap-center">
                   <span className="block">
