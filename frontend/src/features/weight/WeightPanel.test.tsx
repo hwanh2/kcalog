@@ -139,6 +139,56 @@ describe('기록 없는 날의 시작값', () => {
     expect(screen.queryByText(/최근 기록값이에요/)).not.toBeInTheDocument()
   })
 
+  it('그날 기록이 있으면 기록됨 배지를 띄운다 — 저장해도 화면이 그대로라 저장 여부가 안 보였다', async () => {
+    getSummaryMock.mockResolvedValue({
+      ...emptySummary,
+      points: [{ logDate: DATE, weightKg: 70.8, trendKg: 70.8 }],
+      latestKg: 70.8,
+    })
+    renderPanel()
+
+    expect(await screen.findByText('오늘 기록됨')).toBeInTheDocument()
+  })
+
+  it('그날 기록이 없으면 기록됨 배지를 띄우지 않는다', async () => {
+    getSummaryMock.mockResolvedValue({
+      ...emptySummary,
+      points: [{ logDate: '2026-08-07', weightKg: 71.2, trendKg: 71.2 }],
+      latestKg: 71.2,
+    })
+    renderPanel()
+
+    await waitFor(() => expect(screen.getByLabelText('체중 (kg)')).toHaveValue('71.2'))
+    expect(screen.queryByText('오늘 기록됨')).not.toBeInTheDocument()
+  })
+
+  it('저장하면 기록됨 배지가 켜진다', async () => {
+    const user = userEvent.setup()
+    getSummaryMock.mockResolvedValue({
+      ...emptySummary,
+      points: [{ logDate: '2026-08-07', weightKg: 71.2, trendKg: 71.2 }],
+      latestKg: 71.2,
+    })
+    recordWeightMock.mockResolvedValue({ logDate: DATE, weightKg: 71.2 })
+    renderPanel()
+
+    await waitFor(() => expect(screen.getByLabelText('체중 (kg)')).toHaveValue('71.2'))
+    expect(screen.queryByText('오늘 기록됨')).not.toBeInTheDocument()
+
+    // 저장 뒤 갱신된 요약에는 그날 기록이 들어 있다
+    getSummaryMock.mockResolvedValue({
+      ...emptySummary,
+      points: [
+        { logDate: '2026-08-07', weightKg: 71.2, trendKg: 71.2 },
+        { logDate: DATE, weightKg: 71.2, trendKg: 71.2 },
+      ],
+      latestKg: 71.2,
+    })
+    await user.click(screen.getByRole('button', { name: '체중 저장' }))
+
+    expect(await screen.findByText('오늘 기록됨')).toBeInTheDocument()
+  })
+
   it('기록이 하나도 없으면 빈 칸이다 — 제시할 값이 없다', async () => {
     getSummaryMock.mockResolvedValue(emptySummary)
     renderPanel()

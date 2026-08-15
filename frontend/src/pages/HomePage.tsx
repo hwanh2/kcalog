@@ -106,7 +106,11 @@ function Greeting({
           value={date}
           max={today}
           onChange={(e) => e.target.value && onChange(e.target.value)}
-          className="absolute inset-0 cursor-pointer opacity-0"
+          /* h-full w-full — inset-0만 두면 WebKit이 날짜 입력의 고유 폭(≈150px)을 그대로 써서
+             28px짜리 아이콘 칸 밖으로 100px 넘게 삐져나온다. 투명하니 보이지는 않지만
+             문서가 그만큼 넓어져 홈 전체가 좌우로 끌려간다(design D23).
+             음식기록 날짜 머리(RecordsDateHeader)도 같은 이유로 폭을 못 박는다 */
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
       </div>
     </div>

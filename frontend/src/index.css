@@ -63,9 +63,16 @@ body,
 }
 
 /* 확대·축소 잠금 ②/③ — 더블탭 확대를 막는다. 핀치는 viewport 메타(index.html)와
-   gesturestart 차단(main.tsx)이 맡는다. 셋이 한 벌이므로 되돌릴 때도 함께 (design D5) */
+   gesturestart 차단(main.tsx)이 맡는다. 셋이 한 벌이므로 되돌릴 때도 함께 (design D5)
+
+   overflow-x: clip — 화면이 좌우로 밀려나는 걸 막는다. 확대를 막아도 문서가 뷰포트보다
+   조금이라도 넓으면 옆으로 끌려가, 헤더가 잘린 채 고정 요소만 제자리에 남는다(design D23).
+   `hidden`이 아니라 `clip`인 이유: hidden은 스크롤 컨테이너를 만들어 sticky 헤더를 흔든다.
+   가로 스크롤이 필요한 곳(AI PT 칩 줄 등)은 자기 overflow-x를 가지므로 그대로 동작한다 —
+   여기서 touch-action을 pan-y로 좁히면 그 줄들이 함께 막힌다(touch-action은 조상과 교집합). */
 html {
   touch-action: pan-x pan-y;
+  overflow-x: clip;
 }
 
 /* 분석 중 스캔 라인 — 사진 위를 오르내려 "지금 읽고 있다"를 보여준다 */

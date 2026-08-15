@@ -75,7 +75,7 @@ function TrendChart({ entries }: { entries: WeightEntry[] }) {
 
   const values = entries.map((e) => e.weightKg)
   const n = values.length
-  const { x, y } = trendScale({ values, width: W, height: H, padX, padY, minSpan: MIN_SPAN_KG })
+  const { x, y } = trendScale({ values, count: n, width: W, height: H, padX, padY, minSpan: MIN_SPAN_KG })
 
   const line = values.map((v, i) => `${x(i)},${y(v)}`).join(' ')
   const area = `${padX},${H} ${line} ${x(n - 1)},${H}`

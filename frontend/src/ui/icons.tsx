@@ -22,6 +22,15 @@ export function ClockIcon() {
   )
 }
 
+/** 완료 — 이미 처리된 상태를 알리는 배지에 쓴다 */
+export function CheckIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeWidth={2.5}>
+      <path d="M5 12.5 10 17.5 19 7" />
+    </svg>
+  )
+}
+
 /** 즐겨찾기 */
 export function StarIcon() {
   return (
