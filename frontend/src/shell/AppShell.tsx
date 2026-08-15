@@ -69,7 +69,10 @@ export function AppShell() {
         <Link
           to="/app/records?camera=1"
           aria-label="식사 촬영"
-          className="fixed bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2"
+          /* 아래 여백은 내비 높이(55px) + 안전 영역 + 한 칸 띄움이다. 고정값(bottom-20 = 80px)만
+             두면 `env(safe-area-inset-bottom)`이 있는 기기에서 내비가 89px까지 두꺼워져 FAB이
+             그 위에 얹힌다 — 본문 아래 여백과 같은 함정이다(design D24) */
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2"
         >
           <CameraIcon />
         </Link>
