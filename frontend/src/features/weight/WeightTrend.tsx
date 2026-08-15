@@ -13,7 +13,8 @@ export function WeightTrend({ points }: { points: WeightPoint[] }) {
   const pad = 20
   const values = points.flatMap((p) => [p.weightKg, p.trendKg])
   const n = points.length
-  const { x, y } = trendScale({ values, width: W, height: H, padX: pad, padY: pad })
+  // count는 점 개수 — values는 점마다 실측·추세 둘을 담으므로 길이가 2배다
+  const { x, y } = trendScale({ values, count: n, width: W, height: H, padX: pad, padY: pad })
   const trendLine = points.map((p, i) => `${x(i)},${y(p.trendKg)}`).join(' ')
   const latest = points[n - 1]
 
@@ -48,13 +49,26 @@ export function WeightTrend({ points }: { points: WeightPoint[] }) {
         <circle cx={x(n - 1)} cy={y(latest.trendKg)} r={4} className="fill-brand" />
       </svg>
 
-      {/* x축 라벨 */}
-      <div className="mt-1 flex justify-between px-1 text-[11px] text-muted">
-        {ticks.map((i, idx) => (
-          <span key={i}>
-            {idx === ticks.length - 1 ? `오늘 (${latest.weightKg}kg)` : shortDate(points[i].logDate)}
-          </span>
-        ))}
+      {/*
+        x축 라벨 — 점이 찍힌 자리 바로 아래에 놓는다. `justify-between`으로 양끝에 붙이면
+        점은 좌우 여백(pad) 안쪽에 있는데 라벨만 끝까지 나가 서로 어긋난다.
+
+        left와 translateX에 **같은 비율**을 쓰면 왼쪽 끝(0%)에서는 왼쪽 정렬, 가운데(50%)에서는
+        가운데 정렬, 오른쪽 끝(100%)에서는 오른쪽 정렬이 되어 라벨이 저절로 도판 안에 머문다.
+      */}
+      <div className="relative mt-1 h-4 text-[11px] text-muted">
+        {ticks.map((i, idx) => {
+          const pct = (x(i) / W) * 100
+          return (
+            <span
+              key={i}
+              className="absolute whitespace-nowrap"
+              style={{ left: `${pct}%`, transform: `translateX(-${pct}%)` }}
+            >
+              {idx === ticks.length - 1 ? `오늘 (${latest.weightKg}kg)` : shortDate(points[i].logDate)}
+            </span>
+          )
+        })}
       </div>
 
       {/* 범례 */}

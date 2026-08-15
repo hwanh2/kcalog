@@ -11,13 +11,21 @@ export interface TrendScale {
 
 export function trendScale({
   values,
+  count,
   width,
   height,
   padX,
   padY,
   minSpan = 0,
 }: {
+  /** y축 범위를 잡을 값들 — 한 점이 값을 여럿 낼 수 있다(실측 + 추세) */
   values: number[]
+  /**
+   * x축에 늘어놓을 **점 개수**. `values.length`와 다를 수 있으므로 반드시 따로 받는다 —
+   * 값 길이에서 유추하면 실측·추세 두 계열을 넘기는 추세선에서 점이 왼쪽 절반에 몰리고
+   * 오른쪽 끝(오늘 자리)이 비어, 방금 저장한 값이 빠진 것처럼 보인다.
+   */
+  count: number
   width: number
   height: number
   padX: number
@@ -25,7 +33,7 @@ export function trendScale({
   /** 값 폭이 이보다 좁으면 이 폭으로 벌려 선이 납작해지지 않게 한다 */
   minSpan?: number
 }): TrendScale {
-  const n = values.length
+  const n = count
   const min = Math.min(...values)
   const max = Math.max(...values)
   const raw = max - min

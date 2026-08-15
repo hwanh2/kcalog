@@ -4,6 +4,7 @@ import { getWeightSummary, recordWeight } from '../../api/weight'
 import { addDays } from '../../lib/date'
 import { useMutationWithError } from '../../lib/useMutationWithError'
 import { Card } from '../../ui/form'
+import { CheckIcon } from '../../ui/icons'
 import { WeightTrend } from './WeightTrend'
 import { GoalEstimator } from './GoalEstimator'
 import { prevChange, round1, sliceByRange } from './estimator'
@@ -76,7 +77,7 @@ export function WeightPanel({ date }: { date: string }) {
     <>
       {/* ① 체중 기록 — 오렌지 히어로 카드.
           위 여백은 셸의 <main pt-4>가 준다 — 여기서 또 얹으면 이 화면만 아래로 밀린다(design D8) */}
-      <section className="rounded-card bg-gradient-to-br from-brand to-brand-dark p-5 text-white">
+      <section className="rounded-card bg-gradient-to-br from-brand to-brand-dark p-4 text-white">
         <div className="flex items-center justify-between">
           <p className="text-sm text-white/80">
             오늘 · {Number(m)}월 {Number(d)}일
@@ -88,7 +89,7 @@ export function WeightPanel({ date }: { date: string }) {
           )}
         </div>
 
-        <div className="mt-2 flex items-end gap-1.5">
+        <div className="mt-1.5 flex items-end gap-1.5">
           <input
             aria-label="체중 (kg)"
             inputMode="decimal"
@@ -99,6 +100,17 @@ export function WeightPanel({ date }: { date: string }) {
             className="rounded bg-transparent text-4xl font-extrabold tracking-tight text-white outline-none placeholder:text-white/50 focus-visible:ring-2 focus-visible:ring-white"
           />
           <span className="mb-0.5 text-lg font-semibold text-white/75">kg</span>
+          {/*
+            오늘 잰 값이 이미 들어가 있음을 알린다 — 저장해도 화면이 그대로라 "저장이 됐나?"가 남았다.
+            숫자 줄 오른쪽 빈자리에 놓아 **줄을 새로 만들지 않는다**(카드 높이를 늘리지 않는다).
+            저장에 성공하면 요약이 갱신되며 이 배지가 켜지므로, 성공 안내를 따로 띄우지 않아도 된다.
+          */}
+          {existing && (
+            <span className="mb-1 ml-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
+              <CheckIcon />
+              오늘 기록됨
+            </span>
+          )}
         </div>
         {/* 채워둔 값이 오늘 잰 것이 아님을 밝힌다 — 이게 없으면 그대로 저장해 어제 값이
             오늘 기록이 된다(design D3의 위험). 그날 기록이 있으면 뜨지 않는다 */}
@@ -125,7 +137,7 @@ export function WeightPanel({ date }: { date: string }) {
           </p>
         )}
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2">
           <button
             type="button"
             aria-label="0.1 감소"
