@@ -21,7 +21,7 @@ export function CalorieRing({
   /*
     빈 링에서 시작해 값까지 채운다 — 처음부터 채워진 채로 그리면 전환이 걸릴 구간이 없다.
     홈에 들어올 때마다 다시 도는데, 한 번만 돌게 하려면 모듈 밖에 본 적 있음을 들고 있어야 하고
-    그러면 StrictMode의 이중 마운트에서 개발 중에만 연출이 사라진다(design D28).
+    그러면 StrictMode의 이중 마운트에서 개발 중에만 연출이 사라진다(design D3).
   */
   const [drawn, setDrawn] = useState(0)
   useEffect(() => setDrawn(pct), [pct])

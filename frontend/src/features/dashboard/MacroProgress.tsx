@@ -54,12 +54,9 @@ function MacroRow({ label, intake, target, barClass }: Row) {
           )}
         </span>
       </div>
-      {/* 목표가 없으면 채울 것도 없다 — 빈 트랙만 둔다 */}
-      {target !== null ? (
-        <ProgressBar value={pct} barClass={barClass} />
-      ) : (
-        <div className="h-2.5 w-full rounded-full bg-canvas" />
-      )}
+      {/* 목표가 없으면 `pct`가 0이라 빈 트랙이 된다 — 트랙을 손으로 한 벌 더 그리면
+          치수·라운드·배경이 ProgressBar와 갈라진다 */}
+      <ProgressBar value={pct} barClass={barClass} />
     </div>
   )
 }

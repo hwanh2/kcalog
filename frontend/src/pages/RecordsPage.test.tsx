@@ -456,6 +456,27 @@ describe('RecordsPage — 방금 담긴 줄', () => {
     expect(marked()[0].textContent).not.toContain('김치찌개')
   })
 
+  it('한 번 나타난 뒤에는 다시 재생되지 않는다 — 끼니 탭을 오가면 줄이 다시 마운트된다', async () => {
+    getMealsMock.mockResolvedValue([lunch])
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
+    await screen.findByText(/김치찌개/)
+
+    getMealsMock.mockResolvedValue([lunch, egged])
+    await user().click(screen.getByRole('button', { name: '삶은달걀 담기' }))
+    await user().click(screen.getByRole('button', { name: '기록하기' }))
+    await waitFor(() => expect(marked()).toHaveLength(1))
+
+    // 끼니를 옮겼다 돌아오면 그 줄은 언마운트→재마운트된다. 표식이 남아 있으면 그때 또 돈다
+    await user().click(screen.getByRole('button', { name: /아침/ }))
+    await user().click(screen.getByRole('button', { name: /점심/ }))
+    // 기록 줄에만 있는 문구로 기다린다 — "삶은달걀"은 아래 음식 목록에도 있다
+    await screen.findByText(/김치찌개/)
+
+    expect(marked()).toHaveLength(0)
+  })
+
   it('날짜를 옮기면 그 날 목록 전체를 기존으로 본다', async () => {
     getMealsMock.mockResolvedValue([lunch])
     renderPage()

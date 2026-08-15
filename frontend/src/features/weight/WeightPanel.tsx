@@ -159,7 +159,7 @@ export function WeightPanel({ date }: { date: string }) {
             onClick={save}
             disabled={mutation.isPending}
             aria-label={existing ? '체중 수정' : '체중 저장'}
-            className="flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand-ink transition-transform active:scale-[0.98] disabled:opacity-70"
+            className="press flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand-ink disabled:opacity-70"
           >
             저장
           </button>

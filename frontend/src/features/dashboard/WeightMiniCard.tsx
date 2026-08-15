@@ -1,6 +1,6 @@
-import { useId } from 'react'
 import { Link } from 'react-router'
 import type { WeightEntry } from '../../api/weight'
+import { SweepReveal } from '../../ui/SweepReveal'
 import { trendScale } from '../weight/trendScale'
 import { weightSummary } from './weightSummary'
 
@@ -68,7 +68,6 @@ function DeltaText({ delta }: { delta: number }) {
  * 값 폭이 좁아도 선이 납작해지지 않도록 최소 폭(MIN_SPAN_KG)을 준다.
  */
 function TrendChart({ entries }: { entries: WeightEntry[] }) {
-  const revealId = useId()
   const W = 320
   const H = 84
   const padX = 8
@@ -95,13 +94,10 @@ function TrendChart({ entries }: { entries: WeightEntry[] }) {
           <stop offset="0%" stopColor="currentColor" stopOpacity="0.18" />
           <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
-        {/* 체중 탭의 큰 추세선과 같은 방식으로 드러난다 — 한쪽만 움직이면 같은 그래프가 다르게 논다 */}
-        <clipPath id={revealId}>
-          <rect key={line} className="animate-sweep-x" x="0" y="0" width={W} height={H} />
-        </clipPath>
       </defs>
 
-      <g clipPath={`url(#${revealId})`}>
+      {/* 체중 탭의 큰 추세선과 같은 부품 — 한쪽만 움직이면 같은 그래프가 다르게 논다 */}
+      <SweepReveal width={W} height={H} revealKey={line}>
         {n > 1 && <polygon points={area} fill="url(#weightTrendFill)" />}
         {n > 1 && (
           <polyline
@@ -124,7 +120,7 @@ function TrendChart({ entries }: { entries: WeightEntry[] }) {
             strokeWidth={2}
           />
         ))}
-      </g>
+      </SweepReveal>
     </svg>
   )
 }

@@ -93,20 +93,30 @@ export function RecordsPage() {
     방금 담긴 기록만 내려앉으며 나타난다 — 저장에 성공해도 목록이 소리 없이 길어질 뿐이라
     "들어갔나?"가 남았다. 어느 줄이 새 줄인지는 **직전 목록에 없던 id**로 안다.
 
-    첫 목록과 날짜를 옮긴 직후는 통째로 새 목록이므로 전부 기존 취급한다 — 안 그러면
-    화면을 열 때마다 모든 줄이 한꺼번에 움직여, 정작 방금 담은 줄이 묻힌다.
+    첫 목록·날짜·끼니를 옮긴 직후는 보고 있는 목록이 통째로 바뀐 것이므로 전부 기존 취급하고
+    남은 표식도 걷는다. 두 가지를 한꺼번에 막는다.
+
+    - 화면을 열 때마다 모든 줄이 한꺼번에 움직여 정작 방금 담은 줄이 묻히는 것
+    - **표식이 남아 다시 재생되는 것** — 끼니 탭을 옮겼다 돌아오면 그 줄은 언마운트→재마운트되고,
+      표식이 그대로면 담은 지 한참 지난 줄이 방금 담긴 것처럼 또 나타난다(PR #44 리뷰)
+
+    이펙트를 하나로 둔 이유: 걷는 일과 세우는 일을 나누면 **둘의 실행 순서에 기대는 코드**가 된다
+    (같은 커밋에서 끼니와 목록이 함께 바뀌면 어느 쪽이 이기는지가 선언 순서로 정해진다).
   */
-  const seenRef = useRef<{ date: string; ids: Set<number> } | null>(null)
+  const seenRef = useRef<{ date: string; mealType: MealType; ids: Set<number> } | null>(null)
   const [freshIds, setFreshIds] = useState<Set<number>>(new Set())
   useEffect(() => {
     if (!meals) return
     const ids = new Set(meals.map((meal) => meal.id))
     const prev = seenRef.current
-    seenRef.current = { date, ids }
-    if (!prev || prev.date !== date) return
+    seenRef.current = { date, mealType, ids }
+    if (!prev || prev.date !== date || prev.mealType !== mealType) {
+      setFreshIds(new Set())
+      return
+    }
     const fresh = [...ids].filter((id) => !prev.ids.has(id))
     if (fresh.length > 0) setFreshIds(new Set(fresh))
-  }, [meals, date])
+  }, [meals, date, mealType])
 
   const all = meals ?? []
   const counts = countByMealType(all)
