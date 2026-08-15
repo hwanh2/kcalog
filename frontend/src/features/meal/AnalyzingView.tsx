@@ -1,5 +1,6 @@
 import { ListSkeleton } from '../../ui/ListSkeleton'
 import { SparklesIcon } from '../../ui/icons'
+import { PHOTO_PREVIEW_CLASS } from './photoPreview'
 
 /**
  * 분석 대기 화면 — 사진 위로 스캔 라인이 지나가고, 결과가 들어설 자리를 스켈레톤으로 미리 보여준다.
@@ -10,13 +11,15 @@ export function AnalyzingView({ photoUrl }: { photoUrl: string | null }) {
   return (
     <div className="py-4">
       {photoUrl ? (
-        <div className="relative mx-auto w-52 overflow-hidden rounded-2xl">
-          <img src={photoUrl} alt="분석 중인 사진" className="aspect-[4/3] w-full object-cover" />
-          <div aria-hidden className="absolute inset-0 bg-ink/25" />
-          <div
-            aria-hidden
-            className="animate-scan absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-brand/60 to-transparent"
-          />
+        <div className="flex justify-center">
+          <div className="relative overflow-hidden rounded-2xl">
+            <img src={photoUrl} alt="분석 중인 사진" className={PHOTO_PREVIEW_CLASS} />
+            <div aria-hidden className="absolute inset-0 bg-ink/25" />
+            <div
+              aria-hidden
+              className="animate-scan absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-brand/60 to-transparent"
+            />
+          </div>
         </div>
       ) : (
         <span

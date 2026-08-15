@@ -107,6 +107,12 @@ export const KNOWN_EXCEPTIONS: { name: string; ink: string; on: string; why: str
     on: SURFACE.brand,
     why: '주요 버튼·FAB·활성 배지 — 브랜드 정체성 유지, 통과하는 오렌지는 모두 비비드함을 잃는다',
   },
+  {
+    name: 'onBrand on brandDark',
+    ink: INK.onBrand,
+    on: SURFACE.brandDark,
+    why: '3.63:1 — 사진 위 안내 배지·로고/FAB 그라데이션의 어두운 끝. brand(2.86)보다는 낫지만 본문 기준에는 미달',
+  },
   // 브랜드 글씨 — 밝은 면들 위에서 3.21~3.64:1.
   // AA를 지키려면 #b84d00(최악 4.52)까지 내려가야 하는데 눈에 띄게 칙칙해져 여기서 멈췄다.
   { name: 'brandInk on surface', ink: INK.brandInk, on: SURFACE.surface, why: '3.64:1' },

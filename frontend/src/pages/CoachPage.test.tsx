@@ -147,4 +147,12 @@ describe('CoachPage', () => {
 
     await waitFor(() => expect(clearMessagesMock).toHaveBeenCalled())
   })
+
+  it('제목은 하단 탭이 말한다 — 화면에 보이지 않되 h1으로는 남는다', () => {
+    renderPage()
+
+    expect(screen.getByRole('heading', { level: 1, name: 'AI PT' })).toHaveClass('sr-only')
+    // "개인 코칭" 라벨도 함께 뺐다 — 제목이 사라진 자리에 홀로 남으면 무엇의 설명인지 알 수 없다
+    expect(screen.queryByText('개인 코칭')).not.toBeInTheDocument()
+  })
 })

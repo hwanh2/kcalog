@@ -30,10 +30,9 @@ export function CoachPage() {
 
   return (
     <section>
-      <div>
-        <p className="text-xs text-muted">개인 코칭</p>
-        <h1 className="text-xl font-semibold">AI PT</h1>
-      </div>
+      {/* 제목은 하단 탭이 말한다(app-shell 스펙). "개인 코칭" 라벨도 함께 뺀다 —
+          제목이 사라진 자리에 홀로 남으면 무엇에 붙은 설명인지 알 수 없다 */}
+      <h1 className="sr-only">AI PT</h1>
 
       {briefing && <Briefing briefing={briefing} />}
       <Chat />

@@ -12,7 +12,7 @@ import type { DraftValues } from '../food/FoodDraftSheet'
 import { AnalysisSummary, AnalyzedItemList } from './AnalysisSummary'
 import { ItemEditSheet } from './ItemEditSheet'
 import { PhotoOverlay } from './PhotoOverlay'
-import { MEAL_TYPE_LABELS } from './mealDefaults'
+import { MEAL_TYPE_LABELS, MEAL_TYPE_ORDER } from './mealDefaults'
 import { pollAnalysis } from './pollAnalysis'
 import {
   LOW_CONFIDENCE_THRESHOLD,
@@ -35,6 +35,7 @@ export function AnalysisResultSheet({
   mealType,
   busy,
   onAnalysisChange,
+  onMealTypeChange,
   onSave,
   onClose,
 }: {
@@ -43,6 +44,8 @@ export function AnalysisResultSheet({
   mealType: MealType
   busy?: boolean
   onAnalysisChange: (next: Analysis) => void
+  /** 끼니를 이 화면에서 바꾼다 — 상태는 부모(음식기록 탭)가 들고 있어 세그먼트와 같은 값을 가리킨다 */
+  onMealTypeChange: (next: MealType) => void
   onSave: (items: EditableItem[]) => void
   onClose: () => void
 }) {
@@ -233,9 +236,43 @@ export function AnalysisResultSheet({
         </div>
       </div>
 
-      <Button type="button" onClick={save} disabled={busy || reanalyzing} className="mt-4 w-full py-3">
-        {MEAL_TYPE_LABELS[mealType]}에 기록하기
-      </Button>
+      {/* "점심 ▾ 에 [기록하기]" — 끼니가 버튼 문구의 일부로 읽히되 그 자리에서 바꿀 수 있다(design D2).
+          버튼 안에 버튼은 넣을 수 없어 형제로 두고, 네이티브 select라 모바일에서 OS 피커가 열린다 */}
+      <div className="mt-4 flex items-center gap-2">
+        <div className="relative shrink-0">
+          <label htmlFor="record-meal-type" className="sr-only">
+            기록할 끼니
+          </label>
+          <select
+            id="record-meal-type"
+            value={mealType}
+            onChange={(e) => onMealTypeChange(e.target.value as MealType)}
+            className="min-h-11 appearance-none rounded-tile bg-brand-soft py-2 pl-3.5 pr-9 text-[15px] font-bold text-brand-ink outline-none touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+          >
+            {MEAL_TYPE_ORDER.map((type) => (
+              <option key={type} value={type}>
+                {MEAL_TYPE_LABELS[type]}
+              </option>
+            ))}
+          </select>
+          {/* select의 기본 화살표는 브라우저마다 달라 감추고 직접 그린다 — 클릭은 select로 통과시킨다 */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-ink"
+          >
+            ▼
+          </span>
+        </div>
+        <span className="shrink-0 text-[15px] text-ink">에</span>
+        <Button
+          type="button"
+          onClick={save}
+          disabled={busy || reanalyzing}
+          className="min-w-0 flex-1 py-3"
+        >
+          기록하기
+        </Button>
+      </div>
 
       {editingIndex !== null && items[editingIndex] && (
         <ItemEditSheet

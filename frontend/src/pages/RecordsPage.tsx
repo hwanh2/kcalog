@@ -28,7 +28,11 @@ export function RecordsPage() {
   const autoCamera = searchParams.get('camera') === '1'
 
   const [date, setDate] = useState(todayServiceDate)
-  const [mealType, setMealType] = useState<MealType>(() => defaultMealType(new Date()))
+  // 홈의 촬영 카드가 끼니를 실어 보내면 그것을 쓴다 — 여기서 다시 시각을 보면 끼니 경계를
+  // 사이에 두고 카드에 적힌 것과 갈린다(design D1). 직접 들어온 경우에만 시각으로 정한다.
+  const [mealType, setMealType] = useState<MealType>(
+    () => parseMealType(searchParams.get('meal')) ?? defaultMealType(new Date()),
+  )
 
   // 화면을 열어둔 채 05시를 넘기면 "오늘"이 바뀐다 — 돌아올 때 다시 읽어 어제 날짜에 담기는 걸 막는다
   useEffect(() => {
@@ -140,10 +144,16 @@ export function RecordsPage() {
         mealType={mealType}
         autoCamera={autoCamera}
         saving={saveMutation.isPending}
+        onMealTypeChange={setMealType}
         onRecordItems={recordItems}
       />
     </section>
   )
+}
+
+/** 쿼리로 들어온 끼니 — 주소창은 아무 값이나 담을 수 있으므로 아는 값만 받는다 */
+function parseMealType(value: string | null): MealType | null {
+  return MEAL_TYPE_ORDER.includes(value as MealType) ? (value as MealType) : null
 }
 
 /** 세그먼트 배지 — 끼니별 기록 수 */

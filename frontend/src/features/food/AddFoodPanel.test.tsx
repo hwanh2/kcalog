@@ -39,7 +39,7 @@ function renderPanel(onRecordItems = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <AddFoodPanel mealType="BREAKFAST" onRecordItems={onRecordItems} />
+      <AddFoodPanel mealType="BREAKFAST" onMealTypeChange={vi.fn()} onRecordItems={onRecordItems} />
     </QueryClientProvider>,
   )
   return { onRecordItems }
