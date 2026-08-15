@@ -373,6 +373,37 @@ describe('RecordsPage — 날짜', () => {
     await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith('2026-08-04'))
   })
 
+  /*
+    화면을 포그라운드에 열어둔 채 05시를 넘긴 경우. `today`는 마운트와 visibilitychange에서만
+    갱신되므로 그때 낡는데, 낡은 날짜로 담으면 `eatenAtFor`가 과거 분기를 타 **전날 정오**로
+    저장된다. 05시 경계가 존재하는 이유인 야식 사용자가 정확히 이 경우다(PR #42 리뷰).
+  */
+  it('열어둔 채 05시를 넘겨 담아도 새 서비스일의 지금 시각으로 기록한다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      // KST 8/16 04:59 → 서비스일은 아직 8/15
+      vi.setSystemTime(new Date('2026-08-15T19:59:00Z'))
+      const typer = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      getMealsMock.mockResolvedValue([])
+      renderPage('/records')
+
+      // 화면을 그대로 둔 채 경계를 넘긴다 — visibilitychange는 일어나지 않는다
+      vi.setSystemTime(new Date('2026-08-15T20:01:00Z')) // KST 8/16 05:01 → 서비스일 8/16
+
+      await typer.click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
+      await typer.click(screen.getByRole('button', { name: '기록하기' }))
+
+      await waitFor(() => expect(saveMealMock).toHaveBeenCalled())
+      const saved = saveMealMock.mock.calls[0][0].eatenAt
+      // 회귀했을 때 저장되던 값 — 전날 정오
+      expect(saved).not.toBe(new Date('2026-08-15T12:00:00+09:00').toISOString())
+      // 새 서비스일(8/16)에 들어가야 한다. ±ms는 타이머가 흘러 정확히 못 박는다
+      expect(todayServiceDate(new Date(saved))).toBe('2026-08-16')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('지난 날짜에 담으면 그 날의 정오로 기록한다 — 지금 시각을 쓰면 오늘로 들어간다', async () => {
     getMealsMock.mockResolvedValue([])
     renderPage('/records?date=2026-08-06')

@@ -41,7 +41,10 @@ export function RecordsPage() {
   /*
     보는 날짜는 **주소가 들고 있다**(`?date=`). 화면 상태로만 두면 홈에서 날짜를 옮기고 넘어와도
     기록 화면은 늘 오늘이라 두 화면이 서로 다른 날을 본다(design D21).
-    파라미터가 없으면 오늘 — 그래야 05시 경계를 넘겼을 때 위 sync가 그대로 따라온다.
+    파라미터가 없으면 오늘 — 05시 경계를 넘기면 `today`가 갱신되며 함께 따라온다.
+
+    ⚠️ 위 sync는 **화면이 돌아올 때만** 돈다. 포그라운드에 열어둔 채 경계를 넘기면 여기 `date`가
+    낡은 채로 남으므로, 담는 경로(`recordItems`)는 그때 서비스일을 한 번 더 읽는다.
   */
   const date = parseDate(searchParams.get('date'), today) ?? today
   function setDate(next: string) {
@@ -92,10 +95,22 @@ export function RecordsPage() {
   const totals = sumMeals(selected)
 
   function recordItems(items: EditableItem[], analysisJobId?: number) {
-    // 보고 있는 날짜로 담는다 — 지난 날짜를 열어놓고 담으면 그 날의 기록이어야 한다.
-    // eatenAtFor가 오늘이면 지금 시각, 과거면 정오를 써서 05시 경계에 밀리지 않게 한다.
+    /*
+      담는 순간 서비스일을 **다시 읽는다.** `today`는 마운트와 visibilitychange에서만 갱신되는데,
+      화면을 포그라운드에 열어둔 채 05시를 넘기면 그 둘 다 일어나지 않아 값이 낡는다.
+      낡은 날짜로 담으면 `eatenAtFor`가 과거 분기를 타 **전날 정오**로 저장된다 —
+      하필 05시 경계가 있는 이유인 야식 사용자가 정확히 이 경우다(PR #42 리뷰).
+
+      지난 날짜를 보고 있을 때는 그대로 둔다. 무조건 오늘로 밀어넣던 예전 동작으로 돌아가면
+      날짜 선택 자체가 무의미해진다.
+    */
+    const freshToday = todayServiceDate()
+    const viewingToday = date === today
+    // 화면의 "오늘"도 함께 갱신한다 — 주간 띠·날짜 상한·목록 조회가 낡은 날에 머물지 않게
+    if (freshToday !== today) setToday(freshToday)
+
     submitSave({
-      eatenAt: eatenAtFor(date),
+      eatenAt: eatenAtFor(viewingToday ? freshToday : date),
       mealType,
       source: analysisJobId ? 'AI' : 'MANUAL',
       items: toSaveItems(items),
