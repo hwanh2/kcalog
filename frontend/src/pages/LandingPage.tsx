@@ -5,6 +5,7 @@ import { APP_ROOT } from '../auth/landingPath'
 import { AppPreview } from '../features/landing/AppPreview'
 import { Reveal } from '../features/landing/Reveal'
 import { ScanPhone } from '../features/landing/ScanPhone'
+import { useSmoothScroll } from '../features/landing/useSmoothScroll'
 import { InstallGuide } from '../install/InstallGuide'
 import { useInstallState } from '../install/useInstallState'
 
@@ -75,6 +76,7 @@ const FAQ = [
 export function LandingPage() {
   const { state, promptInstall } = useInstallState()
   const scrolled = useScrolled(80)
+  useSmoothScroll()
 
   const cta =
     state === 'installed' ? (
@@ -287,7 +289,10 @@ export function LandingPage() {
               </p>
             </Reveal>
 
-            <ul className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 lg:justify-center lg:overflow-visible">
+            <ul
+              data-lenis-prevent
+              className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 lg:justify-center lg:overflow-visible"
+            >
               {SCREENS.map((item, i) => (
                 <Reveal key={item.screen} delayMs={i * 120} as="li" className="snap-center">
                   <span className="block">
