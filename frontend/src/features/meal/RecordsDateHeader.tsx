@@ -28,8 +28,10 @@ export function RecordsDateHeader({
     // -mx-4 -mt-4 — 셸 본문의 좌우·위 여백을 거슬러 화면 끝까지 채운다(머리는 면이 이어져야 한다)
     <header className="-mx-4 -mt-4 bg-brand px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] text-on-brand">
       <div className="flex items-center justify-between gap-2">
-        {/* 네이티브 날짜 선택을 제목 위에 투명하게 덮는다 — 홈의 캘린더 아이콘과 같은 방식 */}
-        <div className="relative">
+        {/* 네이티브 날짜 선택을 제목 위에 투명하게 덮는다 — 홈의 캘린더 아이콘과 같은 방식.
+            overflow-hidden도 같은 이유다(design D27). 이 머리는 화면 왼쪽에 붙어 있어 넘쳐도
+            아직 증상이 없었을 뿐이다 — 자리 배치에 기대는 안전은 안전이 아니다 */}
+        <div className="relative overflow-hidden">
           <p className="flex items-center gap-1.5 text-xl font-extrabold tabular-nums">
             {Number(month)}.{Number(day)} {koreanWeekday(date)}
             <span aria-hidden className="text-xs">

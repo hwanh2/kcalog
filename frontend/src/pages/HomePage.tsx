@@ -97,8 +97,14 @@ function Greeting({
           {timeGreeting()}, {givenName(nickname)}님
         </h1>
       </div>
-      {/* 캘린더 아이콘 위에 네이티브 날짜 선택을 덮어, 탭하면 그 자리에서 달력이 열린다 */}
-      <div className="relative shrink-0 rounded-lg p-1 text-muted">
+      {/*
+        캘린더 아이콘 위에 네이티브 날짜 선택을 덮어, 탭하면 그 자리에서 달력이 열린다.
+
+        overflow-hidden — WebKit의 날짜 입력은 `w-full`을 줘도 자기 고유 폭(≈150px) 아래로
+        줄어들지 않는다. 이 칸은 28px이고 화면 오른쪽 끝에 붙어 있어, 넘친 만큼 문서가 넓어져
+        홈 전체가 좌우로 끌려갔다. 폭 지정에 기대지 말고 **잘라낸다**(design D27).
+      */}
+      <div className="relative shrink-0 overflow-hidden rounded-lg p-1 text-muted">
         <CalendarIcon />
         <input
           type="date"
@@ -106,10 +112,7 @@ function Greeting({
           value={date}
           max={today}
           onChange={(e) => e.target.value && onChange(e.target.value)}
-          /* h-full w-full — inset-0만 두면 WebKit이 날짜 입력의 고유 폭(≈150px)을 그대로 써서
-             28px짜리 아이콘 칸 밖으로 100px 넘게 삐져나온다. 투명하니 보이지는 않지만
-             문서가 그만큼 넓어져 홈 전체가 좌우로 끌려간다(design D23).
-             음식기록 날짜 머리(RecordsDateHeader)도 같은 이유로 폭을 못 박는다 */
+          /* 폭은 부모가 잘라준다 — w-full은 WebKit에서 지켜지지 않으므로 여기에 기대지 않는다 */
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
       </div>

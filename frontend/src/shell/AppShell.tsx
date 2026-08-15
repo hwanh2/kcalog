@@ -27,7 +27,12 @@ export function AppShell() {
   }, [pathname])
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-canvas">
+    /* overflow-x-clip — 가로로 끌려가지 않게 하는 안전망. `html`에도 같은 선언이 있지만
+       루트의 overflow는 뷰포트로 전파되는 규칙을 타고, WebKit은 `clip` 전파를 지키지 않는다.
+       그래서 **일반 요소**인 여기서 한 번 더 자른다(design D27).
+       `clip`은 스크롤 컨테이너를 만들지 않아 sticky 헤더가 살아 있고, 바텀시트 같은
+       fixed 자식도 자르지 않는다 — 둘 다 실제로 렌더해 확인했다. */
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col overflow-x-clip bg-canvas">
       {/*
         음식기록 탭에서는 헤더를 감춘다 — 그 화면은 끼니 탭이 첫 줄이고(design D18),
         그 위에 서비스명 줄까지 얹으면 기록 목록과 "지금 추가하기"가 그만큼 아래로 밀린다.

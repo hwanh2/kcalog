@@ -69,7 +69,11 @@ body,
    조금이라도 넓으면 옆으로 끌려가, 헤더가 잘린 채 고정 요소만 제자리에 남는다(design D23).
    `hidden`이 아니라 `clip`인 이유: hidden은 스크롤 컨테이너를 만들어 sticky 헤더를 흔든다.
    가로 스크롤이 필요한 곳(AI PT 칩 줄 등)은 자기 overflow-x를 가지므로 그대로 동작한다 —
-   여기서 touch-action을 pan-y로 좁히면 그 줄들이 함께 막힌다(touch-action은 조상과 교집합). */
+   여기서 touch-action을 pan-y로 좁히면 그 줄들이 함께 막힌다(touch-action은 조상과 교집합).
+
+   ⚠️ 이 선언 하나에 기대지 않는다. 루트의 overflow는 뷰포트로 전파되는 규칙을 타는데
+   WebKit은 `clip` 전파를 지키지 않아 실기기에서 아무 일도 하지 않았다. 실제로 막는 것은
+   AppShell의 `overflow-x-clip`이고, 이건 앱 셸 밖(랜딩 등)을 위한 보조다(design D27). */
 html {
   touch-action: pan-x pan-y;
   overflow-x: clip;
