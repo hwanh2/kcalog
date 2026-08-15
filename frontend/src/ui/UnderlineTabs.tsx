@@ -19,8 +19,11 @@ export function UnderlineTabs<T extends string>({
   selected: T
   onSelect: (id: T) => void
 }) {
+  // 탭은 모두 `flex-1`이라 폭이 같다 — 그래서 자리를 재지 않고 비율만으로 밑줄을 옮길 수 있다
+  const activeIndex = items.findIndex((item) => item.id === selected)
+
   return (
-    <div role="group" aria-label={label} className="flex border-b border-border">
+    <div role="group" aria-label={label} className="relative flex border-b border-border">
       {items.map((item) => {
         const active = item.id === selected
         return (
@@ -40,13 +43,26 @@ export function UnderlineTabs<T extends string>({
                 {item.badge}
               </span>
             )}
-            {/* 밑줄은 경계선 위에 겹쳐 그린다(-bottom-px) — 경계선이 비치면 두 줄로 보인다 */}
-            {active && (
-              <span aria-hidden className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand" />
-            )}
           </button>
         )
       })}
+
+      {/*
+        밑줄은 탭마다 따로 그리지 않고 **하나를 옮긴다** — 탭마다 그리면 선택이 바뀔 때
+        순간이동해서 어디서 어디로 갔는지가 안 읽힌다.
+
+        경계선 위에 겹쳐 그린다(-bottom-px) — 경계선이 비치면 두 줄로 보인다.
+        바깥 껍데기가 탭 한 칸 폭을 갖고 옮겨 다니고, 안쪽이 좌우 여백을 만든다.
+      */}
+      {activeIndex >= 0 && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-px left-0 flex h-0.5 transition-transform duration-300 ease-out"
+          style={{ width: `${100 / items.length}%`, transform: `translateX(${activeIndex * 100}%)` }}
+        >
+          <span className="mx-2 flex-1 rounded-full bg-brand" />
+        </span>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { getMeals, saveMeal } from '../api/meal'
@@ -89,6 +89,25 @@ export function RecordsPage() {
     saveMutation.mutate(body)
   }
 
+  /*
+    방금 담긴 기록만 내려앉으며 나타난다 — 저장에 성공해도 목록이 소리 없이 길어질 뿐이라
+    "들어갔나?"가 남았다. 어느 줄이 새 줄인지는 **직전 목록에 없던 id**로 안다.
+
+    첫 목록과 날짜를 옮긴 직후는 통째로 새 목록이므로 전부 기존 취급한다 — 안 그러면
+    화면을 열 때마다 모든 줄이 한꺼번에 움직여, 정작 방금 담은 줄이 묻힌다.
+  */
+  const seenRef = useRef<{ date: string; ids: Set<number> } | null>(null)
+  const [freshIds, setFreshIds] = useState<Set<number>>(new Set())
+  useEffect(() => {
+    if (!meals) return
+    const ids = new Set(meals.map((meal) => meal.id))
+    const prev = seenRef.current
+    seenRef.current = { date, ids }
+    if (!prev || prev.date !== date) return
+    const fresh = [...ids].filter((id) => !prev.ids.has(id))
+    if (fresh.length > 0) setFreshIds(new Set(fresh))
+  }, [meals, date])
+
   const all = meals ?? []
   const counts = countByMealType(all)
   const selected = all.filter((meal) => meal.mealType === mealType)
@@ -136,7 +155,7 @@ export function RecordsPage() {
         <div className="mt-3 overflow-hidden rounded-card border border-border bg-surface">
           <ul className="divide-y divide-border">
             {selected.map((meal) => (
-              <li key={meal.id}>
+              <li key={meal.id} className={freshIds.has(meal.id) ? 'animate-settle-in' : undefined}>
                 <MealCard meal={meal} />
               </li>
             ))}

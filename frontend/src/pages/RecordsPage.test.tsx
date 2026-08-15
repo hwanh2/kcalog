@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -413,6 +413,67 @@ describe('RecordsPage — 날짜', () => {
 
     await waitFor(() => expect(saveMealMock).toHaveBeenCalled())
     expect(saveMealMock.mock.calls[0][0].eatenAt).toBe(new Date('2026-08-06T12:00:00+09:00').toISOString())
+  })
+})
+
+describe('RecordsPage — 방금 담긴 줄', () => {
+  /** 연출이 붙은 줄들 — 붙는 자리가 기록 줄(li)뿐이라 클래스로 바로 찾는다 */
+  function marked(): Element[] {
+    return [...document.querySelectorAll('.animate-settle-in')]
+  }
+
+  const egged: Meal = {
+    ...lunch,
+    id: 99,
+    items: [{ name: '삶은달걀', kcal: 70, carbG: 0.4, proteinG: 6.3, fatG: 4.8, quantity: 1, unit: '개' }],
+  }
+
+  it('처음 열 때는 아무 줄도 새 줄이 아니다 — 전부 움직이면 방금 담은 게 묻힌다', async () => {
+    getMealsMock.mockResolvedValue([lunch, egged])
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
+    await screen.findByText(/김치찌개/)
+
+    expect(marked()).toHaveLength(0)
+  })
+
+  it('담고 나면 새로 생긴 줄만 표시된다', async () => {
+    getMealsMock.mockResolvedValue([lunch])
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
+    await screen.findByText(/김치찌개/)
+
+    // 저장 뒤 다시 조회하면 목록에 한 줄이 늘어 있다
+    getMealsMock.mockResolvedValue([lunch, egged])
+    await user().click(screen.getByRole('button', { name: '삶은달걀 담기' }))
+    await user().click(screen.getByRole('button', { name: '기록하기' }))
+
+    await waitFor(() => expect(marked()).toHaveLength(1))
+    // 표시된 줄은 방금 들어온 그 줄이다 — 원래 있던 줄이 아니라
+    expect(marked()[0].textContent).toContain('삶은달걀')
+    expect(marked()[0].textContent).not.toContain('김치찌개')
+  })
+
+  it('날짜를 옮기면 그 날 목록 전체를 기존으로 본다', async () => {
+    getMealsMock.mockResolvedValue([lunch])
+    renderPage()
+
+    await user().click(await screen.findByRole('button', { name: /점심/ }))
+    await screen.findByText(/김치찌개/)
+
+    // 다른 날짜 — 목록이 통째로 바뀌지만 "새로 담긴 것"은 아니다.
+    // 대기 문구는 **기록 줄에만 있는 것**이어야 한다: 아래 음식 목록에도 있는 이름을 기다리면
+    // 그 목록에 먼저 걸려 새 기록이 그려지기 전에 단언이 돌아 헛통과한다
+    getMealsMock.mockResolvedValue([
+      { ...lunch, id: 51, items: [{ ...lunch.items[0], name: '연어스테이크' }] },
+      { ...lunch, id: 52, items: [{ ...lunch.items[0], name: '연어스테이크' }] },
+    ])
+    fireEvent.change(screen.getByLabelText('날짜 선택'), { target: { value: '2026-08-05' } })
+
+    await waitFor(() => expect(screen.getAllByText(/연어스테이크/)).toHaveLength(2))
+    expect(marked()).toHaveLength(0)
   })
 })
 

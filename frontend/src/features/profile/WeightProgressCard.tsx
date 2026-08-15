@@ -1,5 +1,6 @@
 import type { WeightPoint } from '../../api/weight'
 import { Card } from '../../ui/form'
+import { ProgressBar } from '../../ui/ProgressBar'
 
 /**
  * 체중 진행 — 시작(첫 기록) → 현재 → 목표까지 얼마나 왔는지.
@@ -46,9 +47,8 @@ export function WeightProgressCard({
         </span>
       </div>
 
-      <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-track">
-        <div className="h-full rounded-full bg-brand transition-[width]" style={{ width: `${percent}%` }} />
-      </div>
+      {/* 홈의 매크로 바와 같은 부품 — 예전엔 여기만 `width`를 전환해 규칙에서 벗어나 있었다 */}
+      <ProgressBar value={percent} barClass="bg-brand" trackClass="bg-track" className="mt-3" />
 
       <div className="mt-3 flex items-end justify-between">
         <div className="text-left">
