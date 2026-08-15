@@ -20,8 +20,10 @@
 
 - [x] 2.1 `vite.config.ts` — manifest `start_url`을 `/app`으로
 - [x] 2.2 `index.html` — 공유·검색 메타(제목, description, OG 태그, 대표 이미지)
-- [ ] 2.3 대표 이미지(OG) 생성 후 `public/`에 추가
-  - 지금은 `icon-512.png`를 임시로 쓴다. 링크 미리보기는 뜨지만 아이콘만 보인다 — 1200×630 이미지로 교체할 것
+- [x] 2.3 대표 이미지(OG) 생성 후 `public/`에 추가
+  - `public/og.png` 1200×630. 원본은 `tools/og/og.html`이고 헤드리스 크롬으로 뽑는다 — 스크린샷으로 두면
+    문구가 바뀔 때마다 사람이 다시 찍어야 한다. 색·서체는 앱 토큰을 그대로 쓴다
+  - `twitter:card`도 `summary` → `summary_large_image`로 바꿨다. 안 바꾸면 1200×630을 넣고도 작은 카드로 뜬다
 
 ## 3. 설치 상태 판정
 

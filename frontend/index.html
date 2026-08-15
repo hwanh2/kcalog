@@ -31,8 +31,14 @@
     <meta property="og:title" content="kcalog — 사진 한 장으로 10초 만에 식사 기록" />
     <meta property="og:description" content="찍으면 AI가 음식을 읽고 칼로리와 탄단지를 계산합니다. 체중·주간 리포트·AI 코치까지." />
     <meta property="og:url" content="https://kcalog.site/" />
-    <meta property="og:image" content="https://kcalog.site/icon-512.png" />
-    <meta name="twitter:card" content="summary" />
+    <!-- 원본은 tools/og/og.html — 문구·색이 바뀌면 거기서 다시 뽑는다 -->
+    <meta property="og:image" content="https://kcalog.site/og.png" />
+    <!-- 크기를 함께 알려주면 크롤러가 이미지를 받기 전에 카드 자리를 잡는다 -->
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="kcalog 홈 화면 — 남은 칼로리와 탄단지 달성도" />
+    <!-- summary(작은 정사각 카드)로 두면 1200×630을 넣고도 큰 카드로 뜨지 않는다 -->
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>
