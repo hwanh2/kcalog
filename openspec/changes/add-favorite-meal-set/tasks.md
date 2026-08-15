@@ -42,8 +42,16 @@
 - [x] 5.5 실패 알림 — `useMutationWithError`. ⚠️ 삭제 실패는 **확인 시트만** 알린다(섹션에도 두면 같은 문구가 두 곳에서 alert로 읽힌다)
 - [x] 5.6 테스트 13개 — 담기 시트 6종·섹션 7종
 
-## 6. 마무리
+## 6. PR #40 리뷰 대응
 
-- [x] 6.1 `./gradlew test` · `npm test`(339) · `npm run build` · `openspec validate --strict` 통과
-- [x] 6.2 구현 중 설계와 어긋난 결정을 design.md에 반영 — 상한과 덮어쓰기, 삭제 알림 중복, aria-label, 수량 기본값
-- [ ] 6.3 **실기기 확인** — `polish-ui-details`에서 이월된 것(바텀시트 안전 영역·탭 지연·포커스 링·로딩 깜빡임·사진첩 선택지) + 세트 시트. **네 번째 이월이라 이번엔 넘기지 않는다**
+- [x] 6.1 **저장의 TOCTOU 제거** — 유니크 위반을 잡아 재조회 후 덮어쓴다. 이 레포에서 같은 계열 버그(코칭 브리핑 동시 생성 500)가 이미 한 번 있었다
+- [x] 6.2 쓰기를 `FavoriteMealWriter`로 분리 — 프록시 경계를 넘어야 실패가 rollback-only로 번지지 않는다
+- [x] 6.3 단위 테스트 5개 — 덮어쓰기 우선·경쟁 시 폴백·다른 제약이면 재던짐·상한 예외 통과·항목 순서 보존
+- [x] 6.4 `AnalysisResultSheet`의 검증 전처리 중복 제거 — `validateAndReveal()` 하나로
+- [x] 6.5 `FavoriteMealSaveSheet`의 자체 반올림을 `lib/number`의 `round1`로 통일
+
+## 7. 마무리
+
+- [x] 7.1 `./gradlew test`(22) · `npm test`(339) · `npm run build` · `openspec validate --strict` 통과
+- [x] 7.2 구현 중 설계와 어긋난 결정을 design.md에 반영 — 상한과 덮어쓰기, 삭제 알림 중복, aria-label, 수량 기본값, TOCTOU 대응
+- [ ] 7.3 **실기기 확인** — `polish-ui-details`에서 이월된 것(바텀시트 안전 영역·탭 지연·포커스 링·로딩 깜빡임·사진첩 선택지) + 세트 시트. **네 번째 이월이라 이번엔 넘기지 않는다**

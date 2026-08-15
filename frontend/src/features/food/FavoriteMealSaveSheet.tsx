@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getFavoriteMeals, saveFavoriteMeal } from '../../api/favoriteMeal'
 import type { FavoriteMealItem } from '../../api/favoriteMeal'
+import { round1 } from '../../lib/number'
 import { useMutationWithError } from '../../lib/useMutationWithError'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Sheet } from '../../ui/Sheet'
@@ -115,5 +116,5 @@ export function FavoriteMealSaveSheet({
 }
 
 function sum(items: FavoriteMealItem[], field: 'carbG' | 'proteinG' | 'fatG'): number {
-  return Math.round(items.reduce((total, item) => total + item[field], 0) * 10) / 10
+  return round1(items.reduce((total, item) => total + item[field], 0))
 }

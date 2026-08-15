@@ -85,32 +85,29 @@ export function AnalysisResultSheet({
   }
 
   /**
-   * 세트 저장은 기록 저장과 **같은 검증**을 통과해야 한다 — 값이 비거나 범위를 벗어난 채로
-   * 저장되면 나중에 담을 때 그때야 막혀 손쓸 수 없다.
+   * 검증하고, 실패하면 오류를 드러낸 뒤 false를 준다.
+   *
+   * 기록 저장과 세트 저장이 **같은 검증**을 통과해야 한다 — 세트가 잘못된 값을 품으면 나중에
+   * 담을 때 그때야 막혀 손쓸 수 없다. 두 곳에 같은 전처리를 늘어놓으면 "첫 오류 항목을 연다"
+   * 같은 규칙이 바뀔 때 한쪽만 고쳐진다.
    */
-  function openSetSave() {
+  function validateAndReveal(): boolean {
     const result = validateItems(items)
     setItemErrors(result.itemErrors)
     setFormError(result.formError)
-    if (!result.valid) {
-      const firstBad = result.itemErrors.findIndex((e) => Object.keys(e).length > 0)
-      if (overlay && firstBad >= 0) setEditingIndex(firstBad)
-      return
-    }
-    setSavingSet(true)
+    if (result.valid) return true
+    // 오버레이 모드는 필드가 안 보이므로 첫 오류 항목 시트를 열어 오류를 드러낸다
+    const firstBad = result.itemErrors.findIndex((e) => Object.keys(e).length > 0)
+    if (overlay && firstBad >= 0) setEditingIndex(firstBad)
+    return false
+  }
+
+  function openSetSave() {
+    if (validateAndReveal()) setSavingSet(true)
   }
 
   function save() {
-    const result = validateItems(items)
-    setItemErrors(result.itemErrors)
-    setFormError(result.formError)
-    if (!result.valid) {
-      // 오버레이 모드는 필드가 안 보이므로 첫 오류 항목 시트를 열어 오류를 드러낸다
-      const firstBad = result.itemErrors.findIndex((e) => Object.keys(e).length > 0)
-      if (overlay && firstBad >= 0) setEditingIndex(firstBad)
-      return
-    }
-    onSave(items)
+    if (validateAndReveal()) onSave(items)
   }
 
   async function requestReanalysis() {
