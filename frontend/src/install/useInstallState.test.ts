@@ -1,54 +1,17 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useInstallState } from './useInstallState'
-
-const UA = {
-  iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
-  // iPadOS 13+는 자신을 Macintosh로 소개한다 — maxTouchPoints로만 구분된다
-  ipad: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
-  android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/124.0',
-  mac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124.0',
-  // 카카오톡 인앱 브라우저 — 링크를 뿌릴 가장 유력한 경로다
-  kakao:
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 KAKAOTALK 10.5.0',
-  instagram: 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Instagram 320.0.0.0',
-} as const
-
-function setEnv({
-  userAgent,
-  maxTouchPoints = 0,
-  standalone = false,
-}: {
-  userAgent: string
-  maxTouchPoints?: number
-  standalone?: boolean
-}) {
-  vi.stubGlobal('navigator', { userAgent, maxTouchPoints })
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn((query: string) => ({
-      matches: query.includes('standalone') && standalone,
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  )
-}
-
-/** 브라우저가 설치 프롬프트를 내주는 상황 재현 */
-function fireBeforeInstallPrompt(outcome: 'accepted' | 'dismissed' = 'accepted') {
-  const event = Object.assign(new Event('beforeinstallprompt'), {
-    prompt: vi.fn().mockResolvedValue(undefined),
-    userChoice: Promise.resolve({ outcome }),
-  })
-  act(() => {
-    window.dispatchEvent(event)
-  })
-  return event
-}
+import {
+  UA,
+  fireBeforeInstallPrompt,
+  makeInstallPromptEvent,
+  stubInstallEnv as setEnv,
+} from './__testutils__/installEnv'
+import { rememberInstallPrompt, takeRememberedPrompt, useInstallState } from './useInstallState'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  // 다음 테스트로 새지 않도록 보관된 프롬프트를 비운다
+  takeRememberedPrompt()
 })
 
 describe('useInstallState', () => {
@@ -146,6 +109,21 @@ describe('useInstallState', () => {
     setEnv({ userAgent: UA.kakao })
     const { result } = renderHook(() => useInstallState())
     expect(result.current.state).not.toBe('ios')
+  })
+
+  it('마운트 전에 온 프롬프트도 집어간다 — 놓치면 원-탭 설치 버튼이 안 뜬다', () => {
+    setEnv({ userAgent: UA.android })
+    rememberInstallPrompt(makeInstallPromptEvent().event)
+
+    const { result } = renderHook(() => useInstallState())
+    expect(result.current.state).toBe('installable')
+  })
+
+  it('보관된 프롬프트는 한 번만 넘어간다 — 프롬프트는 재사용할 수 없다', () => {
+    rememberInstallPrompt(makeInstallPromptEvent().event)
+
+    expect(takeRememberedPrompt()).not.toBeNull()
+    expect(takeRememberedPrompt()).toBeNull()
   })
 
   it('설치 완료 이벤트를 받으면 설치됨으로 바뀐다', () => {

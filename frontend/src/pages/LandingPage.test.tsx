@@ -1,45 +1,17 @@
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { UA, fireBeforeInstallPrompt, stubInstallEnv } from '../install/__testutils__/installEnv'
 import { LandingPage } from './LandingPage'
 
-const UA = {
-  iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15',
-  android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/124.0',
-  mac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124.0',
-  kakao:
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 KAKAOTALK 10.5.0',
-} as const
-
-function renderLanding({
-  userAgent,
-  standalone = false,
-}: {
-  userAgent: string
-  standalone?: boolean
-}) {
-  vi.stubGlobal('navigator', { userAgent, maxTouchPoints: 0 })
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn((query: string) => ({ matches: query.includes('standalone') && standalone, media: query })),
-  )
+function renderLanding(env: { userAgent: string; standalone?: boolean }) {
+  stubInstallEnv(env)
   render(
     <MemoryRouter>
       <LandingPage />
     </MemoryRouter>,
   )
-}
-
-function fireBeforeInstallPrompt(prompt = vi.fn().mockResolvedValue(undefined)) {
-  const event = Object.assign(new Event('beforeinstallprompt'), {
-    prompt,
-    userChoice: Promise.resolve({ outcome: 'accepted' as const }),
-  })
-  act(() => {
-    window.dispatchEvent(event)
-  })
-  return prompt
 }
 
 afterEach(() => {
@@ -87,7 +59,7 @@ describe('LandingPage', () => {
   it('설치 프롬프트를 받은 모바일에서는 버튼으로 바로 설치한다', async () => {
     const user = userEvent.setup()
     renderLanding({ userAgent: UA.android })
-    const prompt = fireBeforeInstallPrompt()
+    const { prompt } = fireBeforeInstallPrompt()
 
     await user.click(screen.getByRole('button', { name: '앱 설치하기' }))
     expect(prompt).toHaveBeenCalled()

@@ -244,7 +244,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <Band title="매일 쓰게 만드는 세 가지" tone="track">
+        <Band title="매일 쓰게 만드는 세 가지">
           <ul className="grid gap-4 lg:grid-cols-3 lg:gap-6">
             {FEATURES.map((feature, i) => (
               <Reveal
@@ -322,7 +322,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <Band title="자주 묻는 것" tone="track">
+        <Band title="자주 묻는 것">
           <ul className="mx-auto max-w-2xl divide-y divide-border overflow-hidden rounded-card bg-surface shadow-sm">
             {FAQ.map((item) => (
               <li key={item.q}>
@@ -391,19 +391,9 @@ function useScrolled(threshold: number): boolean {
 }
 
 /** 전폭 배경 + 가운데 정렬 컨테이너를 가진 한 구획 */
-function Band({
-  id,
-  title,
-  tone,
-  children,
-}: {
-  id?: string
-  title: string
-  tone: 'canvas' | 'track'
-  children: ReactNode
-}) {
+function Band({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section id={id} className={`w-full py-24 sm:py-28 ${tone === 'track' ? 'bg-track' : 'bg-canvas'}`}>
+    <section className="w-full bg-track py-24 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
           <h2 className="text-balance text-center text-3xl font-extrabold tracking-tight sm:text-4xl">

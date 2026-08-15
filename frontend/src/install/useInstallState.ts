@@ -65,20 +65,50 @@ export interface InstallController {
   promptInstall: () => Promise<void>
 }
 
+/**
+ * React가 마운트되기 전에 온 `beforeinstallprompt`를 보관해 둔다.
+ *
+ * 이 이벤트는 로드 직후 이르게 발화할 수 있어, 훅의 `useEffect`에서만 듣고 있으면 놓친다.
+ * 놓치면 설치가 안 되는 건 아니지만 **원-탭 설치 버튼 대신 수동 안내가 뜬다** — 안드로이드에서
+ * 가장 잘 통하는 경로가 그 버튼이라 그냥 두기 아깝다.
+ * 등록은 앱 진입점(`main.tsx`)이 하고, 훅은 마운트할 때 여기 있는 걸 집어간다.
+ */
+let earlyPrompt: BeforeInstallPromptEvent | null = null
+
+export function rememberInstallPrompt(event: Event) {
+  // 기본 미니 인포바를 막고 이벤트를 쥐고 있다가 사용자가 누를 때 띄운다
+  event.preventDefault()
+  earlyPrompt = event as BeforeInstallPromptEvent
+}
+
+/** 보관해 둔 프롬프트를 넘기고 비운다 — 프롬프트는 한 번만 쓸 수 있어 주인이 하나여야 한다 */
+export function takeRememberedPrompt(): BeforeInstallPromptEvent | null {
+  const event = earlyPrompt
+  earlyPrompt = null
+  return event
+}
+
 export function useInstallState(): InstallController {
   const [state, setState] = useState<InstallState>(detectInstallState)
   const deferred = useRef<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
-    const onBeforeInstallPrompt = (event: Event) => {
-      // 기본 미니 인포바를 막고 이벤트를 쥐고 있다가 사용자가 누를 때 띄운다
-      event.preventDefault()
-      deferred.current = event as BeforeInstallPromptEvent
+    const accept = (event: BeforeInstallPromptEvent) => {
+      deferred.current = event
       // 데스크톱 크롬도 이 이벤트를 쏘지만 사진으로 기록하는 앱이라 설치가 무의미하다.
       // installed·in-app·desktop 판정이 프롬프트보다 우선한다.
       setState((prev) =>
         prev === 'installed' || prev === 'in-app' || prev === 'desktop' ? prev : 'installable',
       )
+    }
+
+    // 마운트 전에 이미 왔다면 여기서 집어간다
+    const remembered = takeRememberedPrompt()
+    if (remembered) accept(remembered)
+
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault()
+      accept(event as BeforeInstallPromptEvent)
     }
     const onInstalled = () => {
       deferred.current = null

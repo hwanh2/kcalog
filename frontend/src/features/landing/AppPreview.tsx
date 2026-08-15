@@ -15,8 +15,9 @@ import { Card } from '../../ui/form'
  */
 export type PreviewScreen = 'home' | 'record' | 'weight' | 'coach'
 
+/** 화면 설명 — 숫자를 적지 않는다. 아래 가짜 값과 어긋나도 아무도 못 알아채기 때문이다 */
 const LABELS: Record<PreviewScreen, string> = {
-  home: 'kcalog 홈 화면 미리보기 — 남은 칼로리 510kcal, 탄단지 달성도',
+  home: 'kcalog 홈 화면 미리보기 — 남은 칼로리와 탄단지 달성도',
   record: 'kcalog 음식기록 화면 미리보기 — 사진에서 인식한 음식과 칼로리',
   weight: 'kcalog 체중 화면 미리보기 — 최근 체중 추이 그래프',
   coach: 'kcalog AI PT 화면 미리보기 — 코치와 나눈 대화',
