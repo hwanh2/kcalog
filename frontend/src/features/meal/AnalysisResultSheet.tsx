@@ -7,6 +7,7 @@ import type { MealType } from '../../api/meal'
 import { Button } from '../../ui/form'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Sheet } from '../../ui/Sheet'
+import { FavoriteMealSaveSheet } from '../food/FavoriteMealSaveSheet'
 import { FoodDraftSheet } from '../food/FoodDraftSheet'
 import type { DraftValues } from '../food/FoodDraftSheet'
 import { AnalysisSummary, AnalyzedItemList } from './AnalysisSummary'
@@ -20,6 +21,7 @@ import {
   emptyItem,
   fromAnalyzed,
   shouldOverlay,
+  toFavoriteMealItems,
   validateItems,
 } from './mealItems'
 import type { EditableItem, ItemErrors } from './mealItems'
@@ -55,6 +57,7 @@ export function AnalysisResultSheet({
   const [itemErrors, setItemErrors] = useState<ItemErrors[]>([])
   const [formError, setFormError] = useState<string | null>(null)
   const [favoriteIndex, setFavoriteIndex] = useState<number | null>(null)
+  const [savingSet, setSavingSet] = useState(false)
   const [note, setNote] = useState('')
   const [reanalyzing, setReanalyzing] = useState(false)
   /**
@@ -81,17 +84,30 @@ export function AnalysisResultSheet({
     setDirty(true)
   }
 
-  function save() {
+  /**
+   * 검증하고, 실패하면 오류를 드러낸 뒤 false를 준다.
+   *
+   * 기록 저장과 세트 저장이 **같은 검증**을 통과해야 한다 — 세트가 잘못된 값을 품으면 나중에
+   * 담을 때 그때야 막혀 손쓸 수 없다. 두 곳에 같은 전처리를 늘어놓으면 "첫 오류 항목을 연다"
+   * 같은 규칙이 바뀔 때 한쪽만 고쳐진다.
+   */
+  function validateAndReveal(): boolean {
     const result = validateItems(items)
     setItemErrors(result.itemErrors)
     setFormError(result.formError)
-    if (!result.valid) {
-      // 오버레이 모드는 필드가 안 보이므로 첫 오류 항목 시트를 열어 오류를 드러낸다
-      const firstBad = result.itemErrors.findIndex((e) => Object.keys(e).length > 0)
-      if (overlay && firstBad >= 0) setEditingIndex(firstBad)
-      return
-    }
-    onSave(items)
+    if (result.valid) return true
+    // 오버레이 모드는 필드가 안 보이므로 첫 오류 항목 시트를 열어 오류를 드러낸다
+    const firstBad = result.itemErrors.findIndex((e) => Object.keys(e).length > 0)
+    if (overlay && firstBad >= 0) setEditingIndex(firstBad)
+    return false
+  }
+
+  function openSetSave() {
+    if (validateAndReveal()) setSavingSet(true)
+  }
+
+  function save() {
+    if (validateAndReveal()) onSave(items)
   }
 
   async function requestReanalysis() {
@@ -197,19 +213,25 @@ export function AnalysisResultSheet({
         </p>
       )}
 
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => {
-          const next = [...items, emptyItem()]
-          updateItems(next)
-          setEditingIndex(next.length - 1)
-        }}
-        disabled={items.length >= MAX_ITEMS}
-        className="mt-3 w-full"
-      >
-        + 음식 추가
-      </Button>
+      <div className="mt-3 flex gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            const next = [...items, emptyItem()]
+            updateItems(next)
+            setEditingIndex(next.length - 1)
+          }}
+          disabled={items.length >= MAX_ITEMS}
+          className="flex-1"
+        >
+          + 음식 추가
+        </Button>
+        {/* 항목마다 ★을 누르는 대신 이 구성 전체를 한 덩어리로 저장한다(design D7) */}
+        <Button type="button" variant="secondary" onClick={openSetSave} className="flex-1">
+          ☆ 세트로 저장
+        </Button>
+      </div>
 
       <div className="mt-4 rounded-2xl bg-canvas p-3">
         <label htmlFor="reanalysis-note" className="text-sm font-semibold text-ink">
@@ -303,6 +325,14 @@ export function AnalysisResultSheet({
           }}
           onSubmit={(values, remember) => void storeFavorite(values, remember)}
           onClose={() => setFavoriteIndex(null)}
+        />
+      )}
+
+      {savingSet && (
+        <FavoriteMealSaveSheet
+          items={toFavoriteMealItems(items)}
+          onSaved={() => setSavingSet(false)}
+          onClose={() => setSavingSet(false)}
         />
       )}
     </Sheet>
