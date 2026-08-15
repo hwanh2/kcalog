@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Year;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -38,6 +40,10 @@ class MemberIntegrationTest {
 
     @Autowired
     JwtService jwtService;
+
+    /** "올해"의 단일 출처 — 서비스와 같은 KST Clock을 써야 연말 자정 경계에서 테스트가 흔들리지 않는다 */
+    @Autowired
+    Clock clock;
 
     Member member;
     String bearer;
@@ -213,5 +219,54 @@ class MemberIntegrationTest {
                 .andExpect(status().isBadRequest());
 
         assertThat(memberRepository.findById(member.getId()).orElseThrow().getDailyKcalTarget()).isEqualTo(1930);
+    }
+
+    @Test
+    @DisplayName("출생연도·성별 수정 — 유지칼로리 공식에 들어가는 값이라 고칠 수 있어야 한다")
+    void updateBirthYearAndGender() throws Exception {
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_ONBOARDING))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/members/me").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"birthYear\": 1994, \"gender\": \"FEMALE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.birthYear").value(1994))
+                .andExpect(jsonPath("$.gender").value("FEMALE"))
+                // 함께 보내지 않은 값은 그대로 — 부분 수정 규칙
+                .andExpect(jsonPath("$.heightCm").value(175))
+                .andExpect(jsonPath("$.dailyKcalTarget").value(1930));
+    }
+
+    @Test
+    @DisplayName("미래 출생연도는 400 — 온보딩에 걸린 검증이 수정 경로에도 걸린다")
+    void updateFutureBirthYear() throws Exception {
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_ONBOARDING))
+                .andExpect(status().isOk());
+
+        int nextYear = Year.now(clock).getValue() + 1;
+        mockMvc.perform(patch("/api/members/me").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"birthYear\": %d}".formatted(nextYear)))
+                .andExpect(status().isBadRequest());
+
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().getBirthYear()).isEqualTo(1990);
+    }
+
+    @Test
+    @DisplayName("1920년 이전 출생연도는 400")
+    void updateTooOldBirthYear() throws Exception {
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_ONBOARDING))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/members/me").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"birthYear\": 1919}"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().getBirthYear()).isEqualTo(1990);
     }
 }

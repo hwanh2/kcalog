@@ -67,9 +67,13 @@ public class MemberService {
 
     @Transactional
     public MemberResponse updateProfile(Long memberId, UpdateMemberRequest request) {
+        // 수정 경로를 열면 미래 연도 구멍도 함께 열린다 — 온보딩·제안과 같은 검증을 태운다
+        if (request.birthYear() != null) {
+            validateBirthYear(request.birthYear());
+        }
         Member member = findMember(memberId);
-        member.updateProfile(request.heightCm(), request.activityLevel(), request.goal(),
-                request.targetWeightKg(), request.dailyKcalTarget());
+        member.updateProfile(request.gender(), request.birthYear(), request.heightCm(), request.activityLevel(),
+                request.goal(), request.targetWeightKg(), request.dailyKcalTarget());
         return MemberResponse.of(member, latestWeight(memberId));
     }
 
