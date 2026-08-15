@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fieldErrorsFrom } from '../../api/client'
 import { getKcalSuggestion, updateMember } from '../../api/member'
-import type { ActivityLevel, Goal, MemberResponse, UpdateMemberRequest } from '../../api/member'
+import type { ActivityLevel, Gender, Goal, MemberResponse, UpdateMemberRequest } from '../../api/member'
 import { toNumber, validateProfileFields } from '../../api/memberValidation'
 import type { FieldErrors } from '../../api/memberValidation'
 import { Sheet } from '../../ui/Sheet'
@@ -20,9 +20,25 @@ const GOAL_LABELS: Record<Goal, string> = {
   BULK: '근육 증량',
 }
 
+const GENDER_LABELS: Record<Gender, string> = { MALE: '남성', FEMALE: '여성' }
+
 /**
- * 프로필 편집 시트 — 키·목표 체중·목표 방향·활동량·일일 칼로리.
+ * 입력한 출생연도를 나이로 환산해 라벨에 붙인다 — 프로필 카드는 "나이 32세"로 보여주는데
+ * 여기서 "출생연도 1994"만 물으면 같은 값인지 확신할 수 없다. 범위를 벗어나면 붙이지 않는다.
+ * 프로필 카드와 같은 연도 차이 계산이다(만 나이 아님 — 생년만 받으므로 정확히 낼 수 없다).
+ */
+function ageSuffix(birthYear: string): string {
+  const parsed = toNumber(birthYear)
+  if (parsed === null || Object.keys(validateProfileFields({ birthYear: parsed })).length > 0) return ''
+  return ` (${new Date().getFullYear() - parsed}세)`
+}
+
+/**
+ * 프로필 편집 시트 — 성별·출생연도·키·목표 체중·목표 방향·활동량·일일 칼로리.
  * 저장값과 달라진 필드만 PATCH하고, 계산에 영향을 주는 값이 바뀌면 새 제안 칼로리를 보여준다(확정은 사용자 몫).
+ *
+ * 성별·출생연도까지 여는 이유: 프로필 카드가 보여주는 넉 줄(성별·키·나이·활동) 중 둘을 고칠 수 없었고,
+ * 그 둘이 유지칼로리 공식에 직접 들어간다 — 잘못 넣으면 이후 계산이 계속 틀어진다(design D1·D2).
  */
 export function ProfileEditSheet({
   member,
@@ -33,6 +49,8 @@ export function ProfileEditSheet({
   reloadMember: () => Promise<void>
   onClose: () => void
 }) {
+  const [gender, setGender] = useState<string>(member.gender ?? '')
+  const [birthYear, setBirthYear] = useState(String(member.birthYear ?? ''))
   const [heightCm, setHeightCm] = useState(String(member.heightCm ?? ''))
   const [targetWeightKg, setTargetWeightKg] = useState(String(member.targetWeightKg ?? ''))
   const [activityLevel, setActivityLevel] = useState<string>(member.activityLevel ?? '')
@@ -44,24 +62,32 @@ export function ProfileEditSheet({
   const [message, setMessage] = useState<{ text: string; kind: 'info' | 'error' } | null>(null)
   const [busy, setBusy] = useState(false)
 
-  // 키·활동량·목표 방향이 저장값과 달라지면 새 제안 칼로리를 조회해 보여준다
+  // 계산에 들어가는 값(성별·출생연도·키·활동량·목표 방향)이 저장값과 달라지면 새 제안 칼로리를 조회해 보여준다.
+  // ⚠️ 조회에 넘기는 것은 **편집 중인 값**이다 — 저장값을 넘기면 방금 고친 성별·나이가 제안에 안 들어간다
   useEffect(() => {
     const parsedHeight = toNumber(heightCm)
+    const parsedBirthYear = toNumber(birthYear)
     const changed =
-      parsedHeight !== member.heightCm || activityLevel !== member.activityLevel || goal !== (member.goal ?? '')
+      parsedHeight !== member.heightCm ||
+      parsedBirthYear !== member.birthYear ||
+      gender !== (member.gender ?? '') ||
+      activityLevel !== member.activityLevel ||
+      goal !== (member.goal ?? '')
     const valid =
       parsedHeight !== null &&
+      parsedBirthYear !== null &&
+      gender !== '' &&
       activityLevel !== '' &&
       goal !== '' &&
-      Object.keys(validateProfileFields({ heightCm: parsedHeight })).length === 0
-    if (!changed || !valid || member.gender === null || member.birthYear === null || member.latestWeightKg === null) {
+      Object.keys(validateProfileFields({ heightCm: parsedHeight, birthYear: parsedBirthYear })).length === 0
+    if (!changed || !valid || member.latestWeightKg === null) {
       setSuggested(null)
       return
     }
     let cancelled = false
     getKcalSuggestion({
-      gender: member.gender,
-      birthYear: member.birthYear,
+      gender: gender as Gender,
+      birthYear: parsedBirthYear,
       heightCm: parsedHeight,
       weightKg: member.latestWeightKg,
       activityLevel: activityLevel as ActivityLevel,
@@ -76,11 +102,12 @@ export function ProfileEditSheet({
     return () => {
       cancelled = true
     }
-  }, [heightCm, activityLevel, goal, member])
+  }, [gender, birthYear, heightCm, activityLevel, goal, member])
 
   async function save() {
     setMessage(null)
     const parsed = {
+      birthYear: toNumber(birthYear),
       heightCm: toNumber(heightCm),
       targetWeightKg: toNumber(targetWeightKg),
       dailyKcalTarget: toNumber(kcalInput),
@@ -91,6 +118,8 @@ export function ProfileEditSheet({
 
     // 저장값과 달라진 필드만 PATCH
     const request: UpdateMemberRequest = {}
+    if (gender !== (member.gender ?? '') && gender !== '') request.gender = gender as Gender
+    if (parsed.birthYear !== member.birthYear) request.birthYear = parsed.birthYear!
     if (parsed.heightCm !== member.heightCm) request.heightCm = parsed.heightCm!
     if (parsed.targetWeightKg !== member.targetWeightKg) request.targetWeightKg = parsed.targetWeightKg!
     if (activityLevel !== member.activityLevel) request.activityLevel = activityLevel as ActivityLevel
@@ -128,6 +157,25 @@ export function ProfileEditSheet({
         </p>
       )}
 
+      <Field id="gender" label="성별">
+        <Select id="gender" value={gender} onChange={(e) => setGender(e.target.value)}>
+          <option value="">선택</option>
+          {Object.entries(GENDER_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      {/*
+        저장하는 값은 출생연도다 — 만 나이를 저장하면 해가 바뀔 때마다 값이 썩어 유지칼로리가
+        조용히 틀려진다(design D1). 프로필 카드는 "나이"로 보여주므로 아래에 환산값을 함께 둔다.
+      */}
+      <Field id="birthYear" label={`출생연도${ageSuffix(birthYear)}`} error={errors.birthYear}>
+        <TextInput id="birthYear" inputMode="numeric" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} />
+      </Field>
+
       <Field id="heightCm" label="키 (cm)" error={errors.heightCm}>
         <TextInput id="heightCm" inputMode="decimal" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
       </Field>
@@ -162,13 +210,20 @@ export function ProfileEditSheet({
         </Select>
       </Field>
 
+      {/*
+        문장 속 ghost 버튼(회색 글자)이라 누를 수 있는 줄 모른다는 지적을 받았다.
+        아래 "추천 목표" 줄과 같은 모양 — 면 위에 값과 버튼을 갈라 놓아 누를 것이 드러나게 한다.
+      */}
       {suggested !== null && (
-        <p className="mb-4 text-sm text-muted">
-          새 제안 일일 칼로리: <strong className="text-ink">{suggested} kcal</strong>{' '}
-          <Button type="button" variant="ghost" onClick={() => setKcalInput(String(suggested))}>
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-tile bg-brand-soft p-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-brand-ink">새 제안 일일 칼로리</p>
+            <p className="font-semibold text-ink">{suggested} kcal</p>
+          </div>
+          <Button type="button" onClick={() => setKcalInput(String(suggested))} className="shrink-0">
             제안 적용
           </Button>
-        </p>
+        </div>
       )}
 
       <Field id="dailyKcalTarget" label="일일 칼로리 목표" error={errors.dailyKcalTarget}>

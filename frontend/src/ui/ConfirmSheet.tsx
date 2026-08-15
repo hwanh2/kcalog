@@ -9,8 +9,11 @@ import { Sheet } from './Sheet'
  * `confirm`은 출처 문구("localhost 내용:")를 그대로 노출하고 앱 디자인과 어긋난다.
  * `Sheet`를 쓰면 Esc·포커스 가둠·포커스 복귀·안전 영역이 그대로 따라온다.
  *
- * 기본 선택은 **취소**다. 파괴적 버튼을 강조하지 않고 오른쪽에 두어,
- * 습관적으로 한 번 더 누르는 손가락에 데이터가 지워지지 않게 한다.
+ * 기본 선택은 **취소**다 — 넓고, 앞에 온다.
+ *
+ * ⚠️ 실행 버튼은 처음에 흰 바탕 + 빨간 글씨였다(강조하지 않으려고). 그런데 **버튼으로 안 읽혀**
+ * 무엇을 눌러야 지워지는지 찾게 됐다(2026-08-15). 색을 채우되 자리(오른쪽)와 너비(좁게)로
+ * 기본 선택이 취소임을 계속 말한다 — 눈에 띄는 것과 손이 먼저 가는 것은 다르다.
  */
 export function ConfirmSheet({
   title,
@@ -50,13 +53,7 @@ export function ConfirmSheet({
         <Button type="button" variant="secondary" onClick={onCancel} className="flex-1 py-3">
           취소
         </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onConfirm}
-          disabled={busy}
-          className="py-3 text-danger"
-        >
+        <Button type="button" variant="danger" onClick={onConfirm} disabled={busy} className="py-3">
           {confirmLabel}
         </Button>
       </div>

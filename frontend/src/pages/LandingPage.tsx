@@ -1,13 +1,30 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { APP_ROOT } from '../auth/landingPath'
 import { AppPreview } from '../features/landing/AppPreview'
 import { Reveal } from '../features/landing/Reveal'
 import { ScanPhone } from '../features/landing/ScanPhone'
 import { useSmoothScroll } from '../features/landing/useSmoothScroll'
 import { InstallGuide } from '../install/InstallGuide'
-import { useInstallState } from '../install/useInstallState'
+import { AppMark } from '../ui/AppMark'
+import { isStandalone, useInstallState } from '../install/useInstallState'
+
+/**
+ * 루트(`/`)의 진입 — **홈 화면 아이콘으로 들어왔으면 소개를 건너뛰고 앱으로 보낸다.**
+ *
+ * manifest의 `start_url: '/app'`만으로는 이 요구사항을 지킬 수 없다. 그 값은 **설치 시점에 박히고**,
+ * 이미 설치된 아이콘에는 옛 값(`/`)이 남아 있다 — iOS는 재설치 말고는 갱신되지 않고,
+ * 안드로이드도 WebAPK가 갱신될 때까지 하루 남짓 옛 값을 쓴다. 그동안 아이콘을 누르면
+ * 주소창 없는 전체 화면에 **앱 대신 소개 페이지**가 뜬다(이미 설치한 사람에게 "홈 화면에 추가하세요"까지).
+ *
+ * 여기서 한 번 걸러두면 `start_url`을 앞으로 또 옮겨도 안전하다.
+ * 훅을 부르기 전에 갈라야 하므로 껍데기를 따로 둔다 — 본문(LandingPage)은 훅을 여럿 쓴다.
+ */
+export function LandingRoute() {
+  if (isStandalone()) return <Navigate to={APP_ROOT} replace />
+  return <LandingPage />
+}
 
 const FEATURES = [
   {
@@ -102,13 +119,13 @@ export function LandingPage() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="flex items-center gap-2">
-            <BrandMark className="h-8 w-8 text-base" />
+            <AppMark className="h-8 w-8" />
             <span
               className={`text-lg font-extrabold tracking-tight transition-colors ${
                 scrolled ? 'text-ink' : 'text-on-brand'
               }`}
             >
-              kcalog<span className="text-brand">.ai</span>
+              kcalog
             </span>
           </span>
           {state === 'installed' ? (
@@ -348,10 +365,8 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-14 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
-              <BrandMark className="h-9 w-9 text-lg" />
-              <span className="text-xl font-extrabold tracking-tight text-on-brand">
-                kcalog<span className="text-brand">.ai</span>
-              </span>
+              <AppMark className="h-9 w-9" />
+              <span className="text-xl font-extrabold tracking-tight text-on-brand">kcalog</span>
             </span>
             <span className="text-canvas/60">
               사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리
@@ -408,16 +423,6 @@ function Band({ title, children }: { title: string; children: ReactNode }) {
         <div className="mt-12">{children}</div>
       </div>
     </section>
-  )
-}
-
-function BrandMark({ className }: { className: string }) {
-  return (
-    <span
-      className={`flex items-center justify-center rounded-tile bg-gradient-to-tr from-brand-dark to-brand font-black text-on-brand ${className}`}
-    >
-      K
-    </span>
   )
 }
 

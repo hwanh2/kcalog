@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { UA, fireBeforeInstallPrompt, stubInstallEnv } from '../install/__testutils__/installEnv'
-import { LandingPage } from './LandingPage'
+import { LandingPage, LandingRoute } from './LandingPage'
 
 function renderLanding(env: { userAgent: string; standalone?: boolean }) {
   stubInstallEnv(env)
@@ -99,5 +99,37 @@ describe('LandingPage', () => {
     for (const link of screen.getAllByRole('link', { name: '앱 열기' })) {
       expect(link).toHaveAttribute('href', '/app')
     }
+  })
+})
+
+describe('LandingRoute — 설치된 아이콘으로 들어온 경우', () => {
+  function renderRoute(env: { userAgent: string; standalone?: boolean }) {
+    stubInstallEnv(env)
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<LandingRoute />} />
+          <Route path="/app" element={<div>앱 화면</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+  }
+
+  /*
+    manifest의 start_url만으로는 못 막는다 — 그 값은 설치 시점에 박혀서, 이미 설치된 아이콘에는
+    옛 값(`/`)이 남아 있다. 걸러내지 않으면 아이콘을 눌렀을 때 앱 대신 소개 페이지가 뜬다.
+  */
+  it('홈 화면 아이콘(standalone)으로 들어오면 소개를 건너뛰고 앱으로 간다', () => {
+    renderRoute({ userAgent: UA.iphone, standalone: true })
+
+    expect(screen.getByText('앱 화면')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
+  })
+
+  it('브라우저로 들어오면 소개 화면을 그대로 보여준다', () => {
+    renderRoute({ userAgent: UA.iphone })
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('10초')
+    expect(screen.queryByText('앱 화면')).not.toBeInTheDocument()
   })
 })

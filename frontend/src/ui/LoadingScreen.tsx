@@ -1,3 +1,4 @@
+import { AppMark } from './AppMark'
 /**
  * 화면 전체를 차지하는 대기 화면 — 인증 확인·로그인 처리처럼 아직 아무것도 그릴 수 없을 때(design D4).
  *
@@ -15,9 +16,7 @@ export function LoadingScreen({ message }: { message: string }) {
           aria-hidden
           className="absolute inset-0 animate-spin rounded-full border-4 border-border border-t-brand"
         />
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-dark to-brand text-base font-black text-on-brand">
-          K
-        </span>
+        <AppMark className="h-10 w-10" />
       </div>
       <p role="status" className="text-sm font-medium text-muted">
         {message}

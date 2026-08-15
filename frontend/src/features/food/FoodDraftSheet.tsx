@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { MealType } from '../../api/meal'
 import { MEAL_TYPE_LABELS } from '../meal/mealDefaults'
+import { RecordButton } from '../meal/RecordButton'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Button } from '../../ui/form'
 import { Sheet } from '../../ui/Sheet'
@@ -21,11 +22,14 @@ export function FoodDraftSheet({
   initial,
   busy,
   error = null,
+  onMealTypeChange,
   onSubmit,
   onClose,
 }: {
   mode: 'record' | 'favorite'
   mealType?: MealType
+  /** record 모드에서만 — 넘기면 마무리 줄이 끼니를 고를 수 있는 공통 모양이 된다 */
+  onMealTypeChange?: (next: MealType) => void
   initial?: Partial<FoodDraft>
   busy?: boolean
   /** 저장 실패 안내 — 시트를 닫지 않고 여기 보여줘야 입력한 값이 살아 있다 */
@@ -78,9 +82,19 @@ export function FoodDraftSheet({
 
       <ErrorNotice message={error} className="mt-3" />
 
-      <Button type="button" onClick={submit} disabled={busy} className="mt-4 w-full py-3">
-        {submitLabel}
-      </Button>
+      {/* 즐겨찾기 저장에는 끼니가 없다 — 저장은 담는 것이 아니라 라이브러리에 넣는 것이다 */}
+      {mode === 'favorite' || !onMealTypeChange ? (
+        <Button type="button" onClick={submit} disabled={busy} className="mt-4 w-full py-3">
+          {submitLabel}
+        </Button>
+      ) : (
+        <RecordButton
+          mealType={mealType ?? 'BREAKFAST'}
+          onMealTypeChange={onMealTypeChange}
+          onClick={submit}
+          disabled={busy}
+        />
+      )}
     </Sheet>
   )
 }

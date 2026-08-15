@@ -10,7 +10,7 @@ import { prevChange, round1, sliceByRange } from './estimator'
 import type { TrendRange } from './estimator'
 import { validateWeight } from './weightValidation'
 
-const RANGES: TrendRange[] = ['1주', '1월', '3월']
+const RANGES: TrendRange[] = ['1주', '1개월', '3개월']
 
 /** 체중 탭 위젯 — 스테퍼 입력 + 추세선(범위 토글) + 목표 에스티메이터. 요약은 [date-89, date] 조회(90일) */
 export function WeightPanel({ date }: { date: string }) {
@@ -74,8 +74,9 @@ export function WeightPanel({ date }: { date: string }) {
 
   return (
     <>
-      {/* ① 체중 기록 — 오렌지 히어로 카드 */}
-      <section className="mt-4 rounded-card bg-gradient-to-br from-brand to-brand-dark p-5 text-white">
+      {/* ① 체중 기록 — 오렌지 히어로 카드.
+          위 여백은 셸의 <main pt-4>가 준다 — 여기서 또 얹으면 이 화면만 아래로 밀린다(design D8) */}
+      <section className="rounded-card bg-gradient-to-br from-brand to-brand-dark p-5 text-white">
         <div className="flex items-center justify-between">
           <p className="text-sm text-white/80">
             오늘 · {Number(m)}월 {Number(d)}일

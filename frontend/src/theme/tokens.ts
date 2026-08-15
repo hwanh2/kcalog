@@ -24,6 +24,8 @@ export const SURFACE = {
   fat: '#06b6d4',
   fatSoft: '#cffafe',
   successSoft: '#ecfdf5',
+  /** 파괴적 확인 버튼의 바탕 — INK.danger와 같은 값이지만 쓰임이 면이라 여기에도 둔다 */
+  danger: '#b91c1c',
 } as const
 
 /**
@@ -85,6 +87,7 @@ export const PAIRS: { name: string; ink: string; on: string }[] = [
   // 상태 색
   { name: 'success on successSoft', ink: INK.success, on: SURFACE.successSoft },
   { name: 'danger on surface', ink: INK.danger, on: SURFACE.surface },
+  { name: 'onBrand on danger', ink: INK.onBrand, on: SURFACE.danger }, // 삭제 확인 버튼
 ]
 
 /**

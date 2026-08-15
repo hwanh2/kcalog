@@ -49,11 +49,13 @@ export function Button({
   variant = 'primary',
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   const styles = {
     primary: 'bg-brand text-on-brand hover:bg-brand-dark disabled:opacity-50',
     secondary: 'border border-border bg-surface text-ink hover:bg-canvas disabled:opacity-50',
     ghost: 'text-muted hover:text-ink',
+    // 되돌릴 수 없는 실행 — 빨간 글씨만으로는 버튼인지 안 읽혔다(2026-08-15 결정)
+    danger: 'bg-danger text-on-brand hover:brightness-110 disabled:opacity-50',
   }[variant]
   // 라운드는 tile(12px) — 입력 필드(md)보다 둥글게 둬 누를 것과 채울 것을 구분한다
   return (

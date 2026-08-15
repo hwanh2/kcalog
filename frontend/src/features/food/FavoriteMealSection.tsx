@@ -18,10 +18,12 @@ import { FavoriteMealApplySheet } from './FavoriteMealApplySheet'
 export function FavoriteMealSection({
   mealType,
   saving,
+  onMealTypeChange,
   onRecordItems,
 }: {
   mealType: MealType
   saving?: boolean
+  onMealTypeChange: (next: MealType) => void
   onRecordItems: (items: EditableItem[]) => void
 }) {
   const queryClient = useQueryClient()
@@ -51,14 +53,13 @@ export function FavoriteMealSection({
 
       <ul className="space-y-2">
         {sets.map((set) => (
-          <li key={set.id} className="flex items-center gap-2 rounded-2xl border border-border bg-surface p-3">
-            {/* aria-label이 없으면 이름·개수·칼로리·매크로 칩이 통째로 이어붙어 읽힌다 */}
-            <button
-              type="button"
-              aria-label={`${set.name} 담기`}
-              onClick={() => setApplying(set)}
-              className="min-w-0 flex-1 rounded-tile text-left transition-colors hover:bg-canvas active:bg-track focus-visible:ring-2 focus-visible:ring-brand-ink"
-            >
+          // 안쪽 여백도 음식 줄(p-2.5)과 맞춘다 — 오른쪽 인셋이 달라지면 + 가 몇 px 어긋난다
+          <li key={set.id} className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-2.5">
+            {/*
+              담기는 줄 전체가 아니라 **+ 버튼**이다 — 아래 음식 목록과 같은 모양이라야
+              "이건 어떻게 담는 거지"를 두 번 배우지 않는다. 삭제(휴지통)는 그 옆에 그대로.
+            */}
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-ink">{set.name}</p>
               <p className="text-[11px] tabular-nums text-muted">
                 음식 {set.itemCount}개 · {set.totalKcal.toLocaleString()} kcal
@@ -66,15 +67,26 @@ export function FavoriteMealSection({
               <div className="mt-1">
                 <MacroChips carbG={set.carbG} proteinG={set.proteinG} fatG={set.fatG} />
               </div>
-            </button>
+            </div>
+            {/* 휴지통이 먼저, 담기가 맨 오른쪽 — 아래 음식 목록도 담기가 오른쪽 끝이라
+                두 목록의 + 가 같은 세로줄에 선다. 자리가 흔들리면 눈이 매번 다시 찾는다 */}
             <button
               type="button"
               aria-label={`${set.name} 세트 삭제`}
               onClick={() => setDeleting(set)}
               disabled={removeMutation.isPending}
-              className="-mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted touch-manipulation disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-danger"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted touch-manipulation disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-danger"
             >
               <TrashIcon />
+            </button>
+            {/* aria-label이 없으면 "+" 하나만 읽혀 무엇을 담는 건지 알 수 없다 */}
+            <button
+              type="button"
+              aria-label={`${set.name} 담기`}
+              onClick={() => setApplying(set)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-tile bg-brand-soft text-lg font-bold text-brand-ink touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+            >
+              +
             </button>
           </li>
         ))}
@@ -85,6 +97,7 @@ export function FavoriteMealSection({
           set={applying}
           mealType={mealType}
           busy={saving}
+          onMealTypeChange={onMealTypeChange}
           onSubmit={(items) => {
             onRecordItems(items)
             setApplying(null)

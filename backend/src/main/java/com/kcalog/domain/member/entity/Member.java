@@ -84,8 +84,14 @@ public class Member extends BaseEntity {
     }
 
     /** 프로필 수정: null이 아닌 필드만 반영한다 */
-    public void updateProfile(BigDecimal heightCm, ActivityLevel activityLevel,
+    public void updateProfile(Gender gender, Integer birthYear, BigDecimal heightCm, ActivityLevel activityLevel,
                               Goal goal, BigDecimal targetWeightKg, Integer dailyKcalTarget) {
+        if (gender != null) {
+            this.gender = gender;
+        }
+        if (birthYear != null) {
+            this.birthYear = birthYear;
+        }
         if (heightCm != null) {
             this.heightCm = heightCm;
         }

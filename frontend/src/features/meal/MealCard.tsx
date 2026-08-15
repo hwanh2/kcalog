@@ -88,7 +88,7 @@ export function MealCard({ meal }: { meal: Meal }) {
   }
 
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex items-center gap-3 px-3 py-2">
       {meal.imageUrl ? (
         <AuthImage src={meal.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-tile object-cover" />
       ) : (
@@ -127,33 +127,39 @@ export function MealCard({ meal }: { meal: Meal }) {
         </div>
       </button>
 
-      <div className="flex shrink-0 flex-col items-end gap-0.5">
-        <p className="text-sm font-bold tabular-nums text-ink">
+      {/*
+        ☆와 🗑을 세로로 쌓으면 오른쪽 칸만 110px이 되어 줄 전체가 사진(56px)의 두 배로 커진다.
+        가로로 눕히면 64px로 줄고, 44px 탭 대상은 그대로 지킨다.
+      */}
+      <div className="flex shrink-0 flex-col items-end">
+        <p className="whitespace-nowrap text-sm font-bold tabular-nums text-ink">
           {meal.totalKcal.toLocaleString()}
           <span className="ml-0.5 text-[11px] font-medium text-muted">kcal</span>
         </p>
-        {/* 사진 없이 담은 조합도 재사용 가치가 같다 — 저장된 기록에서도 세트를 만든다(design D7) */}
-        <button
-          type="button"
-          aria-label={`${summarize(meal)} 끼니 세트로 저장`}
-          onClick={() => setSavingSet(true)}
-          className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
-        >
-          <span aria-hidden className="text-base leading-none">
-            ☆
-          </span>
-        </button>
-        <button
-          type="button"
-          aria-label={`${summarize(meal)} 삭제`}
-          onClick={() => setConfirmingDelete(true)}
-          disabled={removeMutation.isPending}
-          // 44px 탭 대상 — 아이콘 크기는 그대로 두고 패딩으로 넓힌다.
-          // -mr-2로 시각적 위치는 유지하되 수정 영역과 히트 영역이 겹치지 않게 한다
-          className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-danger"
-        >
-          <TrashIcon />
-        </button>
+        {/* -mr-2로 시각적 위치는 유지하되 수정 영역과 히트 영역이 겹치지 않게 한다 */}
+        <div className="-mr-2 flex items-center">
+          {/* 사진 없이 담은 조합도 재사용 가치가 같다 — 저장된 기록에서도 세트를 만든다(design D7) */}
+          <button
+            type="button"
+            aria-label={`${summarize(meal)} 끼니 세트로 저장`}
+            onClick={() => setSavingSet(true)}
+            className="flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+          >
+            <span aria-hidden className="text-base leading-none">
+              ☆
+            </span>
+          </button>
+          <button
+            type="button"
+            aria-label={`${summarize(meal)} 삭제`}
+            onClick={() => setConfirmingDelete(true)}
+            disabled={removeMutation.isPending}
+            // 44px 탭 대상 — 아이콘 크기는 그대로 두고 패딩으로 넓힌다
+            className="flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-danger"
+          >
+            <TrashIcon />
+          </button>
+        </div>
       </div>
 
       {confirmingDelete && (

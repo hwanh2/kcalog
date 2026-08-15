@@ -1,8 +1,13 @@
 import type { WeightPoint } from '../../api/weight'
+import { koreanWeekday } from '../../lib/date'
 
-export type TrendRange = '1주' | '1월' | '3월'
+/**
+ * 표시 문자열이 곧 타입이다 — 라벨 맵을 따로 두면 값과 표시가 갈릴 자리만 늘어난다(design D6).
+ * "1월"·"3월"로 줄이지 않는다: 한국어에서 그 표기는 January·March로 읽힌다.
+ */
+export type TrendRange = '1주' | '1개월' | '3개월'
 
-const RANGE_DAYS: Record<TrendRange, number> = { '1주': 7, '1월': 30, '3월': 90 }
+const RANGE_DAYS: Record<TrendRange, number> = { '1주': 7, '1개월': 30, '3개월': 90 }
 
 /** 소수 1자리 반올림 — 표시용 공통 정책(중복 방지) */
 export const round1 = (v: number) => Math.round(v * 10) / 10
@@ -40,14 +45,6 @@ export function daysUntil(fromISO: string, toISO: string): number {
   const a = new Date(`${fromISO}T00:00:00Z`).getTime()
   const b = new Date(`${toISO}T00:00:00Z`).getTime()
   return Math.round((b - a) / 86_400_000)
-}
-
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
-
-/** YYYY-MM-DD → 요일 한 글자("월") */
-export function koreanWeekday(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
 }
 
 /** YYYY-MM-DD → "M월 D일 (요일)" */

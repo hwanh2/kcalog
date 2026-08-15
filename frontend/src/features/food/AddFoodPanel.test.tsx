@@ -147,6 +147,25 @@ describe('즐겨찾기 해제', () => {
   })
 })
 
+describe('검색 자리', () => {
+  it('"자주 먹는"에는 검색이 있다 — 공통 카탈로그라 목록이 길다', async () => {
+    renderPanel()
+
+    expect(await screen.findByLabelText('음식 이름 검색')).toBeInTheDocument()
+  })
+
+  it('즐겨찾기 탭에는 검색이 없다 — 내가 담은 몇 개가 이미 다 보인다', async () => {
+    const user = userEvent.setup()
+    getFoodsMock.mockResolvedValue([savedEgg])
+    renderPanel()
+
+    await user.click(await screen.findByRole('button', { name: '즐겨찾기' }))
+
+    expect(screen.queryByLabelText('음식 이름 검색')).not.toBeInTheDocument()
+    expect(screen.getByText('삶은 달걀')).toBeInTheDocument()
+  })
+})
+
 describe('직접 입력', () => {
   it('검색 결과가 없을 때 직접 추가하면 그 값으로 기록을 만든다', async () => {
     const user = userEvent.setup()
@@ -159,7 +178,7 @@ describe('직접 입력', () => {
     await user.type(screen.getByLabelText('탄 (g)'), '80')
     await user.type(screen.getByLabelText('단 (g)'), '12')
     await user.type(screen.getByLabelText('지 (g)'), '20')
-    await user.click(screen.getByRole('button', { name: '아침에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(onRecordItems).toHaveBeenCalledWith([
       expect.objectContaining({ name: '짜장라면', kcal: '600', quantity: '1', unit: '인분' }),
@@ -172,7 +191,7 @@ describe('직접 입력', () => {
 
     await user.type(await screen.findByLabelText('음식 이름 검색'), '짜장라면')
     await user.click(await screen.findByRole('button', { name: "'짜장라면' 직접 추가하기" }))
-    await user.click(screen.getByRole('button', { name: '아침에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(screen.getByText('0~10000 정수여야 합니다')).toBeInTheDocument()
     expect(onRecordItems).not.toHaveBeenCalled()

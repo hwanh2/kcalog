@@ -86,3 +86,13 @@ export function SparklesIcon() {
     </svg>
   )
 }
+
+/** 프로필 — 앱 헤더와 음식기록 날짜 머리가 같은 아이콘을 쓴다(DESIGN.md 5: 같은 뜻에는 같은 아이콘) */
+export function UserIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" />
+    </svg>
+  )
+}

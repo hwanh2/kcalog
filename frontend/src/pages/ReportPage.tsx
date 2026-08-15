@@ -139,7 +139,7 @@ function TdeeTrend({ series }: { series: TdeePoint[] }) {
 }
 
 /**
- * "8월 9일 – 8월 15일" — 같은 해 안이면 연도를 안 쓴다.
+ * "8월 9일 ~ 8월 15일" — 같은 해 안이면 연도를 안 쓴다. 구분자는 한국어 기간 표기의 관용인 `~`.
  * UTC 정오로 파싱하는 이유는 시간대에 따라 날짜가 하루 밀리는 것을 막기 위해서다(HomePage와 동일).
  */
 function formatRange(start: string, end: string): string {
@@ -149,7 +149,7 @@ function formatRange(start: string, end: string): string {
       day: 'numeric',
       timeZone: 'UTC',
     })
-  return start === end ? fmt(start) : `${fmt(start)} – ${fmt(end)}`
+  return start === end ? fmt(start) : `${fmt(start)} ~ ${fmt(end)}`
 }
 
 function Insights({ report }: { report: Report }) {

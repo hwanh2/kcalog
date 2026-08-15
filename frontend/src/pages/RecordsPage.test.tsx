@@ -8,6 +8,7 @@ import type { Food } from '../api/food'
 import { deleteMeal, getMeals, saveMeal, updateMeal } from '../api/meal'
 import type { Meal } from '../api/meal'
 import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
+import { addDays, todayServiceDate } from '../lib/date'
 import { RecordsPage } from './RecordsPage'
 
 vi.mock('../api/meal', () => ({
@@ -115,11 +116,12 @@ describe('RecordsPage — 끼니 세그먼트', () => {
     expect(within(lunchTab).getByText('2')).toBeInTheDocument()
   })
 
-  it('그 끼니에 기록이 없으면 추가를 안내한다', async () => {
+  it('그 끼니에 기록이 없으면 그림과 함께 안내한다 — 한 줄이 큰 카드에 떠 있으면 알약처럼 보인다', async () => {
     getMealsMock.mockResolvedValue([])
     renderPage()
 
     expect(await screen.findByText(/기록이 없어요/)).toBeInTheDocument()
+    expect(screen.getByText(/아래에서 사진으로 찍거나/)).toBeInTheDocument()
   })
 
   it('섭취량이 있는 항목만 수량을 함께 보여준다', async () => {
@@ -139,7 +141,7 @@ describe('RecordsPage — 담기', () => {
 
     await user().click(await screen.findByRole('button', { name: /저녁/ }))
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
-    await user().click(await screen.findByRole('button', { name: '저녁에 기록하기' }))
+    await user().click(await screen.findByRole('button', { name: '기록하기' }))
 
     await waitFor(() => expect(saveMealMock).toHaveBeenCalled())
     // TanStack Query가 mutationFn에 context를 함께 넘기므로 첫 인자만 본다
@@ -161,7 +163,7 @@ describe('RecordsPage — 담기', () => {
     await user().click(screen.getByRole('button', { name: '수량 늘리기' })) // 1 → 2 (0.5씩)
 
     expect(screen.getByText('140')).toBeInTheDocument()
-    await user().click(screen.getByRole('button', { name: /에 기록하기/ }))
+    await user().click(screen.getByRole('button', { name: '기록하기' }))
 
     await waitFor(() => expect(saveMealMock).toHaveBeenCalled())
     expect(saveMealMock.mock.calls[0][0]).toEqual(
@@ -196,7 +198,7 @@ describe('RecordsPage — 저장 실패 복구', () => {
 
     await user().click(await screen.findByRole('button', { name: /저녁/ }))
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
-    await user().click(await screen.findByRole('button', { name: '저녁에 기록하기' }))
+    await user().click(await screen.findByRole('button', { name: '기록하기' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/저장하지 못했어요/)
     expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
@@ -209,7 +211,7 @@ describe('RecordsPage — 저장 실패 복구', () => {
 
     await user().click(await screen.findByRole('button', { name: /저녁/ }))
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
-    await user().click(await screen.findByRole('button', { name: '저녁에 기록하기' }))
+    await user().click(await screen.findByRole('button', { name: '기록하기' }))
     await user().click(await screen.findByRole('button', { name: '다시 시도' }))
 
     await waitFor(() => expect(saveMealMock).toHaveBeenCalledTimes(2))
@@ -328,6 +330,89 @@ describe('RecordsPage — FAB 진입', () => {
 
     const expected = MEAL_TYPE_LABELS[defaultMealType(new Date())]
     expect(await screen.findByRole('button', { name: new RegExp(expected), pressed: true })).toBeInTheDocument()
+  })
+})
+
+describe('RecordsPage — 날짜', () => {
+  it('기본은 오늘 — 그날 기록을 부른다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records')
+
+    await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith(todayServiceDate()))
+  })
+
+  it('?date=로 들어오면 그 날짜를 본다 — 홈에서 날짜를 옮기고 넘어온 경우', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records?date=2026-08-06')
+
+    await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith('2026-08-06'))
+    expect(screen.getByLabelText('날짜 선택')).toHaveValue('2026-08-06')
+  })
+
+  it('미래 날짜는 무시하고 오늘을 본다 — 아직 먹지 않은 날에 담을 이유가 없다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage(`/records?date=${addDays(todayServiceDate(), 3)}`)
+
+    await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith(todayServiceDate()))
+  })
+
+  it('형식이 아닌 값도 무시한다 — 주소창은 아무 값이나 담을 수 있다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records?date=어제')
+
+    await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith(todayServiceDate()))
+  })
+
+  it('주간 띠에서 다른 날을 누르면 그 날짜를 본다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records?date=2026-08-06') // 목요일
+
+    await screen.findByLabelText('날짜 선택')
+    await user().click(screen.getByRole('button', { name: '8월 4일 화요일' })) // 같은 주 화요일
+
+    await waitFor(() => expect(getMealsMock).toHaveBeenCalledWith('2026-08-04'))
+  })
+
+  /*
+    화면을 포그라운드에 열어둔 채 05시를 넘긴 경우. `today`는 마운트와 visibilitychange에서만
+    갱신되므로 그때 낡는데, 낡은 날짜로 담으면 `eatenAtFor`가 과거 분기를 타 **전날 정오**로
+    저장된다. 05시 경계가 존재하는 이유인 야식 사용자가 정확히 이 경우다(PR #42 리뷰).
+  */
+  it('열어둔 채 05시를 넘겨 담아도 새 서비스일의 지금 시각으로 기록한다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      // KST 8/16 04:59 → 서비스일은 아직 8/15
+      vi.setSystemTime(new Date('2026-08-15T19:59:00Z'))
+      const typer = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      getMealsMock.mockResolvedValue([])
+      renderPage('/records')
+
+      // 화면을 그대로 둔 채 경계를 넘긴다 — visibilitychange는 일어나지 않는다
+      vi.setSystemTime(new Date('2026-08-15T20:01:00Z')) // KST 8/16 05:01 → 서비스일 8/16
+
+      await typer.click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
+      await typer.click(screen.getByRole('button', { name: '기록하기' }))
+
+      await waitFor(() => expect(saveMealMock).toHaveBeenCalled())
+      const saved = saveMealMock.mock.calls[0][0].eatenAt
+      // 회귀했을 때 저장되던 값 — 전날 정오
+      expect(saved).not.toBe(new Date('2026-08-15T12:00:00+09:00').toISOString())
+      // 새 서비스일(8/16)에 들어가야 한다. ±ms는 타이머가 흘러 정확히 못 박는다
+      expect(todayServiceDate(new Date(saved))).toBe('2026-08-16')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('지난 날짜에 담으면 그 날의 정오로 기록한다 — 지금 시각을 쓰면 오늘로 들어간다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records?date=2026-08-06')
+
+    await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
+    await user().click(screen.getByRole('button', { name: '기록하기' }))
+
+    await waitFor(() => expect(saveMealMock).toHaveBeenCalled())
+    expect(saveMealMock.mock.calls[0][0].eatenAt).toBe(new Date('2026-08-06T12:00:00+09:00').toISOString())
   })
 })
 

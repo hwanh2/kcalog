@@ -25,8 +25,7 @@ export function todayServiceDate(now: Date = new Date()): string {
  * 오늘(서비스 하루 기준)이면 지금 시각 그대로, 과거 날짜면 그 날의 정오로 둔다 —
  * 과거 날짜에 새벽 시각을 쓰면 05시 경계 때문에 하루 전으로 밀려버린다.
  * <p>
- * 지금 화면에는 과거 날짜로 담는 경로가 없다(음식기록 탭은 오늘만 다룬다).
- * 과거 분기는 날짜 선택이 생길 때를 위해 남겨둔 것이며, 그때까지는 테스트로만 지켜진다.
+ * 음식기록 탭에 날짜 선택이 생기면서 과거 분기가 실제로 쓰인다.
  */
 export function eatenAtFor(date: string, now: Date = new Date()): string {
   if (date === todayServiceDate(now)) {
@@ -40,4 +39,26 @@ export function addDays(dateStr: string, days: number): string {
   const d = new Date(`${dateStr}T12:00:00Z`)
   d.setUTCDate(d.getUTCDate() + days)
   return d.toISOString().slice(0, 10)
+}
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+/**
+ * YYYY-MM-DD → 요일 한 글자("월").
+ * 체중 추세선과 음식기록 주간 띠가 함께 쓴다 — 한 곳에 두지 않으면 요일 계산 규칙이 갈린다.
+ */
+export function koreanWeekday(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
+}
+
+/**
+ * 그 날짜가 속한 주(월~일) 7일. 주의 시작은 월요일 —
+ * 한국에서 달력·주간 리포트가 모두 월요일부터라 여기만 일요일 시작이면 어긋난다.
+ */
+export function weekDates(dateStr: string): string[] {
+  const dayOfWeek = new Date(`${dateStr}T12:00:00Z`).getUTCDay() // 0=일
+  const toMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  const monday = addDays(dateStr, toMonday)
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
 }

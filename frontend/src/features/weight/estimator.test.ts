@@ -19,7 +19,7 @@ describe('sliceByRange', () => {
     expect(sliced[0].logDate).toBe('2026-07-25')
   })
   it('3월은 전부(90일 이내)', () => {
-    expect(sliceByRange(points, '3월')).toHaveLength(points.length)
+    expect(sliceByRange(points, '3개월')).toHaveLength(points.length)
   })
 })
 
