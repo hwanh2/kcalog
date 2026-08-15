@@ -96,6 +96,26 @@
 
 ⚠️ **세트 개수 상한은 여전히 완전히 원자적이지 않다.** 서로 다른 이름의 동시 생성은 각자 검사를 통과해 50을 잠깐 넘길 수 있다. 다음 생성부터 막히므로 스스로 수렴하고, 즐겨찾기 개수 상한에 행 잠금을 거는 것은 얻는 것에 비해 비싸다고 봤다. 이 한계를 코드 주석에도 남겼다.
 
+### 같은 결함이 즐겨찾기 음식·개인 보정치에도 있었다 — 함께 고쳤다
+
+리뷰를 계기로 훑어보니 **같은 모양이 세 곳**이었다.
+
+| 곳 | 제약 |
+|---|---|
+| `FoodService.saveFavorite` | `uq_favorite_food_member_name` |
+| `FoodCorrectionService.upsert` | `uq_food_correction_member_name` |
+| `FavoriteMealService.save` | `uq_favorite_meal_member_name` |
+
+⚠️ **보정치는 재시도로 못 고친다.** `MealService.saveMeal`이 자기 트랜잭션에서 그 upsert를 부르므로, 되돌려 재시도하면 **식사 기록이 중복 생성된다.** 판정을 DB에 넘기는 수밖에 없다.
+
+그래서 평평한 두 테이블(`member_favorite_food`·`food_correction`)은 **네이티브 `ON CONFLICT` upsert**로 바꿨다. 이 레포에 이미 같은 패턴이 있다 — `weight_log`가 "동시 제출 경합에서도 UNIQUE 충돌 없이"라고 적어두고 쓰고 있었다. 그 결과 `saveFavorite`은 재시도도 쓰기 전용 빈도 필요 없어져 다시 단순한 `@Transactional` 메서드가 됐다.
+
+**끼니 세트만 다른 방식(쓰기 빈 + 유니크 위반 포착)을 쓴다.** 세트는 자식 컬렉션(항목)을 가져 한 문장으로 upsert할 수 없다 — 항목 교체가 별도 연산이라 `ON CONFLICT` 하나로 끝나지 않는다.
+
+⚠️ **`now()`가 아니라 `clock_timestamp()`를 쓴다.** Postgres의 `now()`는 **트랜잭션 시작 시각**이라 한 트랜잭션에서 여러 번 저장하면 전부 같은 값이 된다. 즐겨찾기 목록은 `updated_at` 내림차순이라 그러면 "방금 저장한 것이 위로"가 깨진다. 요청마다 트랜잭션이 갈리는 실사용에서는 드러나지 않아, **테스트를 쓰지 않았으면 놓쳤을 자리다**(실제로 테스트가 잡았다).
+
+`MemberFavoriteFood.update`·`FoodCorrection.updateNutrition`은 갱신을 SQL이 맡으면서 쓰이지 않게 되어 지웠다 — 남겨두면 "여기가 갱신 경로"로 읽힌다.
+
 ## Open Questions
 
 - 세트에 끼니(아침·점심…)를 매어둘지 — "회사 점심 A"는 늘 점심이다. 지금은 매지 않고 담을 때 화면의 끼니를 따른다. 매어두면 담기가 한 단계 줄지만 저녁에 같은 걸 먹을 때 어긋난다.

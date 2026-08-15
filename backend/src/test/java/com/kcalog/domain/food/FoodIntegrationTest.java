@@ -238,4 +238,42 @@ class FoodIntegrationTest {
                         .content(EGG_FAVORITE.replace("\"quantity\": 2", "\"quantity\": 0")))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("재저장하면 목록 맨 앞으로 온다 — 갱신 시각이 정렬 기준이다")
+    void resaveMovesToFront() throws Exception {
+        // 저장 시각을 SQL이 직접 넣게 바뀌어(원자적 upsert), updated_at을 안 올리면
+        // "방금 저장한 것이 위로"가 조용히 깨진다
+        mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(EGG_FAVORITE))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(EGG_FAVORITE.replace("삶은달걀", "닭가슴살")))
+                .andExpect(status().isOk());
+
+        // 지금은 닭가슴살이 맨 앞
+        mockMvc.perform(get("/api/favorites").header("Authorization", bearer))
+                .andExpect(jsonPath("$[0].name").value("닭가슴살"));
+
+        mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(EGG_FAVORITE))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/favorites").header("Authorization", bearer))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("삶은달걀"));
+    }
+
+    @Test
+    @DisplayName("재저장이 새 행을 만들지 않는다 — 판정을 DB에 맡겨도 개수는 그대로다")
+    void resaveDoesNotDuplicate() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/favorites").header("Authorization", bearer)
+                            .contentType(MediaType.APPLICATION_JSON).content(EGG_FAVORITE))
+                    .andExpect(status().isOk());
+        }
+
+        assertThat(favoriteRepository.findByMemberIdOrderByUpdatedAtDesc(member.getId())).hasSize(1);
+    }
 }

@@ -49,6 +49,10 @@
 - [x] 6.3 단위 테스트 5개 — 덮어쓰기 우선·경쟁 시 폴백·다른 제약이면 재던짐·상한 예외 통과·항목 순서 보존
 - [x] 6.4 `AnalysisResultSheet`의 검증 전처리 중복 제거 — `validateAndReveal()` 하나로
 - [x] 6.5 `FavoriteMealSaveSheet`의 자체 반올림을 `lib/number`의 `round1`로 통일
+- [x] 6.6 **같은 결함이 있던 즐겨찾기 음식·개인 보정치도 함께 수정** — 네이티브 `ON CONFLICT` upsert (`weight_log`가 쓰던 방식). ⚠️ 보정치는 `MealService`가 자기 트랜잭션에서 불러 **재시도로는 못 고친다**(식사 기록이 중복 생성된다)
+- [x] 6.7 `now()` → `clock_timestamp()` — `now()`는 트랜잭션 시작 시각이라 한 트랜잭션의 여러 저장이 같은 값을 받아 목록 정렬이 깨진다. **테스트가 잡았다**
+- [x] 6.8 죽은 도메인 메서드 제거 — `MemberFavoriteFood.update`·`FoodCorrection.updateNutrition`
+- [x] 6.9 통합 테스트 2개 — 재저장이 맨 앞으로 옴·재저장이 행을 늘리지 않음
 
 ## 7. 마무리
 

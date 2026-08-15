@@ -15,7 +15,8 @@ import java.math.BigDecimal;
 
 /**
  * 개인 영양 보정치 (차별점 #1: 학습형 수정). 회원이 정정한 음식의 확정 영양값을 보관한다.
- * 매칭 키는 정규화된 음식명(회원·정규화명 유니크). 재정정은 {@link #updateNutrition}으로 최신값 덮어쓰기(design D2).
+ * 매칭 키는 정규화된 음식명(회원·정규화명 유니크). 재정정은 최신값 덮어쓰기(평균 아님 — design D2)이며,
+ * 생성·갱신을 가르지 않고 리포지토리의 원자적 upsert가 한 번에 처리한다(동시 저장 시 UNIQUE 충돌 방지).
  * <p>
  * 영양값은 baseQuantity·unit 기준의 <b>총량</b>이다 — 분석에 반영할 때 같은 단위면 비례 조정한다.
  * 수량을 모르는 항목(직접 입력·구 데이터)은 두 필드가 null이며, 이때는 저장값을 그대로 쓴다.
@@ -79,16 +80,4 @@ public class FoodCorrection extends BaseEntity {
         return new FoodCorrection(memberId, display, kcal, carbG, proteinG, fatG, baseQuantity, unit);
     }
 
-    /** 재정정 — 최신값으로 덮어쓰기(평균 아님). 표시명·기준 섭취량도 최신값으로 갱신 */
-    public void updateNutrition(String display, int kcal,
-                                BigDecimal carbG, BigDecimal proteinG, BigDecimal fatG,
-                                BigDecimal baseQuantity, String unit) {
-        this.foodNameDisplay = display;
-        this.kcal = kcal;
-        this.carbG = carbG;
-        this.proteinG = proteinG;
-        this.fatG = fatG;
-        this.baseQuantity = baseQuantity;
-        this.unit = unit;
-    }
 }
