@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- kcalog 마크 — 홈 화면의 칼로리 링을 그대로 쓴다. PWA 아이콘(icon-192/512.png)과 동일한 도형. -->
-  <rect width="64" height="64" rx="14" fill="#ff6b00"/>
-  <circle cx="32" cy="32" r="19" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"
-          stroke-dasharray="93.5 119.4" transform="rotate(-90 32 32)"/>
-</svg>
