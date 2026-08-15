@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
+import { LoadingScreen } from '../ui/LoadingScreen'
 import { landingPathFor } from './landingPath'
 import { useAuth } from './useAuth'
 
@@ -8,7 +9,7 @@ export function RequireAuth() {
   const location = useLocation()
 
   if (state.status === 'loading') {
-    return <p>불러오는 중…</p>
+    return <LoadingScreen message="불러오는 중…" />
   }
   if (state.status === 'guest') {
     return <Navigate to="/login" replace />

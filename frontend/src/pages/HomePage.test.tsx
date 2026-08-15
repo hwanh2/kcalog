@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDashboard } from '../api/dashboard'
 import type { Dashboard } from '../api/dashboard'
 import { getMeals } from '../api/meal'
@@ -201,5 +201,38 @@ describe('HomePage 대시보드', () => {
     expect(await screen.findByText('오늘의 AI 코칭')).toBeInTheDocument()
     expect(screen.getByText('오늘 아침 단백질이 조금 부족했어요.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /오늘의 AI 코칭/ })).toHaveAttribute('href', '/ai-pt')
+  })
+})
+
+describe('촬영 유도 카드', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('촬영 흐름으로 간다 — 예전 /meals/new는 없는 라우트라 눌러도 화면만 비었다', async () => {
+    renderPage()
+
+    const link = await screen.findByRole('link', { name: /촬영 및 기록/ })
+    expect(link).toHaveAttribute('href', '/records?camera=1')
+  })
+
+  it('아무것도 기록하지 않은 채 저녁에 열어도 "아침"이라 하지 않는다', async () => {
+    // 기록 이력이 아니라 시각으로 정한다 — 넘어갈 음식기록 탭이 시각으로 정하기 때문이다(design D1).
+    // shouldAdvanceTime — 안 주면 가짜 시계가 멈춰 react-query의 대기가 끝나지 않는다
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 7, 15, 19, 0, 0)) // 저녁 7시
+    renderPage()
+
+    expect(await screen.findByText('저녁 촬영 및 기록')).toBeInTheDocument()
+    expect(screen.queryByText('아침 촬영 및 기록')).not.toBeInTheDocument()
+  })
+
+  it('점심에 열면 점심을 권한다 — 아침을 이미 기록했는지와 무관하게', async () => {
+    getMealsMock.mockResolvedValue([lunch]) // 점심이 이미 있어도 시각이 기준이다
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 7, 15, 12, 30, 0))
+    renderPage()
+
+    expect(await screen.findByText('점심 촬영 및 기록')).toBeInTheDocument()
   })
 })

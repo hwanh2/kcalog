@@ -10,8 +10,7 @@ import { getWeights } from '../api/weight'
 import { CalorieRing } from '../features/dashboard/CalorieRing'
 import { MacroProgress } from '../features/dashboard/MacroProgress'
 import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
-import { suggestNextMealType } from '../features/dashboard/mealSuggest'
-import { MEAL_TYPE_LABELS } from '../features/meal/mealDefaults'
+import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
 import { addDays, todayServiceDate } from '../lib/date'
 import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
@@ -184,7 +183,9 @@ function CalendarIcon() {
 }
 
 function MealSection({ meals }: { meals: Meal[] }) {
-  const nextType = suggestNextMealType(meals.map((m) => m.mealType))
+  // 음식기록 탭이 쓰는 것과 **같은 기준**이어야 한다 — 홈이 "아침"이라 해놓고 넘어간 화면이
+  // "저녁"에 가 있으면 안 된다(design D1). 그래서 기록 이력이 아니라 시각으로 정한다.
+  const nextType = defaultMealType(new Date())
 
   return (
     <div className="space-y-3">
@@ -202,8 +203,10 @@ function MealSection({ meals }: { meals: Meal[] }) {
         <MealCard key={meal.id} meal={meal} />
       ))}
 
+      {/* 카메라 FAB과 같은 경로 — 등록 경로는 음식기록 탭 하나로 모여 있다.
+          예전 `/meals/new`는 App.tsx에 없는 라우트라 눌러도 화면만 비었다 */}
       <Link
-        to="/meals/new"
+        to="/records?camera=1"
         className="flex items-center justify-between rounded-card border-2 border-dashed border-border bg-canvas/60 p-3.5"
       >
         <span className="flex items-center gap-3">

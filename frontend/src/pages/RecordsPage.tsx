@@ -140,6 +140,7 @@ export function RecordsPage() {
         mealType={mealType}
         autoCamera={autoCamera}
         saving={saveMutation.isPending}
+        onMealTypeChange={setMealType}
         onRecordItems={recordItems}
       />
     </section>

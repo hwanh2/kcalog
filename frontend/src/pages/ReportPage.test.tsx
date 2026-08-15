@@ -86,4 +86,23 @@ describe('ReportPage', () => {
 
     await waitFor(() => expect(screen.getByText(/기록이 없어요/)).toBeInTheDocument())
   })
+
+  it('제목은 하단 탭이 말한다 — 화면에 보이지 않되 h1으로는 남는다', () => {
+    renderPage()
+
+    expect(screen.getByRole('heading', { level: 1, name: '리포트' })).toHaveClass('sr-only')
+  })
+
+  it('제목 자리에 조회 중인 날짜 범위를 보여준다 — "주간"만으로는 어느 주인지 알 수 없다', async () => {
+    renderPage()
+
+    expect(await screen.findByText('8월 3일 – 8월 9일')).toBeInTheDocument()
+  })
+
+  it('시작과 끝이 같은 날이면 한 번만 적는다', async () => {
+    getReportMock.mockResolvedValue({ ...report, rangeStart: '2026-08-09', rangeEnd: '2026-08-09' })
+    renderPage()
+
+    expect(await screen.findByText('8월 9일')).toBeInTheDocument()
+  })
 })

@@ -34,11 +34,14 @@ export function AddFoodPanel({
   mealType,
   autoCamera,
   saving,
+  onMealTypeChange,
   onRecordItems,
 }: {
   mealType: MealType
   autoCamera?: boolean
   saving?: boolean
+  /** 분석 결과 시트에서 끼니를 바꾸면 위 세그먼트도 함께 움직인다 — 두 곳이 같은 상태를 가리킨다 */
+  onMealTypeChange: (next: MealType) => void
   onRecordItems: (items: EditableItem[], analysisJobId?: number) => void
 }) {
   const queryClient = useQueryClient()
@@ -118,6 +121,7 @@ export function AddFoodPanel({
             mealType={mealType}
             autoCamera={autoCamera}
             saving={saving}
+            onMealTypeChange={onMealTypeChange}
             onSave={(items, jobId) => onRecordItems(items, jobId)}
             onManual={() => setDraft({ mode: 'record', name: '' })}
           />

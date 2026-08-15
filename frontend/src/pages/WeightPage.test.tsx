@@ -51,4 +51,12 @@ describe('WeightPage', () => {
     await waitFor(() => expect(screen.getByLabelText('체중 (kg)')).toHaveValue('70.5'))
     expect(getSummaryMock).toHaveBeenCalledWith(addDays(todayLocalDate(), -89), todayLocalDate())
   })
+
+  it('제목은 하단 탭이 말한다 — 화면에 보이지 않되 h1으로는 남는다', () => {
+    getSummaryMock.mockResolvedValue(emptySummary)
+    renderPage()
+
+    // 지우지 않는 이유 — 스크린리더 사용자는 제목으로 화면을 식별한다(app-shell 스펙)
+    expect(screen.getByRole('heading', { level: 1, name: '체중' })).toHaveClass('sr-only')
+  })
 })
