@@ -5,30 +5,49 @@ import type { EditableItem } from './mealItems'
 const EDGE_GAP = '0.5rem'
 
 /**
- * 배지를 가로로 어디에 맞출지 — 음식이 사진 가장자리에 있으면 **가운데 맞춤이 화면을 벗어난다.**
- * 배지 너비를 CSS만으로는 알 수 없으므로, 가장자리 구간에서는 아예 사진 끝에 붙인다.
+ * 배지의 가로 배치를 **한 번에** 정한다 — 위치·이동·너비 상한·꼬리 위치가 서로 맞물려 있어,
+ * 각자 분기하면 임계값을 고칠 때 한 곳을 빠뜨려 배지와 꼬리가 어긋난다.
  *
- * 22/78%는 배지 절반이 대체로 그 안에 들어가는 값이다. 정확히 재려면 렌더 후 측정이 필요한데,
- * 그러면 사진·글꼴 로드 시점마다 배지가 튄다.
+ * 두 가지를 함께 건다. 하나만으로는 사진 밖으로 나가는 것을 못 막는다.
+ *
+ * ① **가장자리는 사진 끝에 붙인다** — 가운데 맞춤이면 배지 절반이 밖으로 나간다.
+ *    22/78%는 배지 절반이 대체로 그 안에 들어가는 값이다. 정확히 재려면 렌더 후 측정이
+ *    필요한데, 그러면 사진·글꼴 로드 시점마다 배지가 튄다.
+ *
+ * ② **가운데 맞춤에는 너비 상한** — ⚠️ ①만으로는 부족하다. 중심이 30%라도 이름이 길면
+ *    왼쪽으로 삐져나간다. 중심에서 **가까운 쪽 여백의 2배**가 쓸 수 있는 최대 너비다.
+ *    끝에 붙인 배지는 한 방향으로만 뻗으므로 사진 폭에서 여백만 빼면 된다.
  */
-function horizontalAnchor(centerX: number): 'left' | 'right' | 'center' {
-  if (centerX < 22) return 'left'
-  if (centerX > 78) return 'right'
-  return 'center'
-}
-
-/**
- * 배지가 사진 밖으로 나가지 않도록 너비 상한을 준다.
- *
- * ⚠️ 가운데 맞춤(`-translate-x-1/2`)일 때는 **가장자리 판정만으로는 부족하다.** 중심이 30%라도
- * 배지가 넓으면 왼쪽으로 삐져나간다. 중심에서 가까운 쪽 여백의 2배가 곧 쓸 수 있는 최대 너비다.
- *
- * 끝에 붙인 배지는 한 방향으로만 뻗으므로 사진 폭에서 여백만 빼면 된다.
- */
-function maxWidthFor(anchor: 'left' | 'right' | 'center', centerX: number): string {
-  if (anchor !== 'center') return `calc(100% - ${EDGE_GAP})`
+function horizontalPlacement(centerX: number): {
+  offset: { left: string } | { right: string }
+  maxWidth: string
+  centered: boolean
+  /** 꼬리는 배지가 가리키는 음식 쪽에 둔다 — 끝에 붙인 배지는 가운데가 아니라 그 끝이다 */
+  tailClass: string
+} {
+  if (centerX < 22) {
+    return {
+      offset: { left: EDGE_GAP },
+      maxWidth: `calc(100% - ${EDGE_GAP})`,
+      centered: false,
+      tailClass: 'left-4',
+    }
+  }
+  if (centerX > 78) {
+    return {
+      offset: { right: EDGE_GAP },
+      maxWidth: `calc(100% - ${EDGE_GAP})`,
+      centered: false,
+      tailClass: 'right-4',
+    }
+  }
   const nearestEdge = Math.min(centerX, 100 - centerX)
-  return `calc(${(nearestEdge * 2).toFixed(2)}% - ${EDGE_GAP})`
+  return {
+    offset: { left: `${centerX}%` },
+    maxWidth: `calc(${(nearestEdge * 2).toFixed(2)}% - ${EDGE_GAP})`,
+    centered: true,
+    tailClass: 'left-1/2 -translate-x-1/2',
+  }
 }
 
 /**
@@ -63,7 +82,7 @@ export function PhotoOverlay({
         const selected = selectedIndex === index
         const hasError = errorIndices.includes(index)
         const surface = selected ? 'bg-brand' : hasError ? 'bg-carb-soft' : 'bg-surface'
-        const anchor = horizontalAnchor(centerX)
+        const place = horizontalPlacement(centerX)
 
         return (
           <button
@@ -72,17 +91,9 @@ export function PhotoOverlay({
             onClick={() => onSelect(index)}
             aria-label={`${item.name || '음식'} 편집`}
             aria-pressed={selected}
-            style={{
-              top: `${centerY}%`,
-              maxWidth: maxWidthFor(anchor, centerX),
-              ...(anchor === 'left'
-                ? { left: EDGE_GAP }
-                : anchor === 'right'
-                  ? { right: EDGE_GAP }
-                  : { left: `${centerX}%` }),
-            }}
+            style={{ top: `${centerY}%`, maxWidth: place.maxWidth, ...place.offset }}
             className={`absolute touch-manipulation rounded-tile focus-visible:ring-2 focus-visible:ring-on-brand ${
-              anchor === 'center' ? '-translate-x-1/2' : ''
+              place.centered ? '-translate-x-1/2' : ''
             } ${below ? 'translate-y-2' : '-translate-y-[calc(100%+0.5rem)]'}`}
           >
             <span className={`relative block rounded-tile px-2.5 py-1.5 text-left shadow-lg ${surface}`}>
@@ -101,17 +112,12 @@ export function PhotoOverlay({
                   확인 필요
                 </span>
               )}
-              {/* 말풍선 꼬리 — 배지가 가리키는 방향으로.
-                  가장자리에 붙인 배지는 꼬리도 그 끝으로 옮긴다(가운데 두면 음식이 아닌 곳을 가리킨다) */}
+              {/* 말풍선 꼬리 — 가로 위치는 배지와 함께 정해진다(horizontalPlacement) */}
               <span
                 aria-hidden
-                className={`absolute h-2.5 w-2.5 rotate-45 ${surface} ${
-                  anchor === 'left'
-                    ? 'left-4'
-                    : anchor === 'right'
-                      ? 'right-4'
-                      : 'left-1/2 -translate-x-1/2'
-                } ${below ? '-top-1' : '-bottom-1'}`}
+                className={`absolute h-2.5 w-2.5 rotate-45 ${surface} ${place.tailClass} ${
+                  below ? '-top-1' : '-bottom-1'
+                }`}
               />
             </span>
           </button>

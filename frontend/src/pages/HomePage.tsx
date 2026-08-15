@@ -204,9 +204,13 @@ function MealSection({ meals }: { meals: Meal[] }) {
       ))}
 
       {/* 카메라 FAB과 같은 경로 — 등록 경로는 음식기록 탭 하나로 모여 있다.
-          예전 `/meals/new`는 App.tsx에 없는 라우트라 눌러도 화면만 비었다 */}
+          예전 `/meals/new`는 App.tsx에 없는 라우트라 눌러도 화면만 비었다.
+
+          끼니를 쿼리로 실어 보낸다 — 양쪽이 각자 `new Date()`를 보면 끼니 경계를 사이에 두고
+          갈린다(14:59 렌더 → 15:01 클릭이면 홈은 "점심", 도착 화면은 "저녁").
+          **카드에 적힌 끼니가 곧 저장될 끼니여야 한다**(design D1) */}
       <Link
-        to="/records?camera=1"
+        to={`/records?camera=1&meal=${nextType}`}
         className="flex items-center justify-between rounded-card border-2 border-dashed border-border bg-canvas/60 p-3.5"
       >
         <span className="flex items-center gap-3">

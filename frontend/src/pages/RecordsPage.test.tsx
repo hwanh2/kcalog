@@ -7,6 +7,7 @@ import { getFoods } from '../api/food'
 import type { Food } from '../api/food'
 import { deleteMeal, getMeals, saveMeal, updateMeal } from '../api/meal'
 import type { Meal } from '../api/meal'
+import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
 import { RecordsPage } from './RecordsPage'
 
 vi.mock('../api/meal', () => ({
@@ -297,6 +298,30 @@ describe('RecordsPage — FAB 진입', () => {
     // 세그먼트는 tabs가 아니라 눌림 상태를 가진 버튼이다(design D3)
     expect(await screen.findByRole('button', { name: 'AI 입력', pressed: true })).toBeInTheDocument()
     expect(screen.getByLabelText(/무엇을 드셨나요/)).toBeInTheDocument()
+  })
+
+  it('홈 카드가 실어 보낸 끼니를 그대로 쓴다 — 여기서 다시 시각을 보면 카드와 갈린다', async () => {
+    getMealsMock.mockResolvedValue([])
+    // 홈이 "저녁 촬영 및 기록"이라 적어놓고 15:01에 눌러도 도착 화면은 저녁이어야 한다
+    renderPage('/records?camera=1&meal=DINNER')
+
+    expect(await screen.findByRole('button', { name: /저녁/, pressed: true })).toBeInTheDocument()
+  })
+
+  it('모르는 끼니 값은 무시하고 시각으로 정한다 — 주소창은 아무 값이나 담을 수 있다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records?meal=BRUNCH')
+
+    const expected = MEAL_TYPE_LABELS[defaultMealType(new Date())]
+    expect(await screen.findByRole('button', { name: new RegExp(expected), pressed: true })).toBeInTheDocument()
+  })
+
+  it('끼니 없이 들어오면 시각으로 정한다', async () => {
+    getMealsMock.mockResolvedValue([])
+    renderPage('/records')
+
+    const expected = MEAL_TYPE_LABELS[defaultMealType(new Date())]
+    expect(await screen.findByRole('button', { name: new RegExp(expected), pressed: true })).toBeInTheDocument()
   })
 })
 

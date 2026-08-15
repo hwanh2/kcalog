@@ -213,7 +213,19 @@ describe('촬영 유도 카드', () => {
     renderPage()
 
     const link = await screen.findByRole('link', { name: /촬영 및 기록/ })
-    expect(link).toHaveAttribute('href', '/records?camera=1')
+    expect(link.getAttribute('href')).toMatch(/^\/records\?camera=1&meal=/)
+  })
+
+  it('카드에 적힌 끼니를 그대로 실어 보낸다 — 도착 화면이 다시 시각을 보면 갈린다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 7, 15, 19, 0, 0))
+    renderPage()
+
+    await screen.findByText('저녁 촬영 및 기록')
+    expect(screen.getByRole('link', { name: /촬영 및 기록/ })).toHaveAttribute(
+      'href',
+      '/records?camera=1&meal=DINNER',
+    )
   })
 
   it('아무것도 기록하지 않은 채 저녁에 열어도 "아침"이라 하지 않는다', async () => {
