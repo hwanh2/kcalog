@@ -1,3 +1,5 @@
+import { ProgressBar } from '../../ui/ProgressBar'
+
 /** 탄단지 달성도 — 매크로별 섭취 g / 목표 g·달성률·진행 바.
  *  목표(target)가 있으면 g/목표 g (%)와 채워진 바, 없으면 섭취 g만 표시. 색: 탄 앰버·단 로즈·지 시안. */
 type Row = { label: string; intake: number; target: number | null; barClass: string }
@@ -52,9 +54,9 @@ function MacroRow({ label, intake, target, barClass }: Row) {
           )}
         </span>
       </div>
-      <div className="h-2.5 w-full overflow-hidden rounded-full bg-canvas">
-        {target !== null && <div className={`h-full rounded-full ${barClass}`} style={{ width: `${pct}%` }} />}
-      </div>
+      {/* 목표가 없으면 `pct`가 0이라 빈 트랙이 된다 — 트랙을 손으로 한 벌 더 그리면
+          치수·라운드·배경이 ProgressBar와 갈라진다 */}
+      <ProgressBar value={pct} barClass={barClass} />
     </div>
   )
 }

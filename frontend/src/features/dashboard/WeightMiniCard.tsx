@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import type { WeightEntry } from '../../api/weight'
+import { SweepReveal } from '../../ui/SweepReveal'
 import { trendScale } from '../weight/trendScale'
 import { weightSummary } from './weightSummary'
 
@@ -95,28 +96,31 @@ function TrendChart({ entries }: { entries: WeightEntry[] }) {
         </linearGradient>
       </defs>
 
-      {n > 1 && <polygon points={area} fill="url(#weightTrendFill)" />}
-      {n > 1 && (
-        <polyline
-          points={line}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-      {values.map((v, i) => (
-        <circle
-          key={i}
-          cx={x(i)}
-          cy={y(v)}
-          r={4}
-          fill="var(--color-surface)"
-          stroke="currentColor"
-          strokeWidth={2}
-        />
-      ))}
+      {/* 체중 탭의 큰 추세선과 같은 부품 — 한쪽만 움직이면 같은 그래프가 다르게 논다 */}
+      <SweepReveal width={W} height={H} revealKey={line}>
+        {n > 1 && <polygon points={area} fill="url(#weightTrendFill)" />}
+        {n > 1 && (
+          <polyline
+            points={line}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+        {values.map((v, i) => (
+          <circle
+            key={i}
+            cx={x(i)}
+            cy={y(v)}
+            r={4}
+            fill="var(--color-surface)"
+            stroke="currentColor"
+            strokeWidth={2}
+          />
+        ))}
+      </SweepReveal>
     </svg>
   )
 }

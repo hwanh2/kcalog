@@ -1,5 +1,6 @@
 import type { WeightPoint } from '../../api/weight'
 import { koreanWeekday } from '../../lib/date'
+import { SweepReveal } from '../../ui/SweepReveal'
 import { trendScale } from './trendScale'
 
 /** 체중 추세선 — 원시 점(옅게) + EMA 추세선(진하게) + 축 라벨·범례. 경량 인라인 SVG. points 오름차순 가정 */
@@ -38,15 +39,24 @@ export function WeightTrend({ points }: { points: WeightPoint[] }) {
             strokeWidth={1}
           />
         ))}
-        {/* 추세선은 글씨가 아니라 면 — 밝은 brand를 그대로 쓴다(굵기로 읽히지, 대비로 읽히지 않는다) */}
-        {n > 1 && (
-          <polyline points={trendLine} fill="none" stroke="currentColor" strokeWidth={2.5} className="text-brand" />
-        )}
-        {points.map((p, i) => (
-          <circle key={p.logDate} cx={x(i)} cy={y(p.weightKg)} r={3} className="fill-muted" opacity={0.5} />
-        ))}
-        {/* 최신 점 강조 */}
-        <circle cx={x(n - 1)} cy={y(latest.trendKg)} r={4} className="fill-brand" />
+        {/*
+          기준선은 도판의 틀이라 처음부터 그대로 있고, **데이터만** 왼쪽에서 오른쪽으로 드러난다.
+          과거에서 오늘로 흐르는 방향이라 마지막에 나타나는 것이 오늘 점이다.
+
+          `key`에 좌표를 넣어 범위를 바꾸면(1주 → 1개월) 다시 그려지게 한다 — 같은 요소를 두면
+          클래스가 그대로라 CSS 애니메이션이 다시 돌지 않는다.
+        */}
+        <SweepReveal width={W} height={H} revealKey={trendLine}>
+          {/* 추세선은 글씨가 아니라 면 — 밝은 brand를 그대로 쓴다(굵기로 읽히지, 대비로 읽히지 않는다) */}
+          {n > 1 && (
+            <polyline points={trendLine} fill="none" stroke="currentColor" strokeWidth={2.5} className="text-brand" />
+          )}
+          {points.map((p, i) => (
+            <circle key={p.logDate} cx={x(i)} cy={y(p.weightKg)} r={3} className="fill-muted" opacity={0.5} />
+          ))}
+          {/* 최신 점 강조 */}
+          <circle cx={x(n - 1)} cy={y(latest.trendKg)} r={4} className="fill-brand" />
+        </SweepReveal>
       </svg>
 
       {/*

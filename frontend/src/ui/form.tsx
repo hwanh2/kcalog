@@ -58,10 +58,12 @@ export function Button({
     danger: 'bg-danger text-on-brand hover:brightness-110 disabled:opacity-50',
   }[variant]
   // 라운드는 tile(12px) — 입력 필드(md)보다 둥글게 둬 누를 것과 채울 것을 구분한다
+  // press — 모바일에는 hover가 없어 누른 순간 아무 반응이 없었다. 살짝 눌리면 닿은 게 읽힌다.
+  // 움직임 줄이기에서는 밝기로 답한다(index.css) — 전역 블록은 전환 시간만 지워 그대로 두면 튄다
   return (
     <button
       {...props}
-      className={`rounded-tile px-4 py-2 text-sm font-medium touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink ${styles} ${className}`}
+      className={`press rounded-tile px-4 py-2 text-sm font-medium touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink ${styles} ${className}`}
     />
   )
 }

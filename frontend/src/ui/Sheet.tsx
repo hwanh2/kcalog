@@ -27,14 +27,16 @@ export function Sheet({
         "닫기" 버튼이 키보드 첫 정지점이 되고 스크린리더도 이를 읽는다(design D4).
         키보드·보조기기 사용자의 닫기 경로는 Esc와 시트 안 닫기 버튼이다.
       */}
-      <div aria-hidden="true" className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div aria-hidden="true" className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} />
       <div
         ref={panelRef}
         role="dialog"
         aria-label={label}
         aria-modal="true"
         tabIndex={-1}
-        className={`relative mx-auto w-full max-w-md overscroll-contain rounded-t-card bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg outline-none ${
+        /* animate-sheet-in — 시트는 열릴 때 마운트되므로 아래에서 올라오는 연출이 한 번 돈다.
+           담기·항목 편집·즐겨찾기·재계산이 모두 이 시트를 지나가, 앱에서 가장 자주 보는 등장이다 */
+        className={`animate-sheet-in relative mx-auto w-full max-w-md overscroll-contain rounded-t-card bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg outline-none ${
           full ? 'max-h-[92dvh] overflow-y-auto' : 'max-h-[80dvh] overflow-y-auto'
         }`}
       >

@@ -106,7 +106,7 @@ export function WeightPanel({ date }: { date: string }) {
             저장에 성공하면 요약이 갱신되며 이 배지가 켜지므로, 성공 안내를 따로 띄우지 않아도 된다.
           */}
           {existing && (
-            <span className="mb-1 ml-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
+            <span className="animate-settle-in mb-1 ml-auto flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
               <CheckIcon />
               오늘 기록됨
             </span>
@@ -159,7 +159,7 @@ export function WeightPanel({ date }: { date: string }) {
             onClick={save}
             disabled={mutation.isPending}
             aria-label={existing ? '체중 수정' : '체중 저장'}
-            className="flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand-ink disabled:opacity-70"
+            className="press flex-1 rounded-full bg-brand-soft py-2.5 font-semibold text-brand-ink disabled:opacity-70"
           >
             저장
           </button>
