@@ -16,6 +16,12 @@ vi.mock('../api/meal', () => ({
   updateMeal: vi.fn(),
   deleteMeal: vi.fn(),
 }))
+// 기록 카드·즐겨찾기 탭이 세트 API를 부른다 — 목킹하지 않으면 실제 fetch를 시도한다
+vi.mock('../api/favoriteMeal', () => ({
+  getFavoriteMeals: vi.fn(() => Promise.resolve([])),
+  saveFavoriteMeal: vi.fn(),
+  deleteFavoriteMeal: vi.fn(),
+}))
 vi.mock('../api/food', () => ({
   getFoods: vi.fn(),
   saveFavorite: vi.fn(),

@@ -11,6 +11,11 @@ vi.mock('../../api/food', () => ({
   saveFavorite: vi.fn(),
   deleteFavorite: vi.fn(),
 }))
+// 즐겨찾기 탭에 세트 섹션이 붙는다 — 목킹하지 않으면 실제 fetch를 시도한다
+vi.mock('../../api/favoriteMeal', () => ({
+  getFavoriteMeals: vi.fn(() => Promise.resolve([])),
+  deleteFavoriteMeal: vi.fn(),
+}))
 vi.mock('../meal/AiRecordPanel', () => ({
   AiRecordPanel: () => <div>AI 패널</div>, // 이 파일은 자주먹는·즐겨찾기만 다룬다
 }))
