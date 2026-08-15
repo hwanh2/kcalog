@@ -12,14 +12,14 @@ const completed = { status: 'authed' as const, member: makeMember({ onboardingCo
 function shellRoutes() {
   return (
     <>
-      <Route path="/onboarding" element={<div>온보딩 화면</div>} />
+      <Route path="/app/onboarding" element={<div>온보딩 화면</div>} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<div>홈 화면</div>} />
-          <Route path="/records" element={<div>음식기록 화면</div>} />
-          <Route path="/weight" element={<div>체중 화면</div>} />
-          <Route path="/report" element={<div>리포트 화면</div>} />
-          <Route path="/ai-pt" element={<div>AI PT 화면</div>} />
+          <Route path="/app" element={<div>홈 화면</div>} />
+          <Route path="/app/records" element={<div>음식기록 화면</div>} />
+          <Route path="/app/weight" element={<div>체중 화면</div>} />
+          <Route path="/app/report" element={<div>리포트 화면</div>} />
+          <Route path="/app/ai-pt" element={<div>AI PT 화면</div>} />
         </Route>
       </Route>
     </>
@@ -28,7 +28,7 @@ function shellRoutes() {
 
 describe('AppShell', () => {
   it('5탭·카메라 FAB과 현재 화면을 함께 렌더한다', () => {
-    renderWithAuth(shellRoutes(), { state: completed, path: '/' })
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
 
     expect(screen.getByText('홈 화면')).toBeInTheDocument()
     for (const name of ['홈', '음식기록', '체중', '리포트', 'AI PT']) {
@@ -39,7 +39,7 @@ describe('AppShell', () => {
   })
 
   it('음식기록 탭에서는 카메라 FAB을 숨긴다 — 등록은 그 화면 안에서 한다', () => {
-    renderWithAuth(shellRoutes(), { state: completed, path: '/records' })
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app/records' })
 
     expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '식사 촬영' })).not.toBeInTheDocument()
@@ -47,7 +47,7 @@ describe('AppShell', () => {
 
   it('탭을 누르면 서버 요청 없이 해당 화면으로 전환된다', async () => {
     const user = userEvent.setup()
-    renderWithAuth(shellRoutes(), { state: completed, path: '/' })
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
 
     await user.click(screen.getByRole('link', { name: '음식기록' }))
     expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
@@ -58,10 +58,10 @@ describe('AppShell', () => {
 
   it('카메라 FAB을 누르면 음식기록 탭으로 이동한다(촬영 자동 열기 신호와 함께)', async () => {
     const user = userEvent.setup()
-    renderWithAuth(shellRoutes(), { state: completed, path: '/weight' })
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app/weight' })
 
     const fab = screen.getByRole('link', { name: '식사 촬영' })
-    expect(fab).toHaveAttribute('href', '/records?camera=1')
+    expect(fab).toHaveAttribute('href', '/app/records?camera=1')
 
     await user.click(fab)
     expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
@@ -69,21 +69,21 @@ describe('AppShell', () => {
 
   it('AI PT 탭으로 전환된다', async () => {
     const user = userEvent.setup()
-    renderWithAuth(shellRoutes(), { state: completed, path: '/' })
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
 
     await user.click(screen.getByRole('link', { name: 'AI PT' }))
     expect(screen.getByText('AI PT 화면')).toBeInTheDocument()
   })
 
   it('현재 탭에 aria-current가 설정된다', () => {
-    renderWithAuth(shellRoutes(), { state: completed, path: '/weight' })
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app/weight' })
     expect(screen.getByRole('link', { name: '체중' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('온보딩 미완료 회원은 셸 대신 온보딩 화면으로 강제된다', () => {
     renderWithAuth(shellRoutes(), {
       state: { status: 'authed', member: makeMember({ onboardingCompleted: false }) },
-      path: '/',
+      path: '/app',
     })
 
     expect(screen.getByText('온보딩 화면')).toBeInTheDocument()

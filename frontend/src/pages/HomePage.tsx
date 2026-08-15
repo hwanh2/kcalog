@@ -141,7 +141,7 @@ function CoachCard() {
   if (!briefing?.hasData) return null
   return (
     <Link
-      to="/ai-pt"
+      to="/app/ai-pt"
       className="flex items-center gap-3 rounded-2xl bg-success-soft px-4 py-3.5"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-success text-lg">
@@ -166,7 +166,7 @@ function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
         <p className="text-sm font-bold text-ink">오늘의 칼로리</p>
         {headline && <p className="truncate text-xs font-medium text-success">{headline}</p>}
       </div>
-      <Link to="/report" className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-brand-ink">
+      <Link to="/app/report" className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-brand-ink">
         리포트 <span aria-hidden>›</span>
       </Link>
     </div>
@@ -191,7 +191,7 @@ function MealSection({ meals }: { meals: Meal[] }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-extrabold">오늘 기록한 식사</h2>
-        <Link to="/records" className="flex items-center gap-0.5 text-xs font-bold text-brand-ink">
+        <Link to="/app/records" className="flex items-center gap-0.5 text-xs font-bold text-brand-ink">
           전체보기
           <Chevron dir="right" small />
         </Link>
@@ -210,7 +210,7 @@ function MealSection({ meals }: { meals: Meal[] }) {
           갈린다(14:59 렌더 → 15:01 클릭이면 홈은 "점심", 도착 화면은 "저녁").
           **카드에 적힌 끼니가 곧 저장될 끼니여야 한다**(design D1) */}
       <Link
-        to={`/records?camera=1&meal=${nextType}`}
+        to={`/app/records?camera=1&meal=${nextType}`}
         className="flex items-center justify-between rounded-card border-2 border-dashed border-border bg-canvas/60 p-3.5"
       >
         <span className="flex items-center gap-3">

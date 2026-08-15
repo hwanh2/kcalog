@@ -16,7 +16,9 @@ export default defineConfig({
         short_name: 'kcalog',
         description: '사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱',
         lang: 'ko',
-        start_url: '/',
+        // 앱은 /app 아래에 있다 — 홈 화면 아이콘은 랜딩(/)을 거치지 않고 곧장 앱으로 들어간다.
+        // 이 값을 바꾸면 이미 설치된 바로가기는 갱신되지 않으므로 재설치가 필요하다.
+        start_url: '/app',
         display: 'standalone',
         // 앱 배경(canvas)과 맞춰 설치 후 실행 시 흰 화면이 번쩍이지 않게 한다
         theme_color: '#f8fafc',

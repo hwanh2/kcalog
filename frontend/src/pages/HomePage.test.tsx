@@ -125,7 +125,7 @@ describe('HomePage 대시보드', () => {
   it('전체보기 — 음식기록 탭 링크', async () => {
     renderPage()
     const link = await screen.findByRole('link', { name: /전체보기/ })
-    expect(link).toHaveAttribute('href', '/records')
+    expect(link).toHaveAttribute('href', '/app/records')
   })
 
   it('체중 추세 카드 — 최근 체중·7일 변화·목표까지 남은 양·그래프', async () => {
@@ -176,7 +176,7 @@ describe('HomePage 대시보드', () => {
 
     expect(await screen.findByText('오늘의 칼로리')).toBeInTheDocument()
     expect(await screen.findByText('감량 페이스 순조로움')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /리포트/ })).toHaveAttribute('href', '/report')
+    expect(screen.getByRole('link', { name: /리포트/ })).toHaveAttribute('href', '/app/report')
   })
 
   it('상단 인사말 — 시간대 인사 + 성 뗀 이름 + 님', async () => {
@@ -200,7 +200,7 @@ describe('HomePage 대시보드', () => {
 
     expect(await screen.findByText('오늘의 AI 코칭')).toBeInTheDocument()
     expect(screen.getByText('오늘 아침 단백질이 조금 부족했어요.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /오늘의 AI 코칭/ })).toHaveAttribute('href', '/ai-pt')
+    expect(screen.getByRole('link', { name: /오늘의 AI 코칭/ })).toHaveAttribute('href', '/app/ai-pt')
   })
 })
 
@@ -213,7 +213,7 @@ describe('촬영 유도 카드', () => {
     renderPage()
 
     const link = await screen.findByRole('link', { name: /촬영 및 기록/ })
-    expect(link.getAttribute('href')).toMatch(/^\/records\?camera=1&meal=/)
+    expect(link.getAttribute('href')).toMatch(/^\/app\/records\?camera=1&meal=/)
   })
 
   it('카드에 적힌 끼니를 그대로 실어 보낸다 — 도착 화면이 다시 시각을 보면 갈린다', async () => {
@@ -224,7 +224,7 @@ describe('촬영 유도 카드', () => {
     await screen.findByText('저녁 촬영 및 기록')
     expect(screen.getByRole('link', { name: /촬영 및 기록/ })).toHaveAttribute(
       'href',
-      '/records?camera=1&meal=DINNER',
+      '/app/records?camera=1&meal=DINNER',
     )
   })
 

@@ -1,5 +1,6 @@
 import { Navigate, useSearchParams } from 'react-router'
 import { kakaoLoginUrl } from '../api/auth'
+import { APP_ROOT } from '../auth/landingPath'
 import { useAuth } from '../auth/useAuth'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -12,7 +13,7 @@ export function LoginPage() {
   const [params] = useSearchParams()
 
   if (state.status === 'authed') {
-    return <Navigate to="/" replace />
+    return <Navigate to={APP_ROOT} replace />
   }
 
   const error = params.get('error')
