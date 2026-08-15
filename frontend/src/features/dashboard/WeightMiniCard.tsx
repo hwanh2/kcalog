@@ -19,7 +19,7 @@ export function WeightMiniCard({
 
   if (!summary) {
     return (
-      <Link to="/weight" className="block rounded-card bg-surface p-4 shadow-sm">
+      <Link to="/app/weight" className="block rounded-card bg-surface p-4 shadow-sm">
         <p className="text-sm font-bold text-ink">체중 추세</p>
         <p className="mt-1 text-sm text-muted">체중을 기록해 추세를 확인해요</p>
       </Link>
@@ -30,7 +30,7 @@ export function WeightMiniCard({
     targetWeightKg != null ? Math.round(Math.abs(summary.latest - targetWeightKg) * 10) / 10 : null
 
   return (
-    <Link to="/weight" className="block rounded-card bg-surface p-4 shadow-sm">
+    <Link to="/app/weight" className="block rounded-card bg-surface p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-bold text-ink">체중 추세</p>

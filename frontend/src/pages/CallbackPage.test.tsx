@@ -16,8 +16,8 @@ function renderCallback(state: AuthState) {
     <>
       <Route path="/auth/callback" element={<CallbackPage />} />
       <Route path="/login" element={<LoginStub />} />
-      <Route path="/" element={<div>홈 화면</div>} />
-      <Route path="/onboarding" element={<div>온보딩 화면</div>} />
+      <Route path="/app" element={<div>홈 화면</div>} />
+      <Route path="/app/onboarding" element={<div>온보딩 화면</div>} />
     </>,
     { state, path: '/auth/callback' },
   )

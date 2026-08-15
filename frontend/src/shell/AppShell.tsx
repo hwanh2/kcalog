@@ -1,11 +1,11 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
 const TABS = [
-  { to: '/', label: '홈', end: true, icon: HomeIcon },
-  { to: '/records', label: '음식기록', end: false, icon: MealIcon },
-  { to: '/weight', label: '체중', end: false, icon: ScaleIcon },
-  { to: '/report', label: '리포트', end: false, icon: ChartIcon },
-  { to: '/ai-pt', label: 'AI PT', end: false, icon: BotIcon },
+  { to: '/app', label: '홈', end: true, icon: HomeIcon },
+  { to: '/app/records', label: '음식기록', end: false, icon: MealIcon },
+  { to: '/app/weight', label: '체중', end: false, icon: ScaleIcon },
+  { to: '/app/report', label: '리포트', end: false, icon: ChartIcon },
+  { to: '/app/ai-pt', label: 'AI PT', end: false, icon: BotIcon },
 ] as const
 
 /** 인증·온보딩 완료 회원용 셸 — 상단 헤더 + 하단 5탭 + 우하단 카메라 FAB (v2 목업 기준).
@@ -28,7 +28,7 @@ export function AppShell() {
           </div>
         </div>
         <Link
-          to="/profile"
+          to="/app/profile"
           className="flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-xs font-semibold text-muted"
         >
           <UserIcon />
@@ -41,9 +41,9 @@ export function AppShell() {
       </main>
 
       {/* 등록 경로는 음식기록 탭 하나로 모은다 — FAB은 그 탭으로 보내며 촬영을 바로 연다(design D13) */}
-      {pathname !== '/records' && (
+      {pathname !== '/app/records' && (
         <Link
-          to="/records?camera=1"
+          to="/app/records?camera=1"
           aria-label="식사 촬영"
           className="fixed bottom-20 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2"
         >

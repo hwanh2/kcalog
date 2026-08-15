@@ -9,7 +9,7 @@ function renderLogin(path: string, state: AuthState) {
   renderWithAuth(
     <>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<div>홈 화면</div>} />
+      <Route path="/app" element={<div>홈 화면</div>} />
     </>,
     { state, path },
   )
