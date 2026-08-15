@@ -46,8 +46,16 @@ const completed: Analysis = {
 function renderPanel() {
   const onSave = vi.fn()
   const onManual = vi.fn()
-  render(<AiRecordPanel mealType="LUNCH" onSave={onSave} onManual={onManual} />)
-  return { onSave, onManual }
+  const onMealTypeChange = vi.fn()
+  render(
+    <AiRecordPanel
+      mealType="LUNCH"
+      onMealTypeChange={onMealTypeChange}
+      onSave={onSave}
+      onManual={onManual}
+    />,
+  )
+  return { onSave, onManual, onMealTypeChange }
 }
 
 /** 사진 선택 — label 안 파일 입력에 직접 넣는다 */
@@ -154,5 +162,44 @@ describe('실패 폴백', () => {
     await user.click(screen.getByRole('button', { name: /AI 없이 직접 입력하기/ }))
 
     expect(onManual).toHaveBeenCalled()
+  })
+})
+
+describe('사진 가져오기 경로', () => {
+  it('눌러서 여는 입력에는 capture가 없다 — 있으면 카메라만 열려 사진첩을 못 고른다', () => {
+    renderPanel()
+
+    const inputs = [...document.querySelectorAll('input[type="file"]')]
+    expect(inputs[0]).not.toHaveAttribute('capture')
+  })
+
+  it('FAB 경로용 입력은 capture를 갖는다 — 촬영이 바로 열려야 한다(design D13)', () => {
+    renderPanel()
+
+    const inputs = [...document.querySelectorAll('input[type="file"]')]
+    expect(inputs[1]).toHaveAttribute('capture', 'environment')
+  })
+
+  it('FAB으로 들어오면 촬영 입력을 연다', () => {
+    const clicked: string[] = []
+    // 어느 입력이 열렸는지만 본다 — jsdom은 파일 대화상자를 띄우지 않는다
+    const spy = vi
+      .spyOn(HTMLInputElement.prototype, 'click')
+      .mockImplementation(function (this: HTMLInputElement) {
+        clicked.push(this.getAttribute('capture') ?? 'none')
+      })
+
+    render(
+      <AiRecordPanel
+        mealType="LUNCH"
+        autoCamera
+        onMealTypeChange={vi.fn()}
+        onSave={vi.fn()}
+        onManual={vi.fn()}
+      />,
+    )
+
+    expect(clicked).toEqual(['environment'])
+    spy.mockRestore()
   })
 })

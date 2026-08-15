@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -62,25 +60,30 @@ public class FoodService {
 
     /**
      * 즐겨찾기 저장 — 정규화명으로 매칭해 없으면 생성, 있으면 최신값 덮어쓰기.
-     * rememberForAnalysis면 개인 보정치도 같은 트랜잭션에서 저장한다(1단위 환산 — "달걀 2개 140kcal"은 70kcal로).
+     * rememberForAnalysis면 개인 보정치도 같은 트랜잭션에서 저장한다.
+     *
+     * <p>판정은 DB에 맡긴다({@code ON CONFLICT}) — "찾아보고 없으면 만든다"로 두면 같은 이름이
+     * 동시에 들어올 때 둘 다 생성 경로로 가 한쪽이 500이 된다. 뜻은 "이 이름으로 이 값"이므로
+     * 동시에 눌렸다는 이유로 실패할 이유가 없다.
      */
     @Transactional
     public FoodResponse saveFavorite(Long memberId, SaveFavoriteRequest request) {
         String normalized = FoodNames.normalize(request.name());
-        MemberFavoriteFood favorite = favoriteRepository.findByMemberIdAndNameNormalized(memberId, normalized)
-                .map(existing -> {
-                    existing.update(request.name(), request.emoji(), request.quantity(), request.unit(),
-                            request.kcal(), request.carbG(), request.proteinG(), request.fatG());
-                    return existing;
-                })
-                .orElseGet(() -> favoriteRepository.save(MemberFavoriteFood.of(
-                        memberId, request.name(), request.emoji(), request.quantity(), request.unit(),
-                        request.kcal(), request.carbG(), request.proteinG(), request.fatG())));
+        favoriteRepository.upsert(memberId, request.name(), normalized, request.emoji(),
+                request.quantity(), request.unit(), request.kcal(),
+                request.carbG(), request.proteinG(), request.fatG());
 
         if (request.shouldRemember()) {
-            rememberAsCorrection(memberId, request);
+            // 보정치는 "그 섭취량 기준의 총량"으로 저장한다 — 나누지 않고 수량·단위를 함께 넘긴다.
+            // 분석에 반영할 때 AI가 찾아낸 양에 맞춰 비례 조정된다(PersonalCorrection.scaledTo).
+            correctionService.upsert(memberId, request.name(),
+                    request.kcal(), request.carbG(), request.proteinG(), request.fatG(),
+                    request.quantity(), request.unit());
         }
-        return FoodResponse.of(favorite);
+
+        return favoriteRepository.findByMemberIdAndNameNormalized(memberId, normalized)
+                .map(FoodResponse::of)
+                .orElseThrow(() -> new IllegalStateException("방금 저장한 즐겨찾기를 찾지 못했습니다"));
     }
 
     @Transactional
@@ -91,13 +94,4 @@ public class FoodService {
         favoriteRepository.delete(favorite);
     }
 
-    /**
-     * 보정치는 "그 섭취량 기준의 총량"으로 저장한다 — 나누지 않고 수량·단위를 함께 넘긴다.
-     * 분석에 반영할 때 AI가 찾아낸 양에 맞춰 비례 조정된다(PersonalCorrection.scaledTo).
-     */
-    private void rememberAsCorrection(Long memberId, SaveFavoriteRequest request) {
-        correctionService.upsert(memberId, request.name(),
-                request.kcal(), request.carbG(), request.proteinG(), request.fatG(),
-                request.quantity(), request.unit());
-    }
 }

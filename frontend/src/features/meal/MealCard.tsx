@@ -10,9 +10,10 @@ import { ErrorNotice } from '../../ui/ErrorNotice'
 import { MacroChips } from '../../ui/MacroChips'
 import { UtensilsIcon } from '../../ui/icons'
 import { Button } from '../../ui/form'
+import { FavoriteMealSaveSheet } from '../food/FavoriteMealSaveSheet'
 import { MealItemsEditor } from './MealItemsEditor'
 import { MEAL_TYPE_LABELS } from './mealDefaults'
-import { fromSaved, toSaveItems, validateItems } from './mealItems'
+import { fromSaved, toFavoriteMealItems, toSaveItems, validateItems } from './mealItems'
 import type { EditableItem, ItemErrors } from './mealItems'
 
 /**
@@ -26,6 +27,7 @@ export function MealCard({ meal }: { meal: Meal }) {
   const [itemErrors, setItemErrors] = useState<ItemErrors[]>([])
   const [formError, setFormError] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [savingSet, setSavingSet] = useState(false)
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['meals'] })
@@ -130,6 +132,17 @@ export function MealCard({ meal }: { meal: Meal }) {
           {meal.totalKcal.toLocaleString()}
           <span className="ml-0.5 text-[11px] font-medium text-muted">kcal</span>
         </p>
+        {/* 사진 없이 담은 조합도 재사용 가치가 같다 — 저장된 기록에서도 세트를 만든다(design D7) */}
+        <button
+          type="button"
+          aria-label={`${summarize(meal)} 끼니 세트로 저장`}
+          onClick={() => setSavingSet(true)}
+          className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+        >
+          <span aria-hidden className="text-base leading-none">
+            ☆
+          </span>
+        </button>
         <button
           type="button"
           aria-label={`${summarize(meal)} 삭제`}
@@ -153,6 +166,14 @@ export function MealCard({ meal }: { meal: Meal }) {
           error={removeMutation.error}
           onConfirm={() => removeMutation.mutate()}
           onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
+
+      {savingSet && (
+        <FavoriteMealSaveSheet
+          items={toFavoriteMealItems(meal.items.map(fromSaved))}
+          onSaved={() => setSavingSet(false)}
+          onClose={() => setSavingSet(false)}
         />
       )}
     </div>

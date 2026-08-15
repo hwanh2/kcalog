@@ -23,13 +23,21 @@ export function WeightPanel({ date }: { date: string }) {
   const existingKg = summary?.points.find((p) => p.logDate === date)?.weightKg
   const existing = existingKg != null
 
+  /**
+   * 그날 기록이 없으면 마지막으로 잰 값에서 시작한다 — 빈 칸(0.0)에서 시작하면 어제와 오늘이
+   * 끊겨 읽힌다(design D3). ±0.1 버튼은 이미 이 값에서 출발하고 있었고, 화면에만 안 보였다.
+   */
+  const startKg = existingKg ?? summary?.latestKg ?? null
+  /** 채워진 값이 **그날 잰 것이 아닐 때** — 출처를 밝히지 않으면 어제 값이 오늘 기록으로 들어간다 */
+  const fromLatest = !existing && startKg != null
+
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [range, setRange] = useState<TrendRange>('1주')
   useEffect(() => {
-    setInput(existingKg != null ? String(existingKg) : '')
+    setInput(startKg != null ? String(startKg) : '')
     setError(null)
-  }, [date, existingKg])
+  }, [date, startKg])
 
   const mutation = useMutationWithError((weightKg: number) => recordWeight({ weightKg, logDate: date }), {
     errorMessage: '체중을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
@@ -42,7 +50,7 @@ export function WeightPanel({ date }: { date: string }) {
   /** −/＋ 0.1 조절 — 현재 입력(없으면 기존일·최신값·70 순)에서 시작 */
   function step(delta: number) {
     const cur = Number(input)
-    const base = input !== '' && Number.isFinite(cur) ? cur : (existingKg ?? summary?.latestKg ?? 70)
+    const base = input !== '' && Number.isFinite(cur) ? cur : (startKg ?? 70)
     setInput(String(round1(base + delta)))
     setError(null)
   }
@@ -91,6 +99,11 @@ export function WeightPanel({ date }: { date: string }) {
           />
           <span className="mb-0.5 text-lg font-semibold text-white/75">kg</span>
         </div>
+        {/* 채워둔 값이 오늘 잰 것이 아님을 밝힌다 — 이게 없으면 그대로 저장해 어제 값이
+            오늘 기록이 된다(design D3의 위험). 그날 기록이 있으면 뜨지 않는다 */}
+        {fromLatest && (
+          <p className="mt-1 text-sm text-white/80">최근 기록값이에요 · 오늘 잰 값으로 고쳐주세요</p>
+        )}
         {change != null && (
           <p className="mt-1 text-sm text-white/80">
             {change.label}{' '}

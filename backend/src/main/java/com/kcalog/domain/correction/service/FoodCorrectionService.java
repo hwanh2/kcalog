@@ -31,17 +31,17 @@ public class FoodCorrectionService {
      * 정정값 저장 — 정규화명으로 매칭해 없으면 생성, 있으면 최신값 덮어쓰기(design D2). 호출자 트랜잭션에 참여.
      * 영양값은 baseQuantity·unit 기준 총량으로 저장한다(나누지 않는다) — 조정은 분석에 반영할 때 한다.
      * 섭취량을 모르는 항목은 baseQuantity·unit을 null로 넘긴다.
+     *
+     * <p>판정은 DB에 맡긴다({@code ON CONFLICT}). "찾아보고 없으면 만든다"로 두면 같은 음식을 동시에
+     * 저장할 때 둘 다 생성 경로로 가 유니크 제약에 걸린다. 호출자(식사 저장·즐겨찾기 저장)의 트랜잭션
+     * 안에서 터지므로 <b>되돌릴 수도 없다</b>.
      */
     @Transactional
     public void upsert(Long memberId, String name, int kcal,
                        BigDecimal carbG, BigDecimal proteinG, BigDecimal fatG,
                        BigDecimal baseQuantity, String unit) {
-        String normalized = FoodNames.normalize(name);
-        repository.findByMemberIdAndFoodNameNormalized(memberId, normalized)
-                .ifPresentOrElse(
-                        existing -> existing.updateNutrition(name, kcal, carbG, proteinG, fatG, baseQuantity, unit),
-                        () -> repository.save(FoodCorrection.of(
-                                memberId, name, kcal, carbG, proteinG, fatG, baseQuantity, unit)));
+        repository.upsert(memberId, FoodNames.normalize(name), name,
+                kcal, carbG, proteinG, fatG, baseQuantity, unit);
     }
 
     /** 분석 주입·덮어쓰기용 — 최근 갱신 순 상한 개수. 상한 0이면 빈 목록. */

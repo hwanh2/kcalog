@@ -12,6 +12,7 @@ import { AiRecordPanel } from '../meal/AiRecordPanel'
 import type { EditableItem } from '../meal/mealItems'
 import { fromFood } from '../meal/mealItems'
 import { EmptyFavorites } from './EmptyFavorites'
+import { FavoriteMealSection } from './FavoriteMealSection'
 import { FoodDraftSheet } from './FoodDraftSheet'
 import type { DraftValues } from './FoodDraftSheet'
 import { FoodList } from './FoodList'
@@ -34,11 +35,14 @@ export function AddFoodPanel({
   mealType,
   autoCamera,
   saving,
+  onMealTypeChange,
   onRecordItems,
 }: {
   mealType: MealType
   autoCamera?: boolean
   saving?: boolean
+  /** 분석 결과 시트에서 끼니를 바꾸면 위 세그먼트도 함께 움직인다 — 두 곳이 같은 상태를 가리킨다 */
+  onMealTypeChange: (next: MealType) => void
   onRecordItems: (items: EditableItem[], analysisJobId?: number) => void
 }) {
   const queryClient = useQueryClient()
@@ -118,28 +122,35 @@ export function AddFoodPanel({
             mealType={mealType}
             autoCamera={autoCamera}
             saving={saving}
+            onMealTypeChange={onMealTypeChange}
             onSave={(items, jobId) => onRecordItems(items, jobId)}
             onManual={() => setDraft({ mode: 'record', name: '' })}
           />
         ) : isPending ? (
           <ListSkeleton rows={4} />
         ) : (
-          <FoodList
-            foods={visible}
-            query={query}
-            onQueryChange={setQuery}
-            favoriteNames={favoriteNames}
-            onPick={setPicked}
-            onToggleFavorite={toggleFavorite}
-            onCreate={(name) => setDraft({ mode: tab === 'favorite' ? 'favorite' : 'record', name })}
-            empty={
-              tab === 'favorite' ? (
-                <EmptyFavorites />
-              ) : (
-                <p className="text-center text-sm text-muted">음식 목록이 비어 있어요.</p>
-              )
-            }
-          />
+          <>
+            {/* 세트는 즐겨찾기 탭에만 — "자주 먹는"은 공통 카탈로그 자리라 내 조합이 낄 곳이 아니다 */}
+            {tab === 'favorite' && (
+              <FavoriteMealSection mealType={mealType} saving={saving} onRecordItems={onRecordItems} />
+            )}
+            <FoodList
+              foods={visible}
+              query={query}
+              onQueryChange={setQuery}
+              favoriteNames={favoriteNames}
+              onPick={setPicked}
+              onToggleFavorite={toggleFavorite}
+              onCreate={(name) => setDraft({ mode: tab === 'favorite' ? 'favorite' : 'record', name })}
+              empty={
+                tab === 'favorite' ? (
+                  <EmptyFavorites />
+                ) : (
+                  <p className="text-center text-sm text-muted">음식 목록이 비어 있어요.</p>
+                )
+              }
+            />
+          </>
         )}
       </div>
 

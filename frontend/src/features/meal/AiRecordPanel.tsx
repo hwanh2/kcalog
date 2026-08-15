@@ -9,6 +9,7 @@ import { AnalysisResultSheet } from './AnalysisResultSheet'
 import { AnalyzingView } from './AnalyzingView'
 import { resizeImage } from './imageResize'
 import { pollAnalysis } from './pollAnalysis'
+import { PHOTO_PREVIEW_CLASS } from './photoPreview'
 import type { EditableItem } from './mealItems'
 
 type Step = 'input' | 'analyzing'
@@ -22,12 +23,14 @@ export function AiRecordPanel({
   mealType,
   autoCamera,
   saving,
+  onMealTypeChange,
   onSave,
   onManual,
 }: {
   mealType: MealType
   autoCamera?: boolean
   saving?: boolean
+  onMealTypeChange: (next: MealType) => void
   onSave: (items: EditableItem[], analysisJobId: number) => void
   onManual: () => void
 }) {
@@ -37,7 +40,8 @@ export function AiRecordPanel({
   const [note, setNote] = useState('')
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  // FAB(카메라 아이콘)으로 들어온 경우에만 쓰는 입력 — 이쪽만 capture를 걸어 촬영이 바로 열린다
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const openedRef = useRef(false)
 
   // 미리보기 blob URL은 메모리에만 두고(사진 미저장), 교체·언마운트 시 해제한다
@@ -50,7 +54,7 @@ export function AiRecordPanel({
   useEffect(() => {
     if (autoCamera && !openedRef.current) {
       openedRef.current = true
-      fileInputRef.current?.click()
+      cameraInputRef.current?.click()
     }
   }, [autoCamera])
 
@@ -103,8 +107,9 @@ export function AiRecordPanel({
       <label className="relative block cursor-pointer rounded-2xl bg-track px-4 py-8 text-center">
         {photoUrl ? (
           <>
-            {/* max-h가 아니라 고정 높이 — max-h는 사진 비율에 따라 높이가 달라져 분석 버튼이 움직인다 */}
-            <img src={photoUrl} alt="선택한 사진" className="mx-auto h-56 rounded-2xl object-contain" />
+            {/* 고정 높이(PHOTO_PREVIEW_CLASS) — max-h로 두면 사진 비율에 따라 높이가 달라져
+                분석 버튼이 움직인다. 크기는 분석 대기 화면과 한 곳에서 공유한다 */}
+            <img src={photoUrl} alt="선택한 사진" className={`mx-auto ${PHOTO_PREVIEW_CLASS}`} />
             <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-bold text-on-brand">
               <CameraIcon />
               사진 변경
@@ -122,12 +127,26 @@ export function AiRecordPanel({
             <span className="mt-0.5 block text-sm text-muted">AI가 음식을 자동으로 인식해요</span>
             <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-on-brand">
               <CameraIcon />
-              촬영하기
+              촬영 · 사진첩
             </span>
           </>
         )}
+        {/*
+          capture를 주지 않는다 — 주면 모바일에서 카메라가 곧장 열려 **사진첩을 고를 수 없다.**
+          없으면 OS가 "사진 보관함 / 사진 찍기" 선택지를 띄운다.
+          FAB으로 들어온 경로는 아래 별도 입력(capture 있음)이 맡아 바로 촬영이 열린다(design D13).
+        */}
         <input
-          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const next = e.target.files?.[0]
+            if (next) pickFile(next)
+          }}
+        />
+        <input
+          ref={cameraInputRef}
           type="file"
           accept="image/*"
           capture="environment"
@@ -198,6 +217,7 @@ export function AiRecordPanel({
           mealType={mealType}
           busy={saving}
           onAnalysisChange={setAnalysis}
+          onMealTypeChange={onMealTypeChange}
           onSave={(items) => {
             onSave(items, analysis.id)
             reset()

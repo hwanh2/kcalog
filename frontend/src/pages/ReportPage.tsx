@@ -20,8 +20,13 @@ export function ReportPage() {
 
   return (
     <section>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">리포트</h1>
+      {/* 제목은 하단 탭이 말한다(app-shell 스펙). 그 자리에는 조회 중인 날짜 범위를 둔다 —
+          "주간"은 알려주지만 **어느 주인지**는 지금까지 화면 어디에도 없었다 */}
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="sr-only">리포트</h1>
+        <p className="min-w-0 truncate text-[13px] font-semibold tabular-nums text-muted">
+          {report ? formatRange(report.rangeStart, report.rangeEnd) : ''}
+        </p>
         <div className="flex rounded-full bg-canvas p-0.5 text-sm" role="tablist" aria-label="기간">
           {PERIODS.map((p) => (
             <button
@@ -131,6 +136,20 @@ function TdeeTrend({ series }: { series: TdeePoint[] }) {
       </svg>
     </Card>
   )
+}
+
+/**
+ * "8월 9일 – 8월 15일" — 같은 해 안이면 연도를 안 쓴다.
+ * UTC 정오로 파싱하는 이유는 시간대에 따라 날짜가 하루 밀리는 것을 막기 위해서다(HomePage와 동일).
+ */
+function formatRange(start: string, end: string): string {
+  const fmt = (d: string) =>
+    new Date(`${d}T12:00:00Z`).toLocaleDateString('ko-KR', {
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    })
+  return start === end ? fmt(start) : `${fmt(start)} – ${fmt(end)}`
 }
 
 function Insights({ report }: { report: Report }) {

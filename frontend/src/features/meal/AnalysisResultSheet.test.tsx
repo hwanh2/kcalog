@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { reanalyze } from '../../api/analysis'
 import type { Analysis } from '../../api/analysis'
 import { ApiError } from '../../api/client'
 import { saveFavorite } from '../../api/food'
+import type { MealType } from '../../api/meal'
 import { AnalysisResultSheet } from './AnalysisResultSheet'
 import { pollAnalysis } from './pollAnalysis'
 
@@ -36,20 +37,22 @@ function analysisWith(name: string, kcal: number): Analysis {
   }
 }
 
-function renderSheet() {
+function renderSheet(mealType: MealType = 'LUNCH') {
   const onSave = vi.fn()
   const onClose = vi.fn()
-  render(
+  const onMealTypeChange = vi.fn()
+  const view = render(
     <AnalysisResultSheet
       analysis={analysisWith('김치찌개', 400)}
       photoUrl={null}
-      mealType="LUNCH"
+      mealType={mealType}
       onAnalysisChange={vi.fn()}
+      onMealTypeChange={onMealTypeChange}
       onSave={onSave}
       onClose={onClose}
     />,
   )
-  return { onSave, onClose }
+  return { onSave, onClose, onMealTypeChange, view }
 }
 
 async function requestReanalysis(user: ReturnType<typeof userEvent.setup>, note: string) {
@@ -72,9 +75,35 @@ describe('저장', () => {
     const user = userEvent.setup()
     const { onSave } = renderSheet()
 
-    await user.click(screen.getByRole('button', { name: '점심에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(onSave).toHaveBeenCalledWith([expect.objectContaining({ name: '김치찌개', kcal: '400' })])
+  })
+})
+
+describe('저장 대상 끼니 변경', () => {
+  it('끼니를 고르면 부모에게 알린다 — 시트를 닫지 않고 바로잡을 수 있다', async () => {
+    const user = userEvent.setup()
+    const { onMealTypeChange } = renderSheet('LUNCH')
+
+    await user.selectOptions(screen.getByLabelText('기록할 끼니'), 'DINNER')
+
+    expect(onMealTypeChange).toHaveBeenCalledWith('DINNER')
+  })
+
+  it('고른 끼니가 드롭다운에 그대로 보인다', () => {
+    renderSheet('DINNER')
+
+    expect(screen.getByLabelText('기록할 끼니')).toHaveValue('DINNER')
+    // 끼니는 버튼 문구가 아니라 옆 드롭다운이 말한다 — "저녁 ▾ 에 [기록하기]"
+    expect(screen.getByRole('button', { name: '기록하기' })).toBeInTheDocument()
+  })
+
+  it('다섯 끼니를 모두 고를 수 있다', () => {
+    renderSheet('LUNCH')
+
+    const options = within(screen.getByLabelText('기록할 끼니')).getAllByRole('option')
+    expect(options.map((o) => o.textContent)).toEqual(['아침', '점심', '저녁', '간식', '야식'])
   })
 })
 

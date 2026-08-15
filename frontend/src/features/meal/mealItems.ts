@@ -1,3 +1,4 @@
+import type { FavoriteMealItem } from '../../api/favoriteMeal'
 import type { AnalyzedItem, BoundingBox, MealItem, MealItemInput } from '../../api/meal'
 import { toNumber } from '../../api/memberValidation'
 import { round1 } from '../../lib/number'
@@ -184,6 +185,27 @@ export function validateItems(items: EditableItem[]): {
         : null
   const valid = formError === null && itemErrors.every((e) => Object.keys(e).length === 0)
   return { valid, itemErrors, formError }
+}
+
+/**
+ * 편집 항목 → 끼니 세트 항목 (검증 통과 가정).
+ *
+ * 세트는 수량·단위가 **필수**라 없으면 기본값(1·"인분")으로 채운다 — 사진 없이 담은 구 기록에는
+ * 수량이 없을 수 있는데, 그때 세트로 저장하지 못하면 "이 조합 또 먹는다"를 놓친다(design D7).
+ */
+export function toFavoriteMealItems(items: EditableItem[]): FavoriteMealItem[] {
+  return items.map((it) => {
+    const quantity = toNumber(it.quantity)
+    return {
+      name: it.name.trim(),
+      quantity: quantity !== null && quantity > 0 ? quantity : 1,
+      unit: it.unit.trim() || '인분',
+      kcal: toNumber(it.kcal)!,
+      carbG: toNumber(it.carbG)!,
+      proteinG: toNumber(it.proteinG)!,
+      fatG: toNumber(it.fatG)!,
+    }
+  })
 }
 
 /** 편집 항목 → 저장 요청 항목 (검증 통과 가정, box 제외). remember=true면 개인 보정 학습을 요청 */
