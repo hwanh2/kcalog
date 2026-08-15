@@ -5,7 +5,7 @@ import { formatQuantity, round1, round2 } from '../../lib/number'
 import { Button } from '../../ui/form'
 import { MacroChips } from '../../ui/MacroChips'
 import { Sheet } from '../../ui/Sheet'
-import { MEAL_TYPE_LABELS } from '../meal/mealDefaults'
+import { RecordButton } from '../meal/RecordButton'
 import { fromFood } from '../meal/mealItems'
 import type { EditableItem } from '../meal/mealItems'
 import { scaleNutrition, stepFor } from './scale'
@@ -20,12 +20,14 @@ export function FavoriteMealApplySheet({
   set,
   mealType,
   busy,
+  onMealTypeChange,
   onSubmit,
   onClose,
 }: {
   set: FavoriteMeal
   mealType: MealType
   busy?: boolean
+  onMealTypeChange: (next: MealType) => void
   onSubmit: (items: EditableItem[]) => void
   onClose: () => void
 }) {
@@ -142,14 +144,13 @@ export function FavoriteMealApplySheet({
         </span>
       </div>
 
-      <Button
-        type="button"
+      <RecordButton
+        mealType={mealType}
+        onMealTypeChange={onMealTypeChange}
         onClick={submit}
         disabled={busy || kept.length === 0}
-        className="mt-4 w-full py-3"
-      >
-        {kept.length === 0 ? '담을 음식이 없어요' : `${MEAL_TYPE_LABELS[mealType]}에 기록하기`}
-      </Button>
+        label={kept.length === 0 ? '담을 음식이 없어요' : '기록하기'}
+      />
     </Sheet>
   )
 }

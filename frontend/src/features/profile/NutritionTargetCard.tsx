@@ -10,14 +10,14 @@ export function NutritionTargetCard({
   carbTargetG,
   proteinTargetG,
   fatTargetG,
-  onEdit,
+  onRecalc,
 }: {
   maintenanceKcal: number | null
   targetKcal: number | null
   carbTargetG: number | null
   proteinTargetG: number | null
   fatTargetG: number | null
-  onEdit: () => void
+  onRecalc: () => void
 }) {
   const diff = maintenanceKcal !== null && targetKcal !== null ? targetKcal - maintenanceKcal : null
   const macros = [
@@ -33,8 +33,12 @@ export function NutritionTargetCard({
           <p className="text-xs font-medium text-muted">영양 목표</p>
           <p className="mt-0.5 text-base font-black text-ink">하루 기준</p>
         </div>
-        <button type="button" onClick={onEdit} className="text-xs font-bold text-brand-ink">
-          ✎ 조정
+        {/*
+          "조정"은 무엇을 조정하는지 말하지 않아, 설정 메뉴의 "프로필 편집"과 같은 시트를 열어도
+          아무도 눈치채지 못했다. 이름이 도착지를 말하게 한다(design D3).
+        */}
+        <button type="button" onClick={onRecalc} className="shrink-0 text-xs font-bold text-brand-ink">
+          유지칼로리 다시 계산
         </button>
       </div>
 

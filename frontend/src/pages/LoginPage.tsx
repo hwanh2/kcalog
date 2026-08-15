@@ -2,6 +2,7 @@ import { Navigate, useSearchParams } from 'react-router'
 import { kakaoLoginUrl } from '../api/auth'
 import { APP_ROOT } from '../auth/landingPath'
 import { useAuth } from '../auth/useAuth'
+import { AppMark } from '../ui/AppMark'
 
 const ERROR_MESSAGES: Record<string, string> = {
   oauth: '카카오 로그인에 실패했어요. 다시 시도해주세요.',
@@ -20,7 +21,8 @@ export function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 text-center">
-      <h1 className="text-3xl font-bold text-brand-ink">kcalog</h1>
+      <AppMark className="h-16 w-16" />
+      <h1 className="mt-4 text-3xl font-bold text-brand-ink">kcalog</h1>
       <p className="mt-2 text-muted">사진 한 장으로 10초 안에 기록하는 체중 관리</p>
       {error && (
         <p role="alert" className="mt-4 text-sm text-danger">

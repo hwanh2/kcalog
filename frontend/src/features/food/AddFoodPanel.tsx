@@ -6,6 +6,7 @@ import type { MealType } from '../../api/meal'
 import { useMutationWithError } from '../../lib/useMutationWithError'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { ListSkeleton } from '../../ui/ListSkeleton'
+import { SearchField } from '../../ui/SearchField'
 import { SegmentedTabs } from '../../ui/SegmentedTabs'
 import { ClockIcon, SparklesIcon, StarIcon } from '../../ui/icons'
 import { AiRecordPanel } from '../meal/AiRecordPanel'
@@ -130,14 +131,27 @@ export function AddFoodPanel({
           <ListSkeleton rows={4} />
         ) : (
           <>
+            {/* 검색은 "자주 먹는"에만 — 즐겨찾기는 내가 담은 몇 개라 이미 다 보인다(design D7) */}
+            {tab === 'catalog' && (
+              <SearchField
+                label="음식 이름 검색"
+                placeholder="음식 이름으로 검색"
+                value={query}
+                onChange={setQuery}
+              />
+            )}
             {/* 세트는 즐겨찾기 탭에만 — "자주 먹는"은 공통 카탈로그 자리라 내 조합이 낄 곳이 아니다 */}
             {tab === 'favorite' && (
-              <FavoriteMealSection mealType={mealType} saving={saving} onRecordItems={onRecordItems} />
+              <FavoriteMealSection
+                mealType={mealType}
+                saving={saving}
+                onMealTypeChange={onMealTypeChange}
+                onRecordItems={onRecordItems}
+              />
             )}
             <FoodList
               foods={visible}
               query={query}
-              onQueryChange={setQuery}
               favoriteNames={favoriteNames}
               onPick={setPicked}
               onToggleFavorite={toggleFavorite}
@@ -159,6 +173,7 @@ export function AddFoodPanel({
           food={picked}
           mealType={mealType}
           busy={saving}
+          onMealTypeChange={onMealTypeChange}
           onSubmit={(quantity, nutrition) => {
             onRecordItems([fromFood(picked, quantity, nutrition)])
             setPicked(null)
@@ -192,6 +207,7 @@ export function AddFoodPanel({
         <FoodDraftSheet
           mode={draft.mode}
           mealType={mealType}
+          onMealTypeChange={onMealTypeChange}
           initial={{ name: draft.name }}
           busy={saving || favoriteMutation.isPending}
           error={draft.mode === 'favorite' ? favoriteMutation.error : null}

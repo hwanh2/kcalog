@@ -5,7 +5,7 @@ import { RequireAuth } from './auth/RequireAuth'
 import { CallbackPage } from './pages/CallbackPage'
 import { CoachPage } from './pages/CoachPage'
 import { HomePage } from './pages/HomePage'
-import { LandingPage } from './pages/LandingPage'
+import { LandingRoute } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -23,8 +23,9 @@ function App() {
         <BrowserRouter>
           <Routes>
             {/* 앱은 /app 아래에만 산다 — manifest start_url이 /app이라 홈 화면 아이콘은 앱으로,
-                검색·링크로 온 방문자는 루트의 랜딩으로 갈린다 */}
-            <Route path="/" element={<LandingPage />} />
+                검색·링크로 온 방문자는 루트의 랜딩으로 갈린다.
+                옛 아이콘은 start_url이 `/`라 여기로 떨어지므로 LandingRoute가 한 번 더 거른다 */}
+            <Route path="/" element={<LandingRoute />} />
             {/* 백엔드가 이 두 경로로 리다이렉트한다(OAuth2SuccessHandler·SecurityConfig) — 옮기면 백엔드도 같이 배포해야 한다 */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/callback" element={<CallbackPage />} />

@@ -2,14 +2,24 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      SVG 파비콘을 쓰지 않는 이유 — 마크의 `k`가 SVG 안에서는 **글자**라 방문자 기기에 그 폰트가
+      없으면 다른 서체로 그려진다(디자인 원본은 Manrope). PNG로 두면 어디서나 같은 그림이다.
+    -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <!-- iOS는 홈 화면 아이콘에 manifest의 icons를 쓰지 않는다 — 이게 없으면 페이지 스크린샷이 들어간다 -->
     <link rel="apple-touch-icon" href="/icon-180.png" />
     <!-- iOS 15.4 미만은 manifest의 display를 보지 않는다 — 없으면 홈 화면에서 열어도 주소창이 남는다 -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <!-- viewport-fit=cover — 없으면 env(safe-area-inset-*)이 항상 0이라 노치 대응이 무효가 된다 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- viewport-fit=cover — 없으면 env(safe-area-inset-*)이 항상 0이라 노치 대응이 무효가 된다.
+         확대·축소 잠금 ①/③ — 고정 폭 모바일 레이아웃이라 배율이 바뀌면 깨진 채로 남는다.
+         Android Chrome과 iOS 홈 화면 실행은 여기서 막히고, iOS Safari 탭은 main.tsx가 맡는다 (design D5) -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <!-- 페이지 배경(--color-canvas)과 같은 값 — 어긋나면 PWA 상태 표시줄에 다른 색 띠가 생긴다 -->
     <meta name="theme-color" content="#f8fafc" />
     <meta name="description" content="사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱" />

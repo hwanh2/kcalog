@@ -10,10 +10,11 @@ import { getWeights } from '../api/weight'
 import { CalorieRing } from '../features/dashboard/CalorieRing'
 import { MacroProgress } from '../features/dashboard/MacroProgress'
 import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
-import { MEAL_TYPE_LABELS, defaultMealType } from '../features/meal/mealDefaults'
+import { MEAL_TYPE_LABELS, defaultMealType, sortByMealOrder } from '../features/meal/mealDefaults'
 import { addDays, todayServiceDate } from '../lib/date'
 import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
+import { UtensilsIcon } from '../ui/icons'
 
 /** 홈(오늘) — 날짜 이동 + 칼로리 링·탄단지 달성도·체중 미니카드·오늘 식사 목록·촬영 유도 (v2 목업 기준) */
 export function HomePage() {
@@ -70,7 +71,7 @@ export function HomePage() {
 
         <WeightMiniCard entries={weights.data ?? []} targetWeightKg={targetWeightKg} />
 
-        <MealSection meals={meals.data ?? []} />
+        <MealSection meals={meals.data ?? []} date={date} today={today} />
       </div>
     </section>
   )
@@ -182,24 +183,33 @@ function CalendarIcon() {
   )
 }
 
-function MealSection({ meals }: { meals: Meal[] }) {
+function MealSection({ meals, date, today }: { meals: Meal[]; date: string; today: string }) {
   // 음식기록 탭이 쓰는 것과 **같은 기준**이어야 한다 — 홈이 "아침"이라 해놓고 넘어간 화면이
   // "저녁"에 가 있으면 안 된다(design D1). 그래서 기록 이력이 아니라 시각으로 정한다.
   const nextType = defaultMealType(new Date())
+  // 보고 있는 날짜를 함께 실어 보낸다 — 안 보내면 기록 화면이 늘 오늘로 열려 두 화면이 다른 날을 본다.
+  // 오늘이면 붙이지 않는다: 기록 화면의 기본값이 오늘이라 주소만 길어진다(design D21)
+  const dateParam = date === today ? '' : `&date=${date}`
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-extrabold">오늘 기록한 식사</h2>
-        <Link to="/app/records" className="flex items-center gap-0.5 text-xs font-bold text-brand-ink">
+        <h2 className="text-sm font-extrabold">{date === today ? '오늘' : '이 날'} 기록한 식사</h2>
+        <Link
+          to={`/app/records${dateParam ? `?date=${date}` : ''}`}
+          className="flex items-center gap-0.5 text-xs font-bold text-brand-ink"
+        >
           전체보기
           <Chevron dir="right" small />
         </Link>
       </div>
 
-      {meals.length === 0 && <p className="px-1 text-muted">오늘 기록한 식사가 없어요.</p>}
+      {meals.length === 0 && (
+        <p className="px-1 text-muted">{date === today ? '오늘' : '이 날'} 기록한 식사가 없어요.</p>
+      )}
 
-      {meals.map((meal) => (
+      {/* 아침부터 — 서버 순서(저장 시각)로는 뒤늦게 채운 아침이 저녁 아래로 간다 */}
+      {sortByMealOrder(meals).map((meal) => (
         <MealCard key={meal.id} meal={meal} />
       ))}
 
@@ -210,7 +220,7 @@ function MealSection({ meals }: { meals: Meal[] }) {
           갈린다(14:59 렌더 → 15:01 클릭이면 홈은 "점심", 도착 화면은 "저녁").
           **카드에 적힌 끼니가 곧 저장될 끼니여야 한다**(design D1) */}
       <Link
-        to={`/app/records?camera=1&meal=${nextType}`}
+        to={`/app/records?camera=1&meal=${nextType}${dateParam}`}
         className="flex items-center justify-between rounded-card border-2 border-dashed border-border bg-canvas/60 p-3.5"
       >
         <span className="flex items-center gap-3">
@@ -230,13 +240,27 @@ function MealCard({ meal }: { meal: Meal }) {
   const names = meal.items.map((it) => it.name).join(' · ')
   return (
     <Card className="flex items-center gap-3">
-      {meal.imageUrl && (
-        <AuthImage src={meal.imageUrl} alt="식사 사진" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+      {meal.imageUrl ? (
+        <AuthImage src={meal.imageUrl} alt="식사 사진" className="h-14 w-14 shrink-0 rounded-tile object-cover" />
+      ) : (
+        // 사진 없이 담은 기록도 같은 자리를 차지한다 — 빈 칸으로 두면 줄마다 글자 시작점이 어긋난다.
+        // 아이콘은 음식기록 탭과 같은 식기 아이콘(DESIGN.md 5 — 같은 뜻에는 같은 아이콘)
+        <span
+          aria-hidden
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-tile bg-canvas text-muted"
+        >
+          <UtensilsIcon size={22} />
+        </span>
       )}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase text-muted">
-            {MEAL_TYPE_LABELS[meal.mealType]} · {formatTime(meal.eatenAt)}
+        <div className="flex items-center justify-between gap-2">
+          {/* 홈은 여러 끼니가 한 목록에 섞이는 유일한 자리다 — 10px 회색 글씨로는 어느 끼니인지
+              훑어지지 않아 칩으로 세운다. 목록이 끼니 순서로 정렬돼 있어 칩만으로 구분된다 */}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-bold text-brand-ink">
+              {MEAL_TYPE_LABELS[meal.mealType]}
+            </span>
+            <span className="truncate text-[10px] font-medium text-muted">{formatTime(meal.eatenAt)}</span>
           </span>
           <span className="text-xs font-black">{meal.totalKcal} kcal</span>
         </div>

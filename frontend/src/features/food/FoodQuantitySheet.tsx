@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Food } from '../../api/food'
 import type { MealType } from '../../api/meal'
-import { MEAL_TYPE_LABELS } from '../meal/mealDefaults'
+import { RecordButton } from '../meal/RecordButton'
 import { Button } from '../../ui/form'
 import { MacroChips } from '../../ui/MacroChips'
 import { Sheet } from '../../ui/Sheet'
@@ -10,18 +10,20 @@ import { scaleNutrition, stepFor } from './scale'
 
 /**
  * 담기 시트 — 수량을 조절하면 영양값이 비례해 바뀌고, 확인하면 그 끼니로 기록된다(design D1).
- * 버튼 문구에 끼니 이름을 박아 잘못된 끼니에 담는 사고를 줄인다.
+ * 마무리 줄은 담는 모든 자리와 같은 `RecordButton` — 끼니가 보이고, 그 자리에서 바꿀 수 있다.
  */
 export function FoodQuantitySheet({
   food,
   mealType,
   busy,
+  onMealTypeChange,
   onSubmit,
   onClose,
 }: {
   food: Food
   mealType: MealType
   busy?: boolean
+  onMealTypeChange: (next: MealType) => void
   onSubmit: (quantity: number, nutrition: ReturnType<typeof scaleNutrition>) => void
   onClose: () => void
 }) {
@@ -64,14 +66,12 @@ export function FoodQuantitySheet({
         </div>
       </div>
 
-      <Button
-        type="button"
+      <RecordButton
+        mealType={mealType}
+        onMealTypeChange={onMealTypeChange}
         onClick={() => onSubmit(quantity, nutrition)}
         disabled={busy}
-        className="mt-4 w-full py-3"
-      >
-        {MEAL_TYPE_LABELS[mealType]}에 기록하기
-      </Button>
+      />
     </Sheet>
   )
 }

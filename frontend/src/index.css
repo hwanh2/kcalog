@@ -42,6 +42,7 @@
   --color-protein-ink: #b91c1c;
   --color-fat-ink: #0e7490;
   --color-success: #047857;
+  /* 글씨(오류 문구)와 면(파괴적 확인 버튼 바탕) 양쪽에 쓴다 — tokens.ts의 INK/SURFACE 둘 다에 있다 */
   --color-danger: #b91c1c;
   /* slate-500(#64748b)과 600(#475569) 사이 — 500은 track 위에서 4.20으로 미달하고(비활성
      세그먼트 라벨이 여기 올라간다), 600은 본문 먹색과 가까워져 1·2차 텍스트 위계가 무너진다 */
@@ -59,6 +60,12 @@ html,
 body,
 #root {
   min-height: 100dvh;
+}
+
+/* 확대·축소 잠금 ②/③ — 더블탭 확대를 막는다. 핀치는 viewport 메타(index.html)와
+   gesturestart 차단(main.tsx)이 맡는다. 셋이 한 벌이므로 되돌릴 때도 함께 (design D5) */
+html {
+  touch-action: pan-x pan-y;
 }
 
 /* 분석 중 스캔 라인 — 사진 위를 오르내려 "지금 읽고 있다"를 보여준다 */

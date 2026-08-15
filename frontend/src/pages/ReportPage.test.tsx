@@ -96,7 +96,7 @@ describe('ReportPage', () => {
   it('제목 자리에 조회 중인 날짜 범위를 보여준다 — "주간"만으로는 어느 주인지 알 수 없다', async () => {
     renderPage()
 
-    expect(await screen.findByText('8월 3일 – 8월 9일')).toBeInTheDocument()
+    expect(await screen.findByText('8월 3일 ~ 8월 9일')).toBeInTheDocument()
   })
 
   it('시작과 끝이 같은 날이면 한 번만 적는다', async () => {

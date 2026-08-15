@@ -1,18 +1,19 @@
 import type { Food } from '../../api/food'
 import { Button } from '../../ui/form'
 import { MacroChips } from '../../ui/MacroChips'
-import { SearchField } from '../../ui/SearchField'
 import { formatQuantity } from '../../lib/number'
 import { normalizeName } from './search'
 
 /**
  * 음식 목록 — 한 줄에 하나씩(★ · 이름/기준량 · 탄단지 · kcal · 담기).
  * ★은 즐겨찾기 토글이다: 채워져 있으면 내 라이브러리에 있는 음식이고, 누르면 저장·해제된다.
+ *
+ * 검색 입력은 여기 없다 — 검색은 목록의 일부가 아니라 목록을 고르는 수단이라 부모가 갖는다(design D7).
+ * `query`는 계속 받는다: 결과 없음 화면의 "'X' 을(를) 찾지 못했어요"가 그 값을 쓴다.
  */
 export function FoodList({
   foods,
   query,
-  onQueryChange,
   favoriteNames,
   onPick,
   onToggleFavorite,
@@ -21,7 +22,6 @@ export function FoodList({
 }: {
   foods: Food[]
   query: string
-  onQueryChange: (value: string) => void
   favoriteNames: Set<string>
   onPick: (food: Food) => void
   onToggleFavorite: (food: Food, saved: boolean) => void
@@ -31,13 +31,6 @@ export function FoodList({
   const trimmed = query.trim()
   return (
     <>
-      <SearchField
-        label="음식 이름 검색"
-        placeholder="음식 이름으로 검색"
-        value={query}
-        onChange={onQueryChange}
-      />
-
       {foods.length === 0 ? (
         <div className="mt-4">
           {trimmed === '' ? (

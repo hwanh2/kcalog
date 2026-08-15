@@ -44,8 +44,10 @@ export interface KcalSuggestion {
   fatTargetG: number
 }
 
-/** 부분 수정 — 담긴 필드만 변경된다 */
+/** 부분 수정 — 담긴 필드만 변경된다. 성별·출생연도도 고칠 수 있다(유지칼로리 공식에 들어가는 값) */
 export interface UpdateMemberRequest {
+  gender?: Gender
+  birthYear?: number
   heightCm?: number
   targetWeightKg?: number
   activityLevel?: ActivityLevel

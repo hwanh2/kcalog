@@ -20,13 +20,31 @@ const SET: FavoriteMeal = {
 
 function renderSheet() {
   const onSubmit = vi.fn()
+  const onMealTypeChange = vi.fn()
   render(
-    <FavoriteMealApplySheet set={SET} mealType="LUNCH" onSubmit={onSubmit} onClose={vi.fn()} />,
+    <FavoriteMealApplySheet
+      set={SET}
+      mealType="LUNCH"
+      onMealTypeChange={onMealTypeChange}
+      onSubmit={onSubmit}
+      onClose={vi.fn()}
+    />,
   )
-  return { onSubmit }
+  return { onSubmit, onMealTypeChange }
 }
 
 describe('세트 담기 시트', () => {
+  it('끼니를 이 자리에서 바꿀 수 있다 — 담는 모든 자리가 같은 마무리 줄을 쓴다', async () => {
+    const user = userEvent.setup()
+    const { onMealTypeChange } = renderSheet()
+
+    const picker = screen.getByLabelText('기록할 끼니')
+    expect(picker).toHaveValue('LUNCH')
+    await user.selectOptions(picker, 'DINNER')
+
+    expect(onMealTypeChange).toHaveBeenCalledWith('DINNER')
+  })
+
   it('든 음식과 합계를 보여준다', () => {
     renderSheet()
 
@@ -39,7 +57,7 @@ describe('세트 담기 시트', () => {
     const user = userEvent.setup()
     const { onSubmit } = renderSheet()
 
-    await user.click(screen.getByRole('button', { name: '점심에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(onSubmit).toHaveBeenCalledTimes(1)
     const items = onSubmit.mock.calls[0][0]
@@ -52,7 +70,7 @@ describe('세트 담기 시트', () => {
     const { onSubmit } = renderSheet()
 
     await user.click(screen.getByRole('button', { name: '미역국 빼기' }))
-    await user.click(screen.getByRole('button', { name: '점심에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     const items = onSubmit.mock.calls[0][0]
     expect(items).toHaveLength(1)
@@ -65,7 +83,7 @@ describe('세트 담기 시트', () => {
 
     await user.click(screen.getByRole('button', { name: '미역국 빼기' }))
     await user.click(screen.getByRole('button', { name: '미역국 다시 담기' }))
-    await user.click(screen.getByRole('button', { name: '점심에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(onSubmit.mock.calls[0][0]).toHaveLength(2)
   })
@@ -76,7 +94,7 @@ describe('세트 담기 시트', () => {
 
     // 공기 단위는 0.5씩 움직인다(stepFor) — 1 → 0.5
     await user.click(screen.getByRole('button', { name: '잡곡밥 수량 줄이기' }))
-    await user.click(screen.getByRole('button', { name: '점심에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(onSubmit.mock.calls[0][0][0]).toMatchObject({
       name: '잡곡밥',

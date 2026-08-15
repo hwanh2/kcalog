@@ -9,6 +9,7 @@ import { useAuth } from '../auth/useAuth'
 import { NutritionTargetCard } from '../features/profile/NutritionTargetCard'
 import { ProfileEditSheet } from '../features/profile/ProfileEditSheet'
 import { ProfileSummaryCard } from '../features/profile/ProfileSummaryCard'
+import { TdeeRecalcSheet } from '../features/profile/TdeeRecalcSheet'
 import { WeeklySummaryCard } from '../features/profile/WeeklySummaryCard'
 import { WeightProgressCard } from '../features/profile/WeightProgressCard'
 import { addDays, todayLocalDate, todayServiceDate } from '../lib/date'
@@ -32,7 +33,9 @@ function Profile({
   reloadMember: () => Promise<void>
   signOut: () => Promise<void>
 }) {
+  // 진입점 둘은 서로 다른 곳으로 간다 — 설정 메뉴는 편집, 영양 목표는 재계산 (design D3)
   const [editing, setEditing] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
 
   const today = todayServiceDate()
   const weights = useQuery({
@@ -63,7 +66,7 @@ function Profile({
         carbTargetG={dashboard.data?.carbTargetG ?? null}
         proteinTargetG={dashboard.data?.proteinTargetG ?? null}
         fatTargetG={dashboard.data?.fatTargetG ?? null}
-        onEdit={() => setEditing(true)}
+        onRecalc={() => setRecalculating(true)}
       />
 
       <WeeklySummaryCard reports={reports.data ?? []} points={weights.data?.points ?? []} />
@@ -82,6 +85,11 @@ function Profile({
 
       {editing && (
         <ProfileEditSheet member={member} reloadMember={reloadMember} onClose={() => setEditing(false)} />
+      )}
+
+      {/* 목표 칼로리는 auth의 member가 들고 있다 — 쿼리 무효화만으로는 이 화면이 안 바뀐다 */}
+      {recalculating && (
+        <TdeeRecalcSheet onApplied={() => void reloadMember()} onClose={() => setRecalculating(false)} />
       )}
     </section>
   )

@@ -227,6 +227,173 @@ describe('ProfilePage — 편집', () => {
   })
 })
 
+describe('ProfilePage — 나이·성별 편집', () => {
+  it('저장된 성별·출생연도가 채워지고, 출생연도 옆에 나이가 환산돼 붙는다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+    await openEditSheet(user)
+
+    expect(screen.getByLabelText('성별')).toHaveValue('MALE')
+    const age = new Date().getFullYear() - 1990
+    expect(screen.getByLabelText(`출생연도 (${age}세)`)).toHaveValue('1990')
+  })
+
+  it('바꾼 성별·출생연도만 담아 저장한다', async () => {
+    const user = userEvent.setup()
+    updateMemberMock.mockResolvedValue(savedMember)
+    renderProfile()
+    await openEditSheet(user)
+
+    await user.selectOptions(screen.getByLabelText('성별'), 'FEMALE')
+    const birthField = screen.getByLabelText(/출생연도/)
+    await user.clear(birthField)
+    await user.type(birthField, '1994')
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(updateMemberMock).toHaveBeenCalledWith({ gender: 'FEMALE', birthYear: 1994 })
+  })
+
+  it('제안 칼로리는 저장값이 아니라 **편집 중인** 성별·출생연도로 조회한다', async () => {
+    const user = userEvent.setup()
+    getKcalSuggestionMock.mockResolvedValue({
+      maintenanceKcal: 1900,
+      carbTargetG: 190,
+      proteinTargetG: 110,
+      fatTargetG: 35,
+      dailyKcalTarget: 1600,
+    })
+    renderProfile()
+    await openEditSheet(user)
+
+    await user.selectOptions(screen.getByLabelText('성별'), 'FEMALE')
+
+    expect(await screen.findByText('1600 kcal')).toBeInTheDocument()
+    expect(getKcalSuggestionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ gender: 'FEMALE', birthYear: 1990 }),
+    )
+  })
+
+  it('범위 밖 출생연도는 저장하지 않고 오류를 표시한다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+    await openEditSheet(user)
+
+    const birthField = screen.getByLabelText(/출생연도/)
+    await user.clear(birthField)
+    await user.type(birthField, '1800')
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(screen.getByText(/출생연도는 1920~/)).toBeInTheDocument()
+    expect(updateMemberMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('ProfilePage — 유지칼로리 다시 계산', () => {
+  /** 두 진입점이 같은 곳으로 가면 하나는 거짓말이다 (design D3) */
+  it('영양 목표의 버튼은 편집이 아니라 재계산 시트를 연다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+
+    expect(screen.getByRole('dialog', { name: '유지칼로리 다시 계산' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('키 (cm)')).not.toBeInTheDocument()
+  })
+
+  it('유지칼로리와 계산 근거·추천 목표를 함께 보여준다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+
+    expect(await screen.findByText('최근 14일 실측')).toBeInTheDocument()
+    expect(screen.getByText('1,900 kcal')).toBeInTheDocument()
+  })
+
+  it('실측이면 무엇을 넣어 계산했는지 설명한다 — 배지는 방식만 말한다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+
+    const basis = await screen.findByRole('region', { name: '계산 근거' })
+    expect(basis).toHaveTextContent('기록한 식사의 하루 평균 칼로리')
+    expect(basis).toHaveTextContent('체중 추세가 움직인 만큼')
+  })
+
+  it('공식 추정이면 다른 근거를 설명한다 — 무엇을 더 하면 실측이 되는지까지', async () => {
+    const user = userEvent.setup()
+    getTdeeMock.mockResolvedValue({
+      status: 'INSUFFICIENT_DATA',
+      maintenanceKcal: 2400,
+      source: 'FORMULA',
+      currentTargetKcal: 1930,
+      recommendedTargetKcal: 1900,
+      windowDays: 14,
+      coverage: 0.2,
+    })
+    renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+
+    const basis = await screen.findByRole('region', { name: '계산 근거' })
+    expect(basis).toHaveTextContent('성별·나이·키·현재 체중')
+    expect(basis).toHaveTextContent(/14일/)
+    expect(basis).not.toHaveTextContent('기록한 식사의 하루 평균 칼로리')
+  })
+
+  it('적용하면 목표가 바뀌고 회원 상태를 다시 읽는다 — 목표는 auth의 member가 들고 있다', async () => {
+    const user = userEvent.setup()
+    updateMemberMock.mockResolvedValue(savedMember)
+    const { reloadMember } = renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+    await user.click(await screen.findByRole('button', { name: '적용' }))
+
+    expect(updateMemberMock).toHaveBeenCalledWith({ dailyKcalTarget: 1900 })
+    expect(reloadMember).toHaveBeenCalled()
+  })
+
+  it('추천이 현재 목표와 같으면 적용을 권하지 않는다', async () => {
+    const user = userEvent.setup()
+    getTdeeMock.mockResolvedValue({
+      status: 'OK',
+      maintenanceKcal: 2400,
+      source: 'ADAPTIVE',
+      currentTargetKcal: 1930,
+      recommendedTargetKcal: 1930,
+      windowDays: 14,
+      coverage: 0.8,
+    })
+    renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+
+    expect(await screen.findByText('현재 목표와 같아요')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '적용' })).not.toBeInTheDocument()
+  })
+
+  it('계산할 데이터가 없으면 숫자 대신 무엇을 하면 되는지 알린다', async () => {
+    const user = userEvent.setup()
+    getTdeeMock.mockResolvedValue({
+      status: 'INSUFFICIENT_DATA',
+      maintenanceKcal: null,
+      source: 'FORMULA',
+      currentTargetKcal: 1930,
+      recommendedTargetKcal: null,
+      windowDays: 14,
+      coverage: 0,
+    })
+    renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '유지칼로리 다시 계산' }))
+
+    expect(
+      await screen.findByText('체중과 식사를 꾸준히 기록하면 실제 데이터로 유지칼로리를 계산해드려요.'),
+    ).toBeInTheDocument()
+  })
+})
+
 describe('ProfilePage — 설정', () => {
   it('로그아웃 버튼은 auth의 로그아웃 처리를 호출한다', async () => {
     const user = userEvent.setup()

@@ -117,6 +117,52 @@ describe('HomePage 대시보드', () => {
     expect(screen.getByText('탄 75g')).toBeInTheDocument()
   })
 
+  it('사진 없는 기록도 자리표시가 들어간다 — 빈 칸이면 줄마다 글자 시작점이 어긋난다', async () => {
+    getMealsMock.mockResolvedValue([lunch]) // imageUrl: null
+    renderPage()
+
+    await screen.findByText('김치찌개')
+    expect(screen.queryByAltText('식사 사진')).not.toBeInTheDocument()
+    // 식기 아이콘 자리표시 — 음식기록 탭과 같은 아이콘
+    expect(document.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument()
+  })
+
+  it('끼니가 칩으로 구분된다 — 홈은 여러 끼니가 한 목록에 섞이는 유일한 자리다', async () => {
+    getMealsMock.mockResolvedValue([
+      lunch,
+      { ...lunch, id: 2, mealType: 'DINNER', items: [{ ...lunch.items[0], name: '된장찌개' }] },
+    ])
+    renderPage()
+
+    expect(await screen.findByText('점심')).toBeInTheDocument()
+    expect(screen.getByText('저녁')).toBeInTheDocument()
+  })
+
+  it('아침부터 끼니 순서로 정렬한다 — 뒤늦게 채운 아침이 저녁 아래로 가면 안 된다', async () => {
+    // 서버는 저장 시각 오름차순으로 준다: 저녁(18시 저장) → 아침(21시에 뒤늦게 채움)
+    getMealsMock.mockResolvedValue([
+      {
+        ...lunch,
+        id: 1,
+        mealType: 'DINNER',
+        eatenAt: '2026-08-08T09:00:00Z',
+        items: [{ ...lunch.items[0], name: '된장찌개' }],
+      },
+      {
+        ...lunch,
+        id: 2,
+        mealType: 'BREAKFAST',
+        eatenAt: '2026-08-08T12:00:00Z',
+        items: [{ ...lunch.items[0], name: '토스트' }],
+      },
+    ])
+    renderPage()
+
+    await screen.findByText('토스트')
+    const names = screen.getAllByText(/토스트|된장찌개/).map((el) => el.textContent)
+    expect(names).toEqual(['토스트', '된장찌개'])
+  })
+
   it('기록 없는 날 — 안내 문구', async () => {
     renderPage()
     expect(await screen.findByText('오늘 기록한 식사가 없어요.')).toBeInTheDocument()

@@ -46,7 +46,8 @@ export function CoachPage() {
 function Briefing({ briefing }: { briefing: CoachingBriefing }) {
   const { stats } = briefing
   return (
-    <div className="mt-4 space-y-3">
+    // 위 여백은 셸의 <main pt-4>가 준다 — 여기서 또 얹으면 이 화면만 아래로 밀린다(design D8)
+    <div className="space-y-3">
       <div
         className="rounded-2xl p-4 text-white shadow-sm"
         style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}
@@ -216,7 +217,7 @@ function Chat() {
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft">🤖</span>
           <div>
-            <p className="text-sm font-semibold text-ink">코치 미아</p>
+            <p className="text-sm font-semibold text-ink">AI 코치</p>
             <p className="text-[11px] text-success">데이터 분석 중 · 온라인</p>
           </div>
         </div>

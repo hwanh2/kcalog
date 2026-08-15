@@ -26,8 +26,12 @@ export default defineConfig({
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          // 안드로이드 적응형 아이콘 — 링이 중앙 70% 안에 들어와 어떤 마스크로 잘려도 온전하다
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          /*
+            안드로이드 적응형 아이콘은 **따로 만든 파일**을 쓴다. 마스크는 중앙 80%만 남기고 잘라내는데,
+            링이 캔버스의 89%까지 닿아 있어 같은 파일을 쓰면 원형 마스크에서 링 위아래가 잘린다.
+            icon-512-maskable은 같은 그림을 80%로 줄여 흰 여백을 두른 것이다.
+          */
+          { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),

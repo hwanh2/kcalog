@@ -1,5 +1,5 @@
 import type { WeightPoint } from '../../api/weight'
-import { koreanWeekday } from './estimator'
+import { koreanWeekday } from '../../lib/date'
 import { trendScale } from './trendScale'
 
 /** 체중 추세선 — 원시 점(옅게) + EMA 추세선(진하게) + 축 라벨·범례. 경량 인라인 SVG. points 오름차순 가정 */

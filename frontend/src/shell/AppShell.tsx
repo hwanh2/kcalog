@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { AppMark } from '../ui/AppMark'
+import { UserIcon } from '../ui/icons'
 
 const TABS = [
   { to: '/app', label: '홈', end: true, icon: HomeIcon },
@@ -12,36 +15,57 @@ const TABS = [
     FAB은 촬영 화면에서는 숨긴다(목업과 동일) */
 export function AppShell() {
   const { pathname } = useLocation()
+  const isRecords = pathname === '/app/records'
+
+  /*
+    화면을 옮기면 맨 위에서 시작한다. 브라우저는 전체 문서 스크롤을 그대로 두므로,
+    긴 홈을 내려보다 "전체보기"를 누르면 도착한 화면이 **중간에서 시작한다** —
+    새 화면인데 이미 지나간 것처럼 보인다. SPA에서는 이걸 직접 해줘야 한다.
+  */
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-canvas">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-dark to-brand text-sm font-black text-on-brand">
-            K
+      {/*
+        음식기록 탭에서는 헤더를 감춘다 — 그 화면은 끼니 탭이 첫 줄이고(design D18),
+        그 위에 서비스명 줄까지 얹으면 기록 목록과 "지금 추가하기"가 그만큼 아래로 밀린다.
+        프로필 진입은 다른 네 탭에 그대로 있다.
+      */}
+      {!isRecords && (
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <AppMark className="h-8 w-8" />
+            {/* 서비스명 한 줄만 — 부제는 모든 화면 맨 위를 상시로 차지해 본문을 밀어냈다(app-shell 스펙) */}
+            <p className="text-base font-extrabold leading-none tracking-tight">kcalog</p>
           </div>
-          <div>
-            <p className="text-base font-extrabold leading-none tracking-tight">
-              kcalog<span className="text-brand-ink">.ai</span>
-            </p>
-            <p className="text-[10px] font-medium text-muted">AI 식단 · 탄단지 코칭</p>
-          </div>
-        </div>
-        <Link
-          to="/app/profile"
-          className="flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-xs font-semibold text-muted"
-        >
-          <UserIcon />
-          프로필
-        </Link>
-      </header>
+          {/*
+            아이콘만 — 음식기록 날짜 머리의 프로필과 같은 크기·자리라 탭을 옮겨도 손이 같은 곳으로 간다.
+            프로필 화면에서는 아예 감춘다: 이미 그 화면인데 같은 곳으로 가는 버튼이 남아 있을 이유가 없다.
+          */}
+          {pathname !== '/app/profile' && (
+            <Link
+              to="/app/profile"
+              aria-label="프로필"
+              className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+            >
+              <UserIcon />
+            </Link>
+          )}
+        </header>
+      )}
 
-      <main className="flex-1 px-4 pb-24 pt-4">
+      {/*
+        아래 여백은 하단 내비 높이 + 안전 영역이다. 고정값(pb-24)만 두면 내비가
+        `env(safe-area-inset-bottom)`만큼 더 두꺼워지는 기기(노치 계열)에서 마지막 카드가 가려진다.
+      */}
+      <main className="flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
         <Outlet />
       </main>
 
       {/* 등록 경로는 음식기록 탭 하나로 모은다 — FAB은 그 탭으로 보내며 촬영을 바로 연다(design D13) */}
-      {pathname !== '/app/records' && (
+      {!isRecords && (
         <Link
           to="/app/records?camera=1"
           aria-label="식사 촬영"
@@ -127,15 +151,6 @@ function BotIcon() {
       <path d="M12 8V4M8 4h8" />
       <circle cx="9" cy="14" r="0.5" fill="currentColor" />
       <circle cx="15" cy="14" r="0.5" fill="currentColor" />
-    </svg>
-  )
-}
-
-function UserIcon() {
-  return (
-    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" />
     </svg>
   )
 }

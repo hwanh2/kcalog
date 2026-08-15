@@ -127,7 +127,7 @@ export function AiRecordPanel({
             <span className="mt-0.5 block text-sm text-muted">AI가 음식을 자동으로 인식해요</span>
             <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-on-brand">
               <CameraIcon />
-              촬영 · 사진첩
+              촬영
             </span>
           </>
         )}

@@ -32,7 +32,7 @@ function renderSection() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <FavoriteMealSection mealType="LUNCH" onRecordItems={onRecordItems} />
+      <FavoriteMealSection mealType="LUNCH" onMealTypeChange={vi.fn()} onRecordItems={onRecordItems} />
     </QueryClientProvider>,
   )
   return { onRecordItems }
@@ -60,6 +60,16 @@ describe('내 세트 섹션', () => {
     expect(screen.queryByRole('region', { name: '내 세트' })).not.toBeInTheDocument()
   })
 
+  it('담기는 + 버튼이다 — 줄 전체가 아니라, 아래 음식 목록과 같은 모양', async () => {
+    renderSection()
+
+    const add = await screen.findByRole('button', { name: '회사 점심 A 담기' })
+    expect(add).toHaveTextContent('+')
+    // 이름은 버튼 안이 아니라 밖에 있다 — 줄이 통째로 버튼이면 휴지통이 버튼 안 버튼이 된다
+    expect(add).not.toHaveTextContent('회사 점심 A')
+    expect(screen.getByRole('button', { name: '회사 점심 A 세트 삭제' })).toBeInTheDocument()
+  })
+
   it('세트를 누르면 담기 시트가 열린다', async () => {
     const user = userEvent.setup()
     renderSection()
@@ -74,7 +84,7 @@ describe('내 세트 섹션', () => {
     const { onRecordItems } = renderSection()
 
     await user.click(await screen.findByRole('button', { name: '회사 점심 A 담기' }))
-    await user.click(screen.getByRole('button', { name: '점심에 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '기록하기' }))
 
     expect(onRecordItems).toHaveBeenCalledTimes(1)
     expect(onRecordItems.mock.calls[0][0]).toHaveLength(2)
