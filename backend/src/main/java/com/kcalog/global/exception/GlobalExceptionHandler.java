@@ -1,6 +1,7 @@
 package com.kcalog.global.exception;
 
 import com.kcalog.domain.coaching.exception.DailyCoachChatLimitException;
+import com.kcalog.domain.feedback.exception.FeedbackRateLimitException;
 import com.kcalog.domain.meal.exception.DailyAnalysisLimitException;
 import com.kcalog.domain.meal.exception.MealAnalysisException;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DailyCoachChatLimitException.class)
     public ProblemDetail handleCoachChatLimit(DailyCoachChatLimitException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+    }
+
+    @ExceptionHandler(FeedbackRateLimitException.class)
+    public ProblemDetail handleFeedbackRateLimit(FeedbackRateLimitException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
     }
 

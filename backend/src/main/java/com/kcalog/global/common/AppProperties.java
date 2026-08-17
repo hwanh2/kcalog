@@ -12,7 +12,14 @@ import java.util.List;
 @Validated
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(String frontendBaseUrl, @Valid Jwt jwt, RefreshToken refreshToken, Openai openai,
-                            Storage storage, Analysis analysis, Cors cors) {
+                            Storage storage, Analysis analysis, Cors cors, Feedback feedback) {
+
+    /**
+     * 의견 알림 — 받을 주소가 비어 있으면 발송하지 않는다(저장은 그대로).
+     * 로컬·테스트에서 SMTP를 갖추지 않아도 의견 보내기가 막히지 않게 하기 위한 기본값이다.
+     */
+    public record Feedback(String mailTo, String mailFrom) {
+    }
 
     /** 교차 출처 허용 설정 — 운영은 프론트 도메인 하나. 로컬은 Vite 프록시로 동일 출처라 비어 있어도 된다.
      *  와일드카드는 쓰지 않는다(자격증명 포함 요청과 함께 쓸 수 없고, 공개 서비스에서 쿠키를 아무 출처에나 열게 된다). */
