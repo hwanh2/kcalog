@@ -14,6 +14,12 @@ management:
       # 인증 없이 열려 있으므로 내부 구성(컴포넌트별 상태)은 감춘다. 전체 상태에는 DB 연결이 반영된다.
       show-details: never
       show-components: never
+  health:
+    mail:
+      # 메일 스타터를 넣으면 SMTP 연결이 헬스체크에 끼어든다. 메일은 **의견 알림에만** 쓰는
+      # 부수 기능이라, 메일 서버가 안 떠도 서비스는 정상이다. 켜두면 SMTP가 막히는 순간
+      # /actuator/health가 DOWN이 되어 감시·로드밸런서가 서비스 전체를 죽은 것으로 본다.
+      enabled: false
 
 spring:
   application:
@@ -31,6 +37,26 @@ spring:
 
   flyway:
     locations: classpath:db/migration
+
+  # SMTP — host가 비어 있으면 JavaMailSender 빈이 만들어지지 않고, 알림만 건너뛴다.
+  # Gmail은 일반 비밀번호로 로그인할 수 없다: 2단계 인증을 켜고 앱 비밀번호를 발급해 MAIL_PASSWORD에 넣는다.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          # 587 포트는 평문으로 열고 STARTTLS로 승격한다 — 이게 없으면 자격증명이 평문으로 나간다
+          starttls:
+            enable: true
+            required: true
+        # 메일 서버가 응답하지 않을 때 스레드가 무한정 묶이지 않게 (ms)
+        smtp.connectiontimeout: 5000
+        smtp.timeout: 5000
+        smtp.writetimeout: 5000
 
   security:
     oauth2:
@@ -74,6 +100,12 @@ app:
   analysis:
     # 개인 보정치를 분석 프롬프트에 주입할 최근 개수 상한 — 토큰·지연 방어(초과분 제외). 0이면 주입 없음.
     correction-inject-limit: ${ANALYSIS_CORRECTION_INJECT_LIMIT:50}
+  feedback:
+    # 의견이 도착하면 이 주소로 알린다. 비어 있으면 발송을 건너뛴다 — 저장은 그대로다.
+    # 로컬·테스트는 비워두는 것이 기본이다(SMTP 없이도 의견 보내기가 동작해야 한다).
+    mail-to: ${FEEDBACK_TO:}
+    # 보내는 주소. 비우면 SMTP 계정(spring.mail.username)을 쓴다 — Gmail은 계정과 다른 주소로 보낼 수 없다.
+    mail-from: ${FEEDBACK_FROM:}
   storage:
     # 사진 Object Storage — 로컬은 docker-compose MinIO 기본값으로 동작. 운영은 S3/R2 주입(application-prod.yml)
     bucket: ${STORAGE_BUCKET:kcalog-photos}

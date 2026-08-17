@@ -22,6 +22,8 @@ dependencies {
 	// 헬스체크 — 배포 파이프라인·리버스 프록시가 기동 성공을 판정하는 근거
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	// 의견 도착 알림 — SMTP 설정이 없으면 JavaMailSender 빈이 만들어지지 않고, 발송만 건너뛴다
+	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")

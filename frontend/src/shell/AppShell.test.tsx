@@ -95,6 +95,29 @@ describe('AppShell', () => {
     expect(screen.getByText('체중 화면')).toBeInTheDocument()
   })
 
+  it('탭을 누르면 진동을 시도한다 — 화면이 바뀌기 전에 닿았다는 답이 와야 한다', async () => {
+    const vibrate = vi.fn(() => true)
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
+    try {
+      const user = userEvent.setup()
+      renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
+
+      await user.click(screen.getByRole('link', { name: '음식기록' }))
+
+      expect(vibrate).toHaveBeenCalled()
+    } finally {
+      delete (navigator as { vibrate?: unknown }).vibrate
+    }
+  })
+
+  it('탭에 누름 반응이 붙어 있다 — 아이폰에서는 진동이 안 오므로 이것만 남는다', () => {
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
+
+    for (const name of ['홈', '음식기록', '체중', '리포트', 'AI PT']) {
+      expect(screen.getByRole('link', { name })).toHaveClass('press')
+    }
+  })
+
   it('카메라 FAB을 누르면 음식기록 탭으로 이동한다(촬영 자동 열기 신호와 함께)', async () => {
     const user = userEvent.setup()
     renderWithAuth(shellRoutes(), { state: completed, path: '/app/weight' })

@@ -6,6 +6,7 @@ import type { MemberResponse } from '../api/member'
 import { getTdee } from '../api/tdee'
 import { getWeightSummary } from '../api/weight'
 import { useAuth } from '../auth/useAuth'
+import { FeedbackSheet } from '../features/profile/FeedbackSheet'
 import { NutritionTargetCard } from '../features/profile/NutritionTargetCard'
 import { ProfileEditSheet } from '../features/profile/ProfileEditSheet'
 import { ProfileSummaryCard } from '../features/profile/ProfileSummaryCard'
@@ -36,6 +37,7 @@ function Profile({
   // 진입점 둘은 서로 다른 곳으로 간다 — 설정 메뉴는 편집, 영양 목표는 재계산 (design D3)
   const [editing, setEditing] = useState(false)
   const [recalculating, setRecalculating] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const today = todayServiceDate()
   const weights = useQuery({
@@ -73,7 +75,9 @@ function Profile({
 
       <nav aria-label="설정" className="overflow-hidden rounded-card border border-border bg-surface">
         <MenuItem label="프로필 편집" onClick={() => setEditing(true)} />
-        <MenuItem label="도움말 & 피드백" href="https://github.com/hwanh2/kcalog/issues" external />
+        {/* 깃허브 이슈로 내보내던 자리 — 불편을 말하려고 새 탭·로그인·이슈 양식을 지나야 했다.
+            "도움말"은 가리킬 내용이 아직 없어 함께 뗐다 — 없는 것을 가리키는 메뉴를 두지 않는다 */}
+        <MenuItem label="의견 보내기" onClick={() => setFeedbackOpen(true)} />
         <MenuItem label="앱 정보" value={`v${APP_VERSION}`} />
       </nav>
 
@@ -86,6 +90,8 @@ function Profile({
       {editing && (
         <ProfileEditSheet member={member} reloadMember={reloadMember} onClose={() => setEditing(false)} />
       )}
+
+      {feedbackOpen && <FeedbackSheet appVersion={APP_VERSION} onClose={() => setFeedbackOpen(false)} />}
 
       {/* 목표 칼로리는 auth의 member가 들고 있다 — 쿼리 무효화만으로는 이 화면이 안 바뀐다 */}
       {recalculating && (
