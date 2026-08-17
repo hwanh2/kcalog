@@ -1,8 +1,5 @@
 package com.kcalog.global.exception;
 
-import com.kcalog.domain.coaching.exception.DailyCoachChatLimitException;
-import com.kcalog.domain.feedback.exception.FeedbackRateLimitException;
-import com.kcalog.domain.meal.exception.DailyAnalysisLimitException;
 import com.kcalog.domain.meal.exception.MealAnalysisException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -43,18 +40,13 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    @ExceptionHandler(DailyAnalysisLimitException.class)
-    public ProblemDetail handleAnalysisLimit(DailyAnalysisLimitException e) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
-    }
-
-    @ExceptionHandler(DailyCoachChatLimitException.class)
-    public ProblemDetail handleCoachChatLimit(DailyCoachChatLimitException e) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
-    }
-
-    @ExceptionHandler(FeedbackRateLimitException.class)
-    public ProblemDetail handleFeedbackRateLimit(FeedbackRateLimitException e) {
+    /**
+     * 모든 호출 상한 초과 — 분석·코치 채팅·의견이 같은 상위를 쓴다.
+     * 상한 정책이 늘 때마다 똑같은 핸들러가 함께 늘던 것을 여기서 끊는다(PR #45 리뷰).
+     * 무엇이 걸렸는지는 각 예외가 담은 문구가 말한다.
+     */
+    @ExceptionHandler(RateLimitException.class)
+    public ProblemDetail handleRateLimit(RateLimitException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
     }
 

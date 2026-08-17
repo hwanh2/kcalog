@@ -134,6 +134,26 @@ class FeedbackMailNotifierTest {
         });
     }
 
+    /**
+     * 지금은 닉네임·이메일이 카카오 프로필에서 오고 앱에 고칠 경로가 없어 실제 악용 경로가 없다.
+     * 출처가 바뀌었을 때 이 자리를 다시 떠올리게 하려고 못 박아 둔다.
+     */
+    @Test
+    @DisplayName("이름에 줄바꿈이 섞여도 헤더가 갈라지지 않는다")
+    void sanitizesHeaders() {
+        JavaMailSender sender = mock(JavaMailSender.class);
+        List<SimpleMailMessage> sent = new ArrayList<>();
+        willAnswerCapture(sender, sent);
+        FeedbackSubmittedEvent injected = new FeedbackSubmittedEvent(
+                10L, 3L, "환희\r\nBcc: victim@example.com", "hwan@example.com", "안녕", "1.0.0", null,
+                Instant.parse("2026-08-17T01:00:00Z"));
+
+        new FeedbackMailNotifier(provider(sender), props("me@example.com", null)).onFeedbackSubmitted(injected);
+
+        assertThat(sent).singleElement().satisfies(message ->
+                assertThat(message.getSubject()).doesNotContain("\r").doesNotContain("\n"));
+    }
+
     @Test
     @DisplayName("보내는 주소를 지정하면 그대로 쓴다")
     void usesConfiguredFrom() {

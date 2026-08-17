@@ -43,7 +43,8 @@ public class FeedbackMailNotifier {
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final AppProperties properties;
 
-    @Async
+    // 실행기를 이름으로 못 박는다 — 이름 없는 @Async는 무엇을 쓸지가 빈 구성에 따라 조용히 바뀐다
+    @Async("mailExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onFeedbackSubmitted(FeedbackSubmittedEvent event) {
         String to = recipient();
@@ -73,14 +74,15 @@ public class FeedbackMailNotifier {
         if (from != null && !from.isBlank()) message.setFrom(from);
 
         // 제목에 보낸 사람을 넣는다 — 받은편지함에서 열어보기 전에 누구인지 읽힌다
-        message.setSubject("[kcalog] %s님의 의견 #%d".formatted(blankToDash(event.memberNickname()), event.id()));
+        message.setSubject("[kcalog] %s님의 의견 #%d".formatted(header(event.memberNickname()), event.id()));
 
         /*
             되물을 주소가 있으면 회신 대상으로 세운다. 메일에서 그대로 "답장"을 누르면 그 사람에게 간다 —
             주소를 본문에서 찾아 복사할 필요가 없다. 카카오가 이메일을 주지 않았으면 없을 수 있다.
         */
-        if (event.memberEmail() != null && !event.memberEmail().isBlank()) {
-            message.setReplyTo(event.memberEmail());
+        String replyTo = header(event.memberEmail());
+        if (!replyTo.isBlank() && !"-".equals(replyTo)) {
+            message.setReplyTo(replyTo);
         }
 
         message.setText("""
@@ -118,5 +120,16 @@ public class FeedbackMailNotifier {
 
     private static String blankToDash(String value) {
         return value == null || value.isBlank() ? "-" : value;
+    }
+
+    /**
+     * 메일 헤더(제목·회신 주소)에 넣을 값.
+     *
+     * <p>줄바꿈이 들어가면 그 뒤가 **새 헤더로 해석된다**(헤더 인젝션). 지금 두 값은 카카오
+     * 프로필에서 오고 앱에 고칠 경로가 없어 실제 악용 경로는 없지만, 출처가 바뀌면 그때
+     * 이 자리를 다시 떠올려야 한다 — 한 줄로 원천 차단해 둔다(PR #45 리뷰).
+     */
+    private static String header(String value) {
+        return blankToDash(value).replaceAll("[\\r\\n]", " ");
     }
 }
