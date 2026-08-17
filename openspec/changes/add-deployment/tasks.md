@@ -93,3 +93,9 @@
 - [x] 7.3 `.env.example` — `CORS_ALLOWED_ORIGINS`, 백업용 R2 항목 추가
 - [x] 7.4 AGENTS.md DB 규칙 — 배포 이후 마이그레이션 동결 명시
 - [x] 7.5 design.md에 구현 이탈 반영, `openspec validate add-deployment --strict` 통과
+
+## 8. 운영 DB 접속 (D9)
+
+- [x] 8.1 `compose.prod.yml` — DB 포트를 **루프백에만** 공개(`127.0.0.1:5432:5432`). 접두사 없이 열면 보안 그룹 규칙 하나가 유일한 방어선이 된다(VM 안 UFW는 도커가 지나쳐 버려 도움이 안 된다)
+- [ ] 8.2 👤 배포 후 실제 접속 확인 — SSH 터널로 붙어 테이블이 보이는지
+- [ ] 8.3 👤 외부에서 5432가 닫혀 있는지 확인 — `nc -vz <VM_IP> 5432`가 **실패해야** 정상
