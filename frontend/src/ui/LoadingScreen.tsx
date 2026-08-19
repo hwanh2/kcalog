@@ -16,7 +16,8 @@ export function LoadingScreen({ message }: { message: string }) {
           aria-hidden
           className="absolute inset-0 animate-spin rounded-full border-4 border-border border-t-brand"
         />
-        <AppMark className="h-10 w-auto" />
+        {/* 회전하는 링 한가운데 놓이므로 잉크 무게중심을 기준으로 맞춘다 (LoginPage와 같은 이유) */}
+        <AppMark className="h-10 w-auto -translate-x-[4.6%]" />
       </div>
       <p role="status" className="text-sm font-medium text-muted">
         {message}
