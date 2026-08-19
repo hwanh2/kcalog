@@ -62,6 +62,14 @@ public class Member extends BaseEntity {
 
     private Integer dailyKcalTarget;
 
+    /**
+     * 근육량 목표 여부 — 탄단지 목표의 비율을 가른다.
+     * goal은 체중이 어느 방향으로 갈지이고, 이 값은 그 체중을 근육으로 채우고 싶은지다.
+     * activityLevel도 아니다 — 이미 유지칼로리에 계수로 곱해져 있어 여기에 다시 쓰면 두 번 반영된다.
+     */
+    @Column(nullable = false)
+    private boolean muscleGoal;
+
     public static Member signUp(Provider provider, String providerId, String email, String nickname) {
         Member member = new Member();
         member.provider = provider;
@@ -73,7 +81,8 @@ public class Member extends BaseEntity {
 
     /** 온보딩 제출: 프로필과 목표 방향, 확정된 일일 칼로리 목표를 저장한다. 목표 체중은 선택(null 허용) */
     public void completeOnboarding(Gender gender, int birthYear, BigDecimal heightCm, ActivityLevel activityLevel,
-                                   Goal goal, BigDecimal targetWeightKg, int dailyKcalTarget) {
+                                   Goal goal, BigDecimal targetWeightKg, int dailyKcalTarget,
+                                   boolean muscleGoal) {
         this.gender = gender;
         this.birthYear = birthYear;
         this.heightCm = heightCm;
@@ -81,6 +90,7 @@ public class Member extends BaseEntity {
         this.goal = goal;
         this.targetWeightKg = targetWeightKg;
         this.dailyKcalTarget = dailyKcalTarget;
+        this.muscleGoal = muscleGoal;
     }
 
     /** 프로필 수정: null이 아닌 필드만 반영한다 */

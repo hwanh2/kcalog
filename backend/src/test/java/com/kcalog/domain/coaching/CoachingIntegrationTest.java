@@ -93,7 +93,7 @@ class CoachingIntegrationTest {
     void setUp() {
         member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-coach", "coach@kakao.com", "코치테스트"));
         member.completeOnboarding(Gender.MALE, 1996, new BigDecimal("175"),
-                ActivityLevel.MID, Goal.CUT, new BigDecimal("65"), 1900);
+                ActivityLevel.MID, Goal.CUT, new BigDecimal("65"), 1900, false);
         memberRepository.save(member);
         bearer = "Bearer " + jwtService.issueAccessToken(member.getId());
 
