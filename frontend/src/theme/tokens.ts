@@ -24,7 +24,7 @@ export const SURFACE = {
   fat: '#06b6d4',
   fatSoft: '#cffafe',
   successSoft: '#ecfdf5',
-  /* 코치 캐릭터(새싹) — 그림에만 쓰는 면이라 대비 기준의 대상이 아니다 */
+  /* 코치 캐릭터(새싹). 그림에만 쓰는 면이라 대비 기준의 대상이 아니다 */
   sprout: '#4fa84f',
   sproutLight: '#7fd07f',
   sproutDark: '#3d8c3d',

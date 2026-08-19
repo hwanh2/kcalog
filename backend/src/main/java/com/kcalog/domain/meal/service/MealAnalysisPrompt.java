@@ -37,6 +37,11 @@ final class MealAnalysisPrompt {
             overallConfidence는 설명의 구체성에 따른 추정 신뢰도(0~1)입니다 — 양이 명시되지 않았으면 낮게 잡습니다.
             """;
 
+    private static final String PHOTO_NOTE_LEAD =
+            "사용자 설명(사진에 보이지 않는 정보이니 추정에 반드시 반영하세요)";
+    private static final String TEXT_NOTE_LEAD =
+            "사용자가 설명한 식사입니다(추정에 반드시 반영하세요)";
+
     /** 구조화 출력 스키마 — strict json_schema. 항목 배열 + 섭취량 + (사진이 있을 때만) 위치 박스 */
     static Map<String, Object> responseFormat(boolean withBox) {
         Map<String, Object> box = Map.of(
@@ -99,29 +104,35 @@ final class MealAnalysisPrompt {
                 "이 사진 속 음식을 항목별로 나누어 각각의 섭취량·영양·위치를 추정해 주세요."));
         addIfPresent(userContent, personalHistory(corrections));
         addIfPresent(userContent, previousEstimate(previous));
-        addIfPresent(userContent, userNotes(notes));
+        addIfPresent(userContent, userNotes(notes, PHOTO_NOTE_LEAD));
         userContent.add(Map.of("type", "image_url", "image_url", Map.of("url", imageDataUrl)));
         return body(model, SYSTEM, userContent, true);
     }
 
-    /** 설명만 분석 — 사진이 없으므로 위치 박스를 요구하지 않는다 */
+    /**
+     * 설명만 분석. 사진이 없으므로 위치 박스를 요구하지 않는다.
+     * <p>
+     * 자료 순서는 사진 분석과 같다(개인 보정, 직전 추정, 사용자 설명). 예전에는 설명을 첫 지시문에
+     * 붙였는데, 그러면 직전 추정이 사용자의 최신 말보다 뒤에 놓여 재분석에서 앵커링이 뒤집힌다.
+     */
     static Map<String, Object> textRequestBody(String model, List<String> notes,
                                                List<PersonalCorrection> corrections, List<PreviousItem> previous) {
         var userContent = new ArrayList<Map<String, Object>>();
         userContent.add(Map.of("type", "text", "text",
-                "다음 식사 설명을 항목별로 나누어 각각의 섭취량·영양을 추정해 주세요.\n" + String.join("\n", notes)));
+                "다음 식사 설명을 항목별로 나누어 각각의 섭취량과 영양을 추정해 주세요."));
         addIfPresent(userContent, personalHistory(corrections));
         addIfPresent(userContent, previousEstimate(previous));
+        addIfPresent(userContent, userNotes(notes, TEXT_NOTE_LEAD));
         return body(model, SYSTEM_TEXT_ONLY, userContent, false);
     }
 
-    /** 직전 회차의 항목 하나 — 프롬프트에 넣을 값만 추린다(위치 박스와 내부 플래그는 뺀다) */
+    /** 직전 회차의 항목 하나. 프롬프트에 넣을 값만 추린다(위치 박스와 내부 플래그는 뺀다) */
     record PreviousItem(String name, String amount, int kcal, String carbG, String proteinG, String fatG) {
     }
 
     /**
      * 직전 추정. 저장된 JSON을 그대로 넣지 않고 항목별 한 줄로 푼다. 모델이 고쳐야 할 것은
-     * 이름·양·영양값이지 좌표가 아니다(design D3).
+     * 이름, 양, 영양값이지 좌표가 아니다(design D3).
      * <p>
      * "언급되지 않은 항목은 그대로 두세요"가 핵심이다. 이 문장이 없으면 밥 이야기를 했는데
      * 국의 값까지 바뀌어, 회차를 거듭할수록 손대지 않은 항목이 흔들린다.
@@ -158,18 +169,20 @@ final class MealAnalysisPrompt {
     }
 
     /**
-     * 사진에 보이지 않는 정보(조리법·섭취량·제외한 재료)를 사용자가 적은 설명.
-     * 재분석마다 덧붙은 것을 모두 넘긴다. 최신 것만 주면 모델이 흘린 지시가 영영 사라진다(design D2).
+     * 사용자가 적은 설명. 재분석마다 덧붙은 것을 모두 넘긴다.
+     * 최신 것만 주면 모델이 흘린 지시가 영영 사라진다(design D2).
+     * <p>
+     * 리드 문장을 인자로 받는 이유는 사진 유무에 따라 설명의 성격이 다르기 때문이다.
+     * 사진이 있으면 보이지 않는 것을 채우는 말이고, 없으면 그 설명이 곧 식사 자체다.
      */
-    private static String userNotes(List<String> notes) {
+    private static String userNotes(List<String> notes, String lead) {
         if (notes == null || notes.isEmpty()) {
             return "";
         }
         if (notes.size() == 1) {
-            return "사용자 설명(사진에 보이지 않는 정보이니 추정에 반드시 반영하세요): " + notes.getFirst();
+            return lead + ": " + notes.getFirst();
         }
-        StringBuilder sb = new StringBuilder(
-                "사용자 설명(사진에 보이지 않는 정보이니 추정에 반드시 반영하세요. 적은 순서대로입니다):\n");
+        StringBuilder sb = new StringBuilder(lead).append(". 적은 순서대로입니다:\n");
         for (String note : notes) {
             sb.append("- ").append(note).append('\n');
         }

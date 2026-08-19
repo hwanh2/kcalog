@@ -45,7 +45,7 @@ export function clearMessages(): Promise<void> {
   return api('/api/coach/messages', { method: 'DELETE' })
 }
 
-/** 지금 건넬 칭찬 한 건 — 없으면 praise가 null이다(204가 아니라 200으로 온다) */
+/** 지금 건넬 칭찬 한 건. 없으면 praise가 null이다(204가 아니라 200으로 온다) */
 export interface Praise {
   id: number
   kind: string

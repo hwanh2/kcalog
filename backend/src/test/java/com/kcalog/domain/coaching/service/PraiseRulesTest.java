@@ -17,7 +17,7 @@ class PraiseRulesTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 8, 19);
     private static final LocalDate YESTERDAY = TODAY.minusDays(1);
 
-    /** 연속 n일 — 판정일에서 거꾸로 채운다 */
+    /** 연속 n일. 판정일에서 거꾸로 채운다 */
     private static List<LocalDate> consecutiveDays(int n) {
         return IntStream.range(0, n).mapToObj(i -> TODAY.minusDays(n - 1L - i)).toList();
     }
@@ -78,21 +78,21 @@ class PraiseRulesTest {
         }
 
         @Test
-        @DisplayName("이틀 연속으로는 칭찬하지 않는다 — 첫 이정표는 사흘이다")
+        @DisplayName("이틀 연속으로는 칭찬하지 않는다, 첫 이정표는 사흘이다")
         void twoDays() {
             assertThat(keysOf(PraiseRules.detect(onlyMealDays(consecutiveDays(2)))))
                     .noneMatch(key -> key.startsWith("meal-streak"));
         }
 
         @Test
-        @DisplayName("나흘 연속이면 아직 사흘 이정표다 — 다음은 이레다")
+        @DisplayName("나흘 연속이면 아직 사흘 이정표다, 다음은 이레다")
         void fourDays() {
             assertThat(keysOf(PraiseRules.detect(onlyMealDays(consecutiveDays(4)))))
                     .contains("meal-streak:3");
         }
 
         @Test
-        @DisplayName("여드레 연속이면 이레 이정표 하나만 낸다 — 지난 것을 몰아주면 말풍선이 줄줄이 뜬다")
+        @DisplayName("여드레 연속이면 이레 이정표 하나만 낸다, 지난 것을 몰아주면 말풍선이 줄줄이 뜬다")
         void eightDaysGivesOnlyLatestMilestone() {
             List<String> keys = keysOf(PraiseRules.detect(onlyMealDays(consecutiveDays(8))));
 
@@ -159,7 +159,7 @@ class PraiseRulesTest {
         }
 
         @Test
-        @DisplayName("그날 먹은 기록이 없으면 칭찬하지 않는다 — 굶은 것은 목표 달성이 아니다")
+        @DisplayName("그날 먹은 기록이 없으면 칭찬하지 않는다, 굶은 것은 목표 달성이 아니다")
         void noIntake() {
             PraiseSignals s = signals(consecutiveDays(1), null, 2000, true, null, true, true);
 
@@ -227,7 +227,7 @@ class PraiseRulesTest {
         @Test
         @DisplayName("첫걸음, 연속 기록, 체중 추세, 하루 목표 순으로 정렬한다")
         void order() {
-            // 넷이 한꺼번에 잡히는 상황 — 첫 기록이면서 사흘 연속이고 어제 목표를 지켰고 추세도 내려갔다
+            // 넷이 한꺼번에 잡히는 상황. 첫 기록이면서 사흘 연속이고 어제 목표를 지켰고 추세도 내려갔다
             PraiseSignals s = new PraiseSignals(consecutiveDays(3), YESTERDAY, 1800, 2000, true, -0.4,
                     "2026-W34", true, true);
 
@@ -244,7 +244,7 @@ class PraiseRulesTest {
     class Facts {
 
         @Test
-        @DisplayName("사실과 폴백 문구를 함께 낸다 — 생성이 실패해도 할 말이 있어야 한다")
+        @DisplayName("사실과 폴백 문구를 함께 낸다, 생성이 실패해도 할 말이 있어야 한다")
         void factAndFallback() {
             PraiseCandidate streak = PraiseRules.detect(onlyMealDays(consecutiveDays(7))).stream()
                     .filter(candidate -> candidate.kind() == PraiseKind.MEAL_STREAK)

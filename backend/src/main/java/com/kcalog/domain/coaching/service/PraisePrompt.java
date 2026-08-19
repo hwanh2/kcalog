@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 칭찬 문구 요청 본문. 페르소나는 브리핑·채팅과 공유해 코치의 말투가 갈라지지 않게 한다(design D1).
+ * 칭찬 문구 요청 본문. 페르소나는 브리핑, 채팅과 공유해 코치의 말투가 갈라지지 않게 한다(design D1).
  * 사실은 규칙이 판정해 넘기고 LLM은 그것을 한 문장으로 옮기기만 한다.
  */
 final class PraisePrompt {

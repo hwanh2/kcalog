@@ -16,7 +16,7 @@ const TABS = [
   { to: '/app/ai-pt', label: 'AI PT', end: false, icon: SproutTabIcon },
 ] as const
 
-/** 인증·온보딩 완료 회원용 셸. 상단 헤더 + 하단 5탭 + 우하단 코치 FAB.
+/** 인증, 온보딩 완료 회원용 셸. 상단 헤더 + 하단 5탭 + 우하단 코치 FAB.
     코치는 음식기록 탭(기록 화면을 가린다)과 AI PT 탭(이미 그 화면이다)에서 숨긴다(design D12) */
 export function AppShell() {
   const { pathname } = useLocation()

@@ -17,6 +17,6 @@ CREATE TABLE praise (
     CONSTRAINT uq_praise_member_key UNIQUE (member_id, dedupe_key)
 );
 
--- 조회는 늘 "안 읽은 것"만 본다 — 읽은 것까지 담으면 인덱스가 계속 자란다
+-- 조회는 늘 "안 읽은 것"만 본다. 읽은 것까지 담으면 인덱스가 계속 자란다
 CREATE INDEX idx_praise_member_pending ON praise (member_id, created_at)
     WHERE dismissed_at IS NULL;

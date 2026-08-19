@@ -66,7 +66,7 @@ describe('코치 FAB', () => {
     expect(dismissPraiseMock.mock.calls[0][0]).toBe(7)
   })
 
-  it('본문을 누르면 AI PT로 가고 읽음 처리한다 — 닫기와는 다른 동작이다', async () => {
+  it('본문을 누르면 AI PT로 가고 읽음 처리한다, 닫기와는 다른 동작이다', async () => {
     const user = userEvent.setup()
     getPraiseMock.mockResolvedValue({
       praise: { id: 7, kind: 'MEAL_STREAK', message: '3일 연속이에요. 잘하고 있어요' },
@@ -81,7 +81,7 @@ describe('코치 FAB', () => {
     expect(dismissPraiseMock.mock.calls[0][0]).toBe(7)
   })
 
-  it('닫기가 실패해도 알리지 않는다 — 다음 조회에 다시 뜨는 것으로 충분하다', async () => {
+  it('닫기가 실패해도 알리지 않는다, 다음 조회에 다시 뜨는 것으로 충분하다', async () => {
     const user = userEvent.setup()
     dismissPraiseMock.mockRejectedValue(new Error('network'))
     getPraiseMock.mockResolvedValue({

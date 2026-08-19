@@ -38,7 +38,7 @@ class AnalysisJobReanalyzeTest {
     }
 
     @Test
-    @DisplayName("설명이 쌓인다 — 최초 설명이 맨 앞이고 덧붙인 순서대로 이어진다")
+    @DisplayName("설명이 쌓인다, 최초 설명이 맨 앞이고 덧붙인 순서대로 이어진다")
     void accumulatesNotes() {
         AnalysisJob job = completed("처음 설명");
 
@@ -60,7 +60,7 @@ class AnalysisJobReanalyzeTest {
     }
 
     @Test
-    @DisplayName("줄바꿈이 든 설명도 한 덩어리로 남는다 — 구분자로 이어 붙이면 쪼개진다")
+    @DisplayName("줄바꿈이 든 설명도 한 덩어리로 남는다, 구분자로 이어 붙이면 쪼개진다")
     void noteWithNewline() {
         AnalysisJob job = completed(null);
 

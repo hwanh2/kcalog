@@ -52,14 +52,14 @@ describe('AppShell', () => {
     expect(screen.queryByText(/\.ai/)).not.toBeInTheDocument()
   })
 
-  it('음식기록 탭에서는 코치를 숨긴다 — 고정 버튼이 기록 화면을 가린다', () => {
+  it('음식기록 탭에서는 코치를 숨긴다, 고정 버튼이 기록 화면을 가린다', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app/records' })
 
     expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'AI 코치' })).not.toBeInTheDocument()
   })
 
-  it('AI PT 탭에서도 코치를 숨긴다 — 이미 그 화면이다', () => {
+  it('AI PT 탭에서도 코치를 숨긴다, 이미 그 화면이다', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app/ai-pt' })
 
     expect(screen.getByText('AI PT 화면')).toBeInTheDocument()

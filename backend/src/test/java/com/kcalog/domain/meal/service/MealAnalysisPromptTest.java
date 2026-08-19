@@ -16,7 +16,7 @@ class MealAnalysisPromptTest {
             new MealAnalysisPrompt.PreviousItem("흰쌀밥", "210g", 300, "66", "5", "1"),
             new MealAnalysisPrompt.PreviousItem("김치찌개", "1인분", 400, "12", "20", "28"));
 
-    /** user 메시지의 텍스트 조각을 이어 붙인다 — 조각이 몇 개로 나뉘든 내용으로 검증한다 */
+    /** user 메시지의 텍스트 조각을 이어 붙인다. 조각이 몇 개로 나뉘든 내용으로 검증한다 */
     @SuppressWarnings("unchecked")
     private static String userText(Map<String, Object> body) {
         List<Map<String, Object>> messages = (List<Map<String, Object>>) body.get("messages");
@@ -41,7 +41,7 @@ class MealAnalysisPromptTest {
     }
 
     @Test
-    @DisplayName("언급되지 않은 항목은 그대로 두라고 지시한다 — 없으면 손대지 않은 항목이 흔들린다")
+    @DisplayName("언급되지 않은 항목은 그대로 두라고 지시한다, 없으면 손대지 않은 항목이 흔들린다")
     void tellsToKeepUnmentioned() {
         String text = userText(MealAnalysisPrompt.requestBody(
                 "model", "data:image/jpeg;base64,x", List.of("밥 양 더 줄었어"), List.of(), PREVIOUS));
@@ -61,7 +61,7 @@ class MealAnalysisPromptTest {
     }
 
     @Test
-    @DisplayName("설명이 사용자 설명 자리에 온다 — 직전 추정보다 뒤여야 방금 한 말이 이긴다")
+    @DisplayName("설명이 사용자 설명 자리에 온다, 직전 추정보다 뒤여야 방금 한 말이 이긴다")
     void notesComeAfterPreviousEstimate() {
         String text = userText(MealAnalysisPrompt.requestBody(
                 "model", "data:image/jpeg;base64,x", List.of("밥 양 더 줄었어"), List.of(), PREVIOUS));
@@ -96,5 +96,14 @@ class MealAnalysisPromptTest {
 
         assertThat(text).contains("직전 추정");
         assertThat(text).contains("밥은 반 공기");
+    }
+
+    @Test
+    @DisplayName("설명만 분석도 사진 분석과 같은 순서다 — 직전 추정이 사용자 설명보다 앞")
+    void textOnlyKeepsSameOrder() {
+        String text = userText(MealAnalysisPrompt.textRequestBody(
+                "model", List.of("밥은 반 공기"), List.of(), PREVIOUS));
+
+        assertThat(text.indexOf("직전 추정")).isLessThan(text.indexOf("밥은 반 공기"));
     }
 }

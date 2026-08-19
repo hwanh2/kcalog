@@ -78,7 +78,7 @@ public final class PraiseRules {
         return !lastDay.isBefore(judgedDay);
     }
 
-    /** 체중 추세 하락. 감량이 목표인 회원에게만. 유지·증량이 목표면 칭찬이 아니다(design D10) */
+    /** 체중 추세 하락. 감량이 목표인 회원에게만. 유지, 증량이 목표면 칭찬이 아니다(design D10) */
     private static void weightTrend(PraiseSignals s, List<PraiseCandidate> found) {
         if (!s.cut() || s.weightTrend7d() == null || s.weightTrend7d() >= 0) {
             return;

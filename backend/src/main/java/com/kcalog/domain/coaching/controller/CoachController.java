@@ -51,13 +51,13 @@ public class CoachController {
         return coachingService.chatStream(memberId, request.content());
     }
 
-    /** 지금 건넬 칭찬 한 건 — 없으면 praise가 null이다(design D15) */
+    /** 지금 건넬 칭찬 한 건. 없으면 praise가 null이다(design D15) */
     @GetMapping("/praise")
     public PraiseResponse praise(@LoginMemberId Long memberId) {
         return praiseService.current(memberId);
     }
 
-    /** 칭찬 읽음 처리 — 닫으면 다시 뜨지 않는다 */
+    /** 칭찬 읽음 처리. 닫으면 다시 뜨지 않는다 */
     @PostMapping("/praise/{praiseId}/dismiss")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void dismissPraise(@LoginMemberId Long memberId, @PathVariable Long praiseId) {

@@ -58,26 +58,19 @@ public class PraiseSignalsCollector {
         List<LocalDate> mealDays = new ArrayList<>(byDate.keySet()); // TreeMap이라 오름차순
         DailyNutrition judged = byDate.get(judgedDay);
 
+        // 최신 체중은 한 번만 읽는다. 감량 여부 판정과 첫 체중 기록 확인이 같은 값을 본다
+        WeightLog latest = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).orElse(null);
+
         return new PraiseSignals(
                 mealDays,
                 judgedDay,
                 judged == null ? null : judged.kcal(),
                 member.getDailyKcalTarget(),
-                isCut(member),
+                CoachingSignalsCollector.isCut(member, latest),
                 weightTrend(memberId, calendarToday),
                 isoWeek(calendarToday),
                 mealDailyIntake.earliestDate(memberId, zone) != null,
-                weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).isPresent());
-    }
-
-    /** 목표 체중이 최근 체중보다 낮으면 감량 목표. CoachingSignalsCollector와 같은 판단 */
-    private boolean isCut(Member member) {
-        if (member.getTargetWeightKg() == null) {
-            return false;
-        }
-        return weightLogRepository.findTopByMemberIdOrderByLogDateDesc(member.getId())
-                .map(latest -> member.getTargetWeightKg().doubleValue() < latest.getWeightKg().doubleValue())
-                .orElse(false);
+                latest != null);
     }
 
     private Double weightTrend(Long memberId, LocalDate calendarToday) {

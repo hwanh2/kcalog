@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** 칭찬 — 감지·중복 방지·읽음 처리·문구 생성 실패 폴백. OpenAI는 목킹. */
+/** 칭찬. 감지, 중복 방지, 읽음 처리, 문구 생성 실패 폴백. OpenAI는 목킹. */
 @IntegrationTest
 @Transactional
 class PraiseIntegrationTest {
@@ -82,7 +82,7 @@ class PraiseIntegrationTest {
                         new BigDecimal("30.0"), new BigDecimal("20.0")))));
     }
 
-    /** 연속 기록만 잡히게 한다 — 첫걸음은 이미 받은 것으로 미리 저장해 둔다 */
+    /** 연속 기록만 잡히게 한다. 첫걸음은 이미 받은 것으로 미리 저장해 둔다 */
     private void alreadyPraisedFirstSteps() {
         praiseRepository.save(Praise.of(member.getId(), PraiseKind.FIRST_MEAL, "first:meal", "첫 기록", "RULE"));
         praiseRepository.save(Praise.of(member.getId(), PraiseKind.FIRST_WEIGHT, "first:weight", "첫 체중", "RULE"));
@@ -132,7 +132,7 @@ class PraiseIntegrationTest {
         mockMvc.perform(post("/api/coach/praise/" + id + "/dismiss").header("Authorization", bearer))
                 .andExpect(status().isNoContent());
 
-        // 첫걸음을 닫았으니 남은 것은 없다 — 사흘을 채우지 않았고 어제 기록도 없다
+        // 첫걸음을 닫았으니 남은 것은 없다. 사흘을 채우지 않았고 어제 기록도 없다
         mockMvc.perform(get("/api/coach/praise").header("Authorization", bearer))
                 .andExpect(jsonPath("$.praise").doesNotExist());
     }

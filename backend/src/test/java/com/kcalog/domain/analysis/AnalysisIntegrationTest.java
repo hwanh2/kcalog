@@ -101,7 +101,7 @@ class AnalysisIntegrationTest {
         return com.jayway.jsonpath.JsonPath.parse(body).read("$.id", Long.class);
     }
 
-    /** 최초 설명을 붙여 작업을 만든다 — 재분석이 그 설명을 계속 들고 가는지 보려면 필요하다 */
+    /** 최초 설명을 붙여 작업을 만든다. 재분석이 그 설명을 계속 들고 가는지 보려면 필요하다 */
     private Long createJobWithNote(String note) throws Exception {
         String body = mockMvc.perform(multipart("/api/analyses").file(image())
                         .param("note", note).header("Authorization", bearer))
@@ -280,7 +280,7 @@ class AnalysisIntegrationTest {
         reanalyze(id, "밥도 적어", 202);
         awaitStatus(id, "COMPLETED");
 
-        // 마지막 호출 본문 — 직전 추정 항목과 설명 셋이 모두 들어 있어야 한다
+        // 마지막 호출 본문. 직전 추정 항목과 설명 셋이 모두 들어 있어야 한다
         String sent = lastRequestText();
         assertThat(sent).contains("직전 추정");
         assertThat(sent).contains("김치찌개");          // 직전 결과의 항목 이름

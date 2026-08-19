@@ -126,7 +126,7 @@ public class AnalysisJob extends BaseEntity {
         this.errorCode = null;
     }
 
-    /** 지금까지의 설명 전부 — 최초 설명이 맨 앞이고 덧붙인 순서대로 이어진다 */
+    /** 지금까지의 설명 전부. 최초 설명이 맨 앞이고 덧붙인 순서대로 이어진다 */
     public List<String> allNotes() {
         List<String> all = new ArrayList<>();
         if (note != null && !note.isBlank()) {
@@ -146,8 +146,19 @@ public class AnalysisJob extends BaseEntity {
         try {
             return NOTES_MAPPER.writeValueAsString(notes);
         } catch (JsonProcessingException e) {
-            // 쓰기가 실패해도 재분석 자체는 진행돼야 한다. 이번 설명만 남긴다
-            return null;
+            return onlyThisNote(added);
+        }
+    }
+
+    /**
+     * 전체를 쓰지 못했을 때 이번 설명만이라도 남긴다. null을 돌려주면 그동안 쌓인 설명이
+     * 통째로 날아가, 사용자가 앞서 한 말이 다음 회차에서 사라진다.
+     */
+    private String onlyThisNote(String added) {
+        try {
+            return NOTES_MAPPER.writeValueAsString(List.of(added));
+        } catch (JsonProcessingException fatal) {
+            return reanalysisNotes; // 이번 설명은 잃더라도 이미 쌓인 것은 지킨다
         }
     }
 
