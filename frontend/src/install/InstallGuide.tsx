@@ -33,11 +33,13 @@ export function InstallGuide({ state, onInstall }: Props) {
       <div className="mt-5 rounded-card bg-surface p-5 shadow-sm sm:p-6">
         {state === 'in-app' && (
           <div className="space-y-5">
-            <PointerFrame label="오른쪽 위 ⋯" position="right">
-              <BrowserChrome />
+            <PointerFrame label="화면 아래 오른쪽" position="right">
+              <InAppBar />
             </PointerFrame>
             <ol className="space-y-4">
-              <Step n="1" title="오른쪽 위 ⋯ 메뉴 열기">아래쪽에 있는 경우도 있습니다.</Step>
+              <Step n="1" title="화면 아래 공유 버튼 누르기">
+                맨 오른쪽에 있습니다. 안드로이드는 같은 자리의 ⋮ 메뉴입니다.
+              </Step>
               <Step n="2" title="‘다른 브라우저로 열기’ 선택">Safari나 Chrome을 고르면 됩니다.</Step>
               <Step n="3" title="이 페이지가 다시 열리면">기기에 맞는 설치 방법이 여기 나옵니다.</Step>
             </ol>
@@ -59,13 +61,21 @@ export function InstallGuide({ state, onInstall }: Props) {
 
         {state === 'ios' && (
           <div className="space-y-5">
-            <PointerFrame label="화면 아래 공유 버튼" position="center">
-              <SafariBar />
+            <PointerFrame label="주소창 오른쪽" position="right">
+              <SafariTopBar />
+            </PointerFrame>
+            <PointerFrame label="‘더 보기’" position="right">
+              <ShareSheetRow />
             </PointerFrame>
             <ol className="space-y-4">
-              <Step n="1" title="공유 버튼 누르기">화면 아래 가운데(아이패드는 위쪽)에 있습니다.</Step>
-              <Step n="2" title="‘홈 화면에 추가’ 선택">메뉴를 아래로 한참 내려야 나옵니다.</Step>
-              <Step n="3" title="오른쪽 위 ‘추가’">홈 화면에 칼로그 아이콘이 생깁니다.</Step>
+              <Step n="1" title="공유 버튼 누르기">
+                주소창 오른쪽에 있습니다. 설정에 따라 화면 아래 가운데인 기기도 있습니다.
+              </Step>
+              <Step n="2" title="‘더 보기’ 누르기">
+                아이콘 줄 맨 오른쪽입니다. ‘홈 화면에 추가’가 바로 보이면 건너뛰세요.
+              </Step>
+              <Step n="3" title="‘홈 화면에 추가’ 선택">목록을 아래로 내리면 나옵니다.</Step>
+              <Step n="4" title="오른쪽 위 ‘추가’">홈 화면에 칼로그 아이콘이 생깁니다.</Step>
             </ol>
           </div>
         )}
@@ -127,17 +137,60 @@ function PointerFrame({
   )
 }
 
-/** iOS 브라우저 하단 막대 — 가운데 공유 버튼을 강조한다 */
-function SafariBar() {
+/**
+ * iOS 브라우저 주소창 — 오른쪽 끝 공유 버튼을 강조한다.
+ *
+ * 하단 막대 가운데가 아니라 주소창 옆을 가리키는 이유: 지금 iOS 기본 배치가 이쪽이다.
+ * 하단 막대 배치도 설정으로 남아 있어 단계 설명에서 그쪽도 함께 알려준다.
+ */
+function SafariTopBar() {
+  return (
+    <div className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2 shadow-sm">
+      <span className="min-w-0 flex-1 truncate px-3 text-center text-xs text-muted">
+        kcalog.site
+      </span>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-ink ring-2 ring-brand">
+        <ShareIcon />
+      </span>
+    </div>
+  )
+}
+
+/**
+ * 공유 시트의 동작 아이콘 줄 — ‘더 보기’를 강조한다.
+ *
+ * 여기가 실제로 막히는 자리다. 시트에 ‘홈 화면에 추가’가 보이지 않아 되돌아 나가는데,
+ * 목록은 ‘더 보기’ 안에 접혀 있다.
+ */
+function ShareSheetRow() {
+  return (
+    <div className="flex items-end justify-around rounded-xl bg-surface px-2 py-3 shadow-sm">
+      {['복사', '기기로', '읽기 목록'].map((label) => (
+        <span key={label} className="flex flex-col items-center gap-1">
+          <span className="h-9 w-9 rounded-full bg-track" aria-hidden="true" />
+          <span className="text-[10px] text-muted">{label}</span>
+        </span>
+      ))}
+      <span className="flex flex-col items-center gap-1">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-brand-ink ring-2 ring-brand">
+          <ChevronDownIcon />
+        </span>
+        <span className="text-[10px] font-bold text-brand-ink">더 보기</span>
+      </span>
+    </div>
+  )
+}
+
+/** 인앱 브라우저 하단 막대 — 맨 오른쪽 공유 버튼을 강조한다(안드로이드는 같은 자리가 ⋮ 메뉴다) */
+function InAppBar() {
   return (
     <div className="flex items-center justify-between rounded-xl bg-surface px-3 py-2 shadow-sm">
       <BarIcon>‹</BarIcon>
       <BarIcon>›</BarIcon>
+      <BarIcon>↻</BarIcon>
       <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand-ink ring-2 ring-brand">
         <ShareIcon />
       </span>
-      <BarIcon>▤</BarIcon>
-      <BarIcon>⧉</BarIcon>
     </div>
   )
 }
@@ -194,6 +247,14 @@ function ShareIcon() {
       <path d="M12 3v12" />
       <path d="M8 7l4-4 4 4" />
       <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9l6 6 6-6" />
     </svg>
   )
 }

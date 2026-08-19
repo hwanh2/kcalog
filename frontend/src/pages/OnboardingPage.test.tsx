@@ -294,8 +294,10 @@ describe('OnboardingPage 위저드', () => {
     await findResult()
 
     // 이 앱에서 가장 중요한 한 가지. 매일 기록해야 추정값이 내 몸의 값으로 바뀐다
-    expect(screen.getByText('매일 기록해야 정확해져요')).toBeInTheDocument()
+    expect(screen.getByText('2주 뒤엔 내 몸에서 나온 숫자로 바뀌어요')).toBeInTheDocument()
     expect(screen.getByText(/실제로 먹은 양과 체중 변화/)).toBeInTheDocument()
+    // 이 대비가 빠지면 "다들 하는 그 계산"으로 읽힌다
+    expect(screen.getByText(/대부분의 칼로리 앱은 이 추정값을 끝까지 써요/)).toBeInTheDocument()
 
     expect(screen.getByText(/200~300kcal만 더 빼면/)).toBeInTheDocument()
     // 탄수 4kcal/g, 지방 9kcal/g → 20g과 9g이 맞바꿔진다
