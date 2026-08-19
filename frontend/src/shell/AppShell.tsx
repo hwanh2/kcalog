@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { CoachFab } from '../features/coach/CoachFab'
+import { TutorialOverlay } from '../features/tutorial/TutorialOverlay'
 import { tapHaptic } from '../lib/haptics'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import { AppMark } from '../ui/AppMark'
@@ -124,6 +125,9 @@ export function AppShell() {
           )
         })}
       </nav>
+
+      {/* 셸에 둔다. 홈과 음식기록이 같은 Outlet이라 스텝 6에서 화면을 옮겨도 살아 있다 (add-app-tutorial design D7) */}
+      <TutorialOverlay />
     </div>
   )
 }

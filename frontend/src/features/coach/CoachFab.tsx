@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation } from 'react-router'
 import { dismissPraise, getPraise } from '../../api/coach'
+import { TUTORIAL_IDS } from '../tutorial/steps'
 import { CloseIcon } from '../../ui/icons'
 import { SproutIcon } from './SproutIcon'
 
@@ -79,6 +80,7 @@ export function CoachFab() {
       {/* 테두리를 두지 않는다. 화분의 오렌지와 겹쳐 링이 하나 더 있는 것처럼 보였다.
           띄우는 일은 그림자가 맡고, 선이 없어진 만큼 그림을 키운다 */}
       <Link
+        id={TUTORIAL_IDS.coach}
         to="/app/ai-pt"
         aria-label="AI 코치"
         className="press flex h-14 w-14 items-center justify-center rounded-full bg-surface shadow-xl touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2"

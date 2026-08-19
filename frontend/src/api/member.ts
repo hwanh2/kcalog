@@ -20,6 +20,8 @@ export interface MemberResponse {
   /** 근육량 목표 여부. 탄단지 비율을 가른다 */
   muscleGoal: boolean
   onboardingCompleted: boolean
+  /** 앱 둘러보기 안내를 봤는지. 건너뛴 경우도 참이다 */
+  tutorialCompleted: boolean
 }
 
 export interface OnboardingRequest {
@@ -75,4 +77,14 @@ export function completeOnboarding(request: OnboardingRequest): Promise<MemberRe
 
 export function updateMember(request: UpdateMemberRequest): Promise<MemberResponse> {
   return api('/api/members/me', { method: 'PATCH', body: JSON.stringify(request) })
+}
+
+/** 앱 둘러보기를 끝냈거나 건너뛰었다 */
+export function completeTutorial(): Promise<MemberResponse> {
+  return api('/api/members/me/tutorial', { method: 'POST' })
+}
+
+/** 프로필의 다시 보기. 완료 기록을 지우면 홈에서 처음부터 다시 뜬다 */
+export function restartTutorial(): Promise<MemberResponse> {
+  return api('/api/members/me/tutorial', { method: 'DELETE' })
 }

@@ -187,6 +187,34 @@ html {
   animation: drop-in 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* 앱 둘러보기. 비추는 자리만 남기고 나머지를 덮는다.
+   구멍을 뚫는 대신 화면보다 큰 그림자를 두른다(add-app-tutorial design D1).
+
+   자리 이동을 transform으로 할 수 없다. 그림자 구멍이 맞으려면 크기가 실제로 달라져야 해서
+   top, left, width, height를 직접 옮긴다. 짧게 두고, 위 전역 블록이 reduced-motion에서 끈다. */
+.tutorial-spotlight {
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.72);
+  transition:
+    top 200ms ease-out,
+    left 200ms ease-out,
+    width 200ms ease-out,
+    height 200ms ease-out;
+}
+
+/* 스텝이 바뀔 때 말풍선의 **글자만** 갈아끼운다.
+   말풍선 전체에 걸면 안 된다. 다시 재생하려면 key로 노드를 갈아야 하는데, 그러면
+   포커스를 가두고 있는 노드가 통째로 사라지고 누르고 있던 버튼도 함께 사라진다. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.tutorial-copy {
+  animation: rise-in 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* 누름 반응 — 모바일에는 hover가 없어 누른 순간 아무 반응이 없었다.
 
    움직임을 줄여달라는 설정에서는 **크기 대신 밝기**로 답한다. 아래 전역 블록은 전환 시간만

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getDashboard } from '../api/dashboard'
 import { getReport } from '../api/report'
+import { restartTutorial } from '../api/member'
 import type { MemberResponse } from '../api/member'
 import { getTdee } from '../api/tdee'
 import { getWeightSummary } from '../api/weight'
@@ -78,6 +79,19 @@ function Profile({
         {/* 깃허브 이슈로 내보내던 자리 — 불편을 말하려고 새 탭·로그인·이슈 양식을 지나야 했다.
             "도움말"은 가리킬 내용이 아직 없어 함께 뗐다 — 없는 것을 가리키는 메뉴를 두지 않는다 */}
         <MenuItem label="의견 보내기" onClick={() => setFeedbackOpen(true)} />
+        {/*
+          건너뛰기를 마음 편히 누르려면 되돌릴 길이 있어야 한다.
+          완료 기록만 지운다. 홈으로 옮기는 일은 오버레이가 스텝의 경로를 보고 알아서 한다.
+        */}
+        <MenuItem
+          label="튜토리얼 다시 보기"
+          onClick={() => {
+            void (async () => {
+              await restartTutorial()
+              await reloadMember()
+            })()
+          }}
+        />
         <MenuItem label="앱 정보" value={`v${APP_VERSION}`} />
       </nav>
 
