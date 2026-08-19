@@ -13,6 +13,7 @@ import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.entity.Provider;
 import com.kcalog.domain.member.repository.MemberRepository;
+import com.kcalog.domain.weight.repository.WeightLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,6 +42,8 @@ class DashboardIntegrationTest {
     @Autowired
     MealRepository mealRepository;
     @Autowired
+    WeightLogRepository weightLogRepository;
+    @Autowired
     JwtService jwtService;
 
     Member member;
@@ -54,7 +58,7 @@ class DashboardIntegrationTest {
     void setUp() {
         member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-dash", "d@kakao.com", "대시"));
         member.completeOnboarding(Gender.MALE, 1995, new BigDecimal("175.0"), ActivityLevel.MID,
-                Goal.MAINTAIN, new BigDecimal("70.0"), 2000);
+                Goal.MAINTAIN, new BigDecimal("70.0"), 2000, false);
         memberRepository.save(member);
         bearer = "Bearer " + jwtService.issueAccessToken(member.getId());
     }
@@ -77,14 +81,49 @@ class DashboardIntegrationTest {
                 .andExpect(jsonPath("$.carbG").value(115.0))
                 .andExpect(jsonPath("$.dailyKcalTarget").value(2000))
                 .andExpect(jsonPath("$.remainingKcal").value(1000))
-                // 탄단지 목표 = 2000kcal의 50/30/20 → 탄 250 / 단 150 / 지 44 (design D3)
-                .andExpect(jsonPath("$.carbTargetG").value(250))
-                .andExpect(jsonPath("$.proteinTargetG").value(150))
-                .andExpect(jsonPath("$.fatTargetG").value(44))
+                // 체중 기록이 없는 회원이라 단백질 범위를 적용할 수 없다. 비율만 쓴다 (design D7)
+                // 2000kcal, 근육량 OFF → 단 2000×0.2/4=100, 지 2000×0.25/9=55.6→56, 탄 나머지 1096/4=274
+                .andExpect(jsonPath("$.carbTargetG").value(274))
+                .andExpect(jsonPath("$.proteinTargetG").value(100))
+                .andExpect(jsonPath("$.fatTargetG").value(56))
                 .andExpect(jsonPath("$.timeline.length()").value(2))
                 .andExpect(jsonPath("$.timeline[0].mealType").value("BREAKFAST")) // 시각 오름차순
                 .andExpect(jsonPath("$.timeline[1].mealType").value("LUNCH"))
                 .andExpect(jsonPath("$.timeline[0].totalKcal").value(350));
+    }
+
+    /**
+     * 대시보드가 weight_log를 실제로 읽는지 본다(design D8). 이 배선이 빠지면 체중을 알면서도
+     * 범위가 적용되지 않아 단백질이 비율값 그대로 나간다. 이번 change가 고치려던 그 상태다.
+     */
+    @Test
+    @DisplayName("체중이 있으면 단백질을 체중으로 자른다. 상한(체중×2.0)")
+    void clampsProteinWithWeight() throws Exception {
+        weightLogRepository.upsert(member.getId(), LocalDate.parse(DATE), new BigDecimal("70.0"));
+        member.completeOnboarding(Gender.MALE, 1995, new BigDecimal("175.0"), ActivityLevel.MID,
+                Goal.MAINTAIN, new BigDecimal("70.0"), 2000, true);
+        memberRepository.save(member);
+
+        mockMvc.perform(get("/api/dashboard").param("date", DATE).header("Authorization", bearer))
+                .andExpect(status().isOk())
+                // 근육량 ON → 단 2000×0.3/4=150인데 상한 70×2.0=140에 걸린다.
+                // 잘린 40kcal은 탄수로 가고 지방은 그대로 (design D6)
+                .andExpect(jsonPath("$.proteinTargetG").value(140))
+                .andExpect(jsonPath("$.fatTargetG").value(56))
+                .andExpect(jsonPath("$.carbTargetG").value(234));
+    }
+
+    @Test
+    @DisplayName("체중이 있으면 단백질을 체중으로 자른다. 하한(체중×1.2)")
+    void raisesProteinToLowerBound() throws Exception {
+        weightLogRepository.upsert(member.getId(), LocalDate.parse(DATE), new BigDecimal("90.0"));
+
+        mockMvc.perform(get("/api/dashboard").param("date", DATE).header("Authorization", bearer))
+                .andExpect(status().isOk())
+                // 근육량 OFF → 단 100(1.11 g/kg)인데 하한 90×1.2=108로 올라간다. 모자란 칼로리는 탄수에서 뺀다
+                .andExpect(jsonPath("$.proteinTargetG").value(108))
+                .andExpect(jsonPath("$.fatTargetG").value(56))
+                .andExpect(jsonPath("$.carbTargetG").value(266));
     }
 
     @Test

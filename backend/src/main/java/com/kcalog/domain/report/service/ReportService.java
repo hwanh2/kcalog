@@ -58,7 +58,10 @@ public class ReportService {
         Range range = resolveRange(period, a, memberId, zone);
         int rangeDays = (int) ChronoUnit.DAYS.between(range.start(), range.end()) + 1;
         Integer target = member.getDailyKcalTarget();
-        MacroTargetG macro = MacroTargetG.from(target);
+        // 단백질 목표를 체중으로 자르려면 최근 체중이 필요하다. 아래 cut 판정과 같은 값을 쓴다
+        WeightLog latest = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).orElse(null);
+        MacroTargetG macro = MacroTargetG.from(target,
+                latest == null ? null : latest.getWeightKg(), member.isMuscleGoal());
 
         Map<LocalDate, DailyNutrition> byDate = mealDailyIntake.byDate(memberId, range.start(), range.end(), zone);
         List<DailyNutrition> days = new ArrayList<>(byDate.values());
@@ -71,7 +74,6 @@ public class ReportService {
         BigDecimal avgFat = mean(days, DailyNutrition::fatG, daysLogged);
         int[] pct = ReportCalc.percent(avgCarb.doubleValue(), avgProtein.doubleValue(), avgFat.doubleValue());
 
-        WeightLog latest = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).orElse(null);
         boolean cut = latest != null && member.getTargetWeightKg() != null
                 && member.getTargetWeightKg().compareTo(latest.getWeightKg()) < 0;
         Integer onTargetDays = (target != null && daysLogged > 0)

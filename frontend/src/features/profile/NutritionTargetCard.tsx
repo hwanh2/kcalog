@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { Card } from '../../ui/form'
+import { InfoIcon } from '../../ui/icons'
+import { MacroGuideSheet } from '../dashboard/MacroGuideSheet'
 
 /**
  * 영양 목표 — 유지 칼로리(TDEE)와 목표 섭취를 나란히 두고 차이를 보여준다.
- * 탄단지 목표(g)는 서버가 칼로리 목표에서 파생해 내려준 값을 그대로 쓴다(프론트에 비율 상수를 복제하지 않는다).
+ * 탄단지 목표(g)는 서버가 칼로리 목표, 체중, 근육량 목표에서 파생해 내려준 값을 그대로 쓴다
+ * (프론트에 비율 상수를 복제하지 않는다).
  */
 export function NutritionTargetCard({
   maintenanceKcal,
@@ -19,6 +23,7 @@ export function NutritionTargetCard({
   fatTargetG: number | null
   onRecalc: () => void
 }) {
+  const [guideOpen, setGuideOpen] = useState(false)
   const diff = maintenanceKcal !== null && targetKcal !== null ? targetKcal - maintenanceKcal : null
   const macros = [
     { label: '탄수화물', grams: carbTargetG, bar: 'bg-carb' },
@@ -65,7 +70,18 @@ export function NutritionTargetCard({
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-xs font-semibold text-ink">탄단지 목표</p>
-        <p className="text-[11px] font-medium text-muted">g 단위</p>
+        <div className="flex items-center gap-1">
+          <p className="text-[11px] font-medium text-muted">g 단위</p>
+          {/* 상시 노출하지 않고 누른 사람에게만 보여준다 (design D9) */}
+          <button
+            type="button"
+            aria-label="탄단지 목표 안내 열기"
+            onClick={() => setGuideOpen(true)}
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+          >
+            <InfoIcon />
+          </button>
+        </div>
       </div>
       <ul className="mt-2 space-y-2.5">
         {macros.map((macro) => (
@@ -81,6 +97,8 @@ export function NutritionTargetCard({
           </li>
         ))}
       </ul>
+
+      {guideOpen && <MacroGuideSheet onClose={() => setGuideOpen(false)} />}
     </Card>
   )
 }

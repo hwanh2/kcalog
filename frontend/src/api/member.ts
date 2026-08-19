@@ -17,6 +17,8 @@ export interface MemberResponse {
   targetWeightKg: number | null
   dailyKcalTarget: number | null
   latestWeightKg: number | null
+  /** 근육량 목표 여부. 탄단지 비율을 가른다 */
+  muscleGoal: boolean
   onboardingCompleted: boolean
 }
 
@@ -30,6 +32,7 @@ export interface OnboardingRequest {
   /** 선택 — 감량·증량을 고른 경우에만 입력 */
   targetWeightKg?: number
   dailyKcalTarget: number
+  muscleGoal: boolean
 }
 
 /** 제안 칼로리 입력 — 온보딩 요청에서 확정 목표·목표 체중을 뺀 것(계산은 방향으로 한다) */
