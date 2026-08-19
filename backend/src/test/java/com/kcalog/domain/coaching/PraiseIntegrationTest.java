@@ -69,7 +69,7 @@ class PraiseIntegrationTest {
     void setUp() {
         member = memberRepository.save(Member.signUp(Provider.KAKAO, "kakao-praise", "praise@kakao.com", "칭찬"));
         member.completeOnboarding(Gender.MALE, 1996, new BigDecimal("175"),
-                ActivityLevel.MID, Goal.CUT, new BigDecimal("65"), 1900);
+                ActivityLevel.MID, Goal.CUT, new BigDecimal("65"), 1900, false);
         memberRepository.save(member);
         bearer = "Bearer " + jwtService.issueAccessToken(member.getId());
         when(openAiClient.complete(any())).thenReturn("3일 연속이에요. 잘하고 있어요");
