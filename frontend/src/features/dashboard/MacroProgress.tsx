@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { MacroGuideSheet } from './MacroGuideSheet'
+import { InfoIcon } from '../../ui/icons'
 import { ProgressBar } from '../../ui/ProgressBar'
 
 /** 탄단지 달성도 — 매크로별 섭취 g / 목표 g·달성률·진행 바.
@@ -19,6 +22,7 @@ export function MacroProgress({
   proteinTargetG: number | null
   fatTargetG: number | null
 }) {
+  const [guideOpen, setGuideOpen] = useState(false)
   const rows: Row[] = [
     { label: '탄수화물', intake: carbG, target: carbTargetG, barClass: 'bg-carb' },
     { label: '단백질', intake: proteinG, target: proteinTargetG, barClass: 'bg-protein' },
@@ -27,10 +31,25 @@ export function MacroProgress({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-extrabold">오늘의 탄·단·지 달성도</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-extrabold">오늘의 탄·단·지 달성도</h2>
+        {/*
+          목표를 매일 마주하는 자리다. "탄수가 왜 이렇게 많지", "고기를 이만큼 먹어야 하나"가
+          생기는 곳도 여기다. 문구를 상시로 깔면 잔소리가 되므로 (i)로만 둔다 (design D9).
+        */}
+        <button
+          type="button"
+          aria-label="탄단지 목표 안내 열기"
+          onClick={() => setGuideOpen(true)}
+          className="-my-2 -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+        >
+          <InfoIcon />
+        </button>
+      </div>
       {rows.map((row) => (
         <MacroRow key={row.label} {...row} />
       ))}
+      {guideOpen && <MacroGuideSheet onClose={() => setGuideOpen(false)} />}
     </div>
   )
 }

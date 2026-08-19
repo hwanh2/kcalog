@@ -7,6 +7,7 @@ import { getDashboard } from '../api/dashboard'
 import { getMeals } from '../api/meal'
 import type { Meal } from '../api/meal'
 import { getWeights } from '../api/weight'
+import { CalorieGuideSheet } from '../features/dashboard/CalorieGuideSheet'
 import { CalorieRing } from '../features/dashboard/CalorieRing'
 import { MacroProgress } from '../features/dashboard/MacroProgress'
 import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
@@ -14,7 +15,7 @@ import { MEAL_TYPE_LABELS, defaultMealType, sortByMealOrder } from '../features/
 import { addDays, todayServiceDate } from '../lib/date'
 import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
-import { UtensilsIcon } from '../ui/icons'
+import { InfoIcon, UtensilsIcon } from '../ui/icons'
 
 /** 홈(오늘) — 날짜 이동 + 칼로리 링·탄단지 달성도·체중 미니카드·오늘 식사 목록·촬영 유도 (v2 목업 기준) */
 export function HomePage() {
@@ -42,7 +43,17 @@ export function HomePage() {
         )}
 
         {dashboard.data && (
-          <Card>
+          <Card className="relative">
+            {/*
+              카드 전체가 리포트로 가는 길이다. 링크로 **감싸지** 않고 면만 덮는다 , 
+              <a> 안에 (i) 버튼을 넣으면 중첩 인터랙티브라 HTML 규칙에 어긋나고,
+              버튼을 눌러도 클릭이 링크로 새어 올라간다. 형제로 두면 그럴 일이 없다.
+            */}
+            <Link
+              to="/app/report"
+              aria-label="리포트 보기"
+              className="absolute inset-0 rounded-card focus-visible:ring-2 focus-visible:ring-brand-ink"
+            />
             <CoachHeader withCoaching={date === today} />
             <div className="mt-3">
               <CalorieRing
@@ -168,15 +179,35 @@ function CoachCard() {
 function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
   const { data: briefing } = useQuery({ queryKey: ['coachBriefing'], queryFn: getBriefing })
   const headline = withCoaching && briefing?.hasData ? briefing.headline : ''
+  const [guideOpen, setGuideOpen] = useState(false)
   return (
-    <div className="flex items-center justify-between">
+    /* items-start. 코칭 한 줄이 붙어 두 줄이 되어도 (i)는 첫 줄에 머문다.
+       달성도 카드의 (i)와 카드 위쪽에서 같은 높이로 맞춘다 */
+    <div className="flex items-start justify-between">
       <div className="min-w-0">
-        <p className="text-sm font-bold text-ink">오늘의 칼로리</p>
+        {/* 카드를 누르면 리포트로 간다는 것을 알리는 표시. 화살표가 없으면 누를 수 있는지 모른다 */}
+        <p className="flex items-center gap-0.5 text-sm font-bold text-ink">
+          오늘의 칼로리
+          <span aria-hidden className="text-muted">
+            ›
+          </span>
+        </p>
         {headline && <p className="truncate text-xs font-medium text-success">{headline}</p>}
       </div>
-      <Link to="/app/report" className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-brand-ink">
-        리포트 <span aria-hidden>›</span>
-      </Link>
+      {/*
+        목표 숫자만 보면 "앱이 정해준 값"으로 읽힌다. 유지칼로리라는 기준선이 있고
+        목표는 거기서 얼마나 뺄지 더할지를 정한 결과라는 것을 여기서 알린다 (design D12).
+        z-10. 카드를 덮은 리포트 링크보다 위에 있어야 눌린다.
+      */}
+      <button
+        type="button"
+        aria-label="유지칼로리 안내 열기"
+        onClick={() => setGuideOpen(true)}
+        className="relative z-10 -my-2 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+      >
+        <InfoIcon />
+      </button>
+      {guideOpen && <CalorieGuideSheet onClose={() => setGuideOpen(false)} />}
     </div>
   )
 }

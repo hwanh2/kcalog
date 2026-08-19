@@ -4,11 +4,17 @@ server:
   forward-headers-strategy: framework
 
 management:
+  server:
+    # actuator를 애플리케이션과 다른 포트로 분리한다. Traefik은 8080만 라우팅하므로
+    # 지표(prometheus)는 도메인으로 닿지 않고, 8081은 보안 그룹으로 감시 서버만 허용한다.
+    # health만 예외적으로 Traefik 라우터를 따로 두어 공개한다. 배포 확인이 그 경로로
+    # 앱 기동과 TLS, 라우팅을 함께 검증하기 때문이다 (add-observability D4).
+    port: 8081
   endpoints:
     web:
       exposure:
-        # health만 노출 — env·configprops 등이 열리면 시크릿이 새어나간다
-        include: health
+        # health와 prometheus만 연다. env, configprops 등이 열리면 시크릿이 새어나간다
+        include: health,prometheus
   endpoint:
     health:
       # 인증 없이 열려 있으므로 내부 구성(컴포넌트별 상태)은 감춘다. 전체 상태에는 DB 연결이 반영된다.

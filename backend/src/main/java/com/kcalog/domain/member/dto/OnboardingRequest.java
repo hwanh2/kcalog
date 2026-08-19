@@ -29,6 +29,13 @@ public record OnboardingRequest(
         @NotNull ActivityLevel activityLevel,
         @NotNull Goal goal,
         // 제안값을 사용자가 수정해 확정한 최종 목표
-        @NotNull @Min(DAILY_KCAL_MIN) @Max(DAILY_KCAL_MAX) Integer dailyKcalTarget
+        @NotNull @Min(DAILY_KCAL_MIN) @Max(DAILY_KCAL_MAX) Integer dailyKcalTarget,
+        // 탄단지 비율을 가른다. 화면 토글의 기본값이 false라 누락은 false로 읽는다. @NotNull을 걸지 않는다.
+        // primitive가 아니라 Boolean인 이유: 이 필드를 모르는 구버전 앱(PWA 캐시)이 보낸 요청을
+        // 400으로 막지 않기 위해서다. Jackson은 누락된 primitive를 null로 보고 거절한다.
+        Boolean muscleGoal
 ) {
+    public boolean muscleGoalOrDefault() {
+        return Boolean.TRUE.equals(muscleGoal);
+    }
 }

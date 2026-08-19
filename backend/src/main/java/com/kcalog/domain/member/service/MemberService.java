@@ -40,7 +40,8 @@ public class MemberService {
         validateBirthYear(request.birthYear());
         Member member = findMember(memberId);
         member.completeOnboarding(request.gender(), request.birthYear(), request.heightCm(),
-                request.activityLevel(), request.goal(), request.targetWeightKg(), request.dailyKcalTarget());
+                request.activityLevel(), request.goal(), request.targetWeightKg(), request.dailyKcalTarget(),
+                request.muscleGoalOrDefault());
 
         // 현재 체중은 member가 아니라 weight_log가 소유 (design D5).
         // 동시 제출 경합에서도 안전하도록 DB의 ON CONFLICT 원자 upsert를 쓴다 (read-then-write 금지)
@@ -55,7 +56,8 @@ public class MemberService {
         double maintenance = dailyKcalCalculator.maintenance(request.gender(), request.birthYear(),
                 request.heightCm(), request.weightKg(), request.activityLevel());
         int target = dailyKcalCalculator.toTarget(maintenance, request.gender(), request.goal());
-        return KcalSuggestionResponse.of(maintenance, target);
+        return KcalSuggestionResponse.of(maintenance, target, request.weightKg(),
+                request.muscleGoalOrDefault());
     }
 
     /** 미래 출생연도 차단 — 나이가 음수가 되면 칼로리 계산이 왜곡된다 (온보딩·제안 공용) */

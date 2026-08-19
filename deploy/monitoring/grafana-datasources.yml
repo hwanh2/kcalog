@@ -1,0 +1,17 @@
+# 데이터소스를 파일로 넣는다. 화면에서 손으로 등록하면 그 설정이 이 VM에만 남아,
+# 서버를 다시 세울 때 사라진다 (D11).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
