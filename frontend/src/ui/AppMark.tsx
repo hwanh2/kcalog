@@ -8,7 +8,27 @@
  *
  * 장식이므로 대체 텍스트를 비운다 — 옆에 "칼로그"가 글자로 함께 있는 자리에 쓴다.
  * 마크만 홀로 놓는 자리에서는 호출측이 `alt`를 준다.
+ *
+ * `onDark` — 어두운 면(랜딩 히어로, 푸터) 위에서는 k만 흰색인 그림을 쓴다.
+ * 기본 마크의 k는 slate-800이라 그런 면에서는 링만 뜨고 가운데가 비어 보인다.
+ *
+ * 가로가 세로보다 길다(317×256). 왼쪽 잔상 때문이다. 호출측은 높이만 정하고
+ * 폭은 `w-auto`로 둔다 — 정사각으로 묶으면 그림이 눌린다.
  */
-export function AppMark({ className = '', alt = '' }: { className?: string; alt?: string }) {
-  return <img src="/kcalog-mark-v2.png" alt={alt} className={className} />
+export function AppMark({
+  className = '',
+  alt = '',
+  onDark = false,
+}: {
+  className?: string
+  alt?: string
+  onDark?: boolean
+}) {
+  return (
+    <img
+      src={onDark ? '/kcalog-mark-on-dark-v2.png' : '/kcalog-mark-v2.png'}
+      alt={alt}
+      className={className}
+    />
+  )
 }

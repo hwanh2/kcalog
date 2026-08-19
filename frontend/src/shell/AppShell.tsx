@@ -56,7 +56,7 @@ export function AppShell() {
       {!isRecords && (
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <AppMark className="h-8 w-8" />
+            <AppMark className="h-8 w-auto" />
             {/* 서비스명 한 줄만 — 부제는 모든 화면 맨 위를 상시로 차지해 본문을 밀어냈다(app-shell 스펙) */}
             <p className="text-base font-extrabold leading-none tracking-tight">칼로그</p>
           </div>
