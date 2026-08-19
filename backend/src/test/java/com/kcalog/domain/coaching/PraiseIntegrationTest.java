@@ -17,6 +17,7 @@ import com.kcalog.domain.member.entity.Goal;
 import com.kcalog.domain.member.entity.Member;
 import com.kcalog.domain.member.entity.Provider;
 import com.kcalog.domain.member.repository.MemberRepository;
+import com.kcalog.global.common.ServiceDay;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -59,6 +61,10 @@ class PraiseIntegrationTest {
     @Autowired
     JwtService jwtService;
 
+    /** 감지가 보는 "오늘"의 단일 출처. 달력 날짜로 심으면 00~05시에 하루가 어긋난다 */
+    @Autowired
+    Clock clock;
+
     @MockitoBean
     OpenAiClient openAiClient;
 
@@ -73,6 +79,14 @@ class PraiseIntegrationTest {
         memberRepository.save(member);
         bearer = "Bearer " + jwtService.issueAccessToken(member.getId());
         when(openAiClient.complete(any())).thenReturn("3일 연속이에요. 잘하고 있어요");
+    }
+
+    /**
+     * 감지가 보는 "오늘". 하루는 05시에 바뀌므로(ServiceDay) 00~05시에는 달력 날짜와 하루 다르다.
+     * 달력 날짜로 식사를 심으면 그 시간대에 연속 일수가 하루 어긋나 칭찬이 나오지 않는다.
+     */
+    private LocalDate serviceToday() {
+        return ServiceDay.today(clock);
     }
 
     private void mealOn(LocalDate date, int kcal) {
@@ -101,7 +115,7 @@ class PraiseIntegrationTest {
     @Test
     @DisplayName("첫 식사 기록을 남기면 첫걸음을 칭찬한다")
     void firstMeal() throws Exception {
-        mealOn(LocalDate.now(KST), 1500);
+        mealOn(serviceToday(), 1500);
 
         mockMvc.perform(get("/api/coach/praise").header("Authorization", bearer))
                 .andExpect(status().isOk())
@@ -112,7 +126,7 @@ class PraiseIntegrationTest {
     @DisplayName("사흘 연속 기록하면 연속 칭찬이 나온다")
     void mealStreak() throws Exception {
         alreadyPraisedFirstSteps();
-        LocalDate today = LocalDate.now(KST);
+        LocalDate today = serviceToday();
         for (int i = 0; i < 3; i++) {
             mealOn(today.minusDays(i), 1500);
         }
@@ -126,7 +140,7 @@ class PraiseIntegrationTest {
     @Test
     @DisplayName("닫으면 다시 나오지 않는다")
     void dismissed() throws Exception {
-        mealOn(LocalDate.now(KST), 1500);
+        mealOn(serviceToday(), 1500);
         String id = praiseId();
 
         mockMvc.perform(post("/api/coach/praise/" + id + "/dismiss").header("Authorization", bearer))
@@ -141,7 +155,7 @@ class PraiseIntegrationTest {
     @DisplayName("같은 이정표에 다시 도달해도 칭찬하지 않는다")
     void sameMilestoneAgain() throws Exception {
         alreadyPraisedFirstSteps();
-        LocalDate today = LocalDate.now(KST);
+        LocalDate today = serviceToday();
         for (int i = 0; i < 3; i++) {
             mealOn(today.minusDays(i), 1500);
         }
@@ -160,7 +174,7 @@ class PraiseIntegrationTest {
     @DisplayName("문구 생성이 실패해도 규칙 문구로 칭찬하고, 다시 조회할 때 생성을 되풀이하지 않는다")
     void fallbackWhenGenerationFails() throws Exception {
         when(openAiClient.complete(any())).thenThrow(new IllegalStateException("boom"));
-        mealOn(LocalDate.now(KST), 1500);
+        mealOn(serviceToday(), 1500);
 
         mockMvc.perform(get("/api/coach/praise").header("Authorization", bearer))
                 .andExpect(jsonPath("$.praise.message").value("첫 기록이에요. 잘 오셨어요"));
@@ -179,7 +193,7 @@ class PraiseIntegrationTest {
     @Test
     @DisplayName("안 읽은 칭찬이 있으면 감지가 돌지 않는다")
     void pendingSkipsDetection() throws Exception {
-        mealOn(LocalDate.now(KST), 1500);
+        mealOn(serviceToday(), 1500);
         mockMvc.perform(get("/api/coach/praise").header("Authorization", bearer))
                 .andExpect(status().isOk());
 
