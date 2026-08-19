@@ -15,6 +15,7 @@ export function WizardShell({
   onNext,
   nextLabel = '다음',
   nextDisabled = false,
+  showSteps = true,
   children,
 }: {
   step: number
@@ -25,6 +26,8 @@ export function WizardShell({
   onNext: () => void
   nextLabel?: string
   nextDisabled?: boolean
+  /** 몇 번째 단계인지 감춘다 — 마지막 화면은 더 물을 것이 없어 진행 표시가 할 말이 없다 */
+  showSteps?: boolean
   children: ReactNode
 }) {
   return (
@@ -44,35 +47,49 @@ export function WizardShell({
           // 가입 직후 처음 만나는 화면이라, 어느 앱의 질문인지 여기서 한 번 더 말해준다
           <AppMark className="h-9 w-auto" alt="칼로그" />
         )}
-        <span className="text-sm text-muted">
-          {step} / {total}
-        </span>
+        {showSteps && (
+          <span className="text-sm text-muted">
+            {step} / {total}
+          </span>
+        )}
       </div>
 
       <div className="mt-5">
-        <p className="text-xs font-bold text-brand-ink">STEP {step}</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">{title}</h1>
+        {showSteps && <p className="text-xs font-bold text-brand-ink">STEP {step}</p>}
+        <h1 className={`text-2xl font-bold text-ink ${showSteps ? 'mt-1' : ''}`}>{title}</h1>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
 
       <div className="mt-6 flex-1">{children}</div>
 
-      <div className="mt-6">
+      {/*
+        하단은 화면에 붙인다 — 마지막 단계의 설명이 길어지면서 '시작하기'가 스크롤 아래로
+        밀려났다. 설명을 접거나 (i)로 숨기는 대신 버튼을 항상 손 닿는 곳에 둔다.
+        sticky는 일반 흐름에서 자리를 차지하므로 본문 마지막 줄을 가리지 않는다.
+      */}
+      <div className="sticky bottom-0 -mx-5 mt-6 bg-canvas px-5 pb-[env(safe-area-inset-bottom)] pt-3">
+        {/* 내용이 버튼 뒤로 딱 잘려 사라지지 않게 — 위로 갈수록 투명해지는 띠를 한 겹 얹는다 */}
         <div
-          className="mb-3 flex gap-1.5"
-          role="progressbar"
-          aria-valuenow={step}
-          aria-valuemin={1}
-          aria-valuemax={total}
-          aria-label="온보딩 진행"
-        >
-          {Array.from({ length: total }, (_, i) => (
-            <span
-              key={i}
-              className={`h-1.5 flex-1 rounded-full ${i < step ? 'bg-brand' : 'bg-border'}`}
-            />
-          ))}
-        </div>
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-8 h-8 bg-gradient-to-t from-canvas to-transparent"
+        />
+        {showSteps && (
+          <div
+            className="mb-3 flex gap-1.5"
+            role="progressbar"
+            aria-valuenow={step}
+            aria-valuemin={1}
+            aria-valuemax={total}
+            aria-label="온보딩 진행"
+          >
+            {Array.from({ length: total }, (_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 flex-1 rounded-full ${i < step ? 'bg-brand' : 'bg-border'}`}
+              />
+            ))}
+          </div>
+        )}
         <button
           type="button"
           onClick={onNext}
@@ -141,17 +158,23 @@ export function OptionCard({
 }
 
 /**
- * 슬라이더 + 직접 입력 — 큰 숫자 자체가 입력칸이라 정밀 입력도 가능하다.
+ * 스테퍼 + 직접 입력 — 양쪽 버튼으로 한 칸씩 옮기고, 큰 숫자를 눌러 바로 칠 수도 있다.
+ *
+ * 슬라이더를 걷어낸 자리다. 드래그는 손가락으로 1cm를 맞추기 어려웠고, 화면 폭이 좁을수록
+ * 한 픽셀이 여러 칸을 건너뛰었다. 버튼은 눌린 만큼만 움직인다.
+ *
  * 입력칸을 비운 상태를 허용해야 지우고 다시 칠 수 있어, 표시 문자열을 따로 들고 있다가
  * 숫자로 읽히는 동안만 부모에 올린다(부모는 항상 마지막 유효 숫자를 갖는다).
+ * 초점을 잃을 때 비어 있으면 마지막 값으로 되돌린다 — 빈 칸으로 다음 단계에 가지 않게.
  */
-export function SliderField({
+export function StepperField({
   label,
   unit,
   value,
   min,
   max,
   step = 1,
+  inputMode = 'numeric',
   onChange,
 }: {
   label: string
@@ -160,11 +183,15 @@ export function SliderField({
   min: number
   max: number
   step?: number
+  inputMode?: 'numeric' | 'decimal'
   onChange: (v: number) => void
 }) {
   const [raw, setRaw] = useState(String(value))
-  // 슬라이더 등 밖에서 값이 바뀌면 표시도 따라간다
+  // 버튼 등 밖에서 값이 바뀌면 표시도 따라간다
   useEffect(() => setRaw(String(value)), [value])
+
+  /* 버튼은 범위를 넘지 않는다. 직접 입력은 막지 않는다 — 범위 검증은 '다음'에서 문구와 함께 알린다 */
+  const nudge = (delta: number) => onChange(Math.min(max, Math.max(min, value + delta)))
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">
@@ -172,30 +199,53 @@ export function SliderField({
         <span className="text-sm text-muted">{label}</span>
         <span className="text-xs text-muted">{unit}</span>
       </div>
-      <input
-        type="number"
-        aria-label={label}
-        value={raw}
-        min={min}
-        max={max}
-        step={step}
-        onChange={(e) => {
-          setRaw(e.target.value)
-          const parsed = Number(e.target.value)
-          if (e.target.value !== '' && Number.isFinite(parsed)) onChange(parsed)
-        }}
-        className="mt-1 w-full rounded bg-transparent text-4xl font-black text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
-      />
-      <input
-        type="range"
-        aria-label={`${label} 슬라이더`}
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 w-full accent-brand"
-      />
+      <div className="mt-1 flex items-center gap-2">
+        <StepButton label={`${label} 줄이기`} disabled={value <= min} onClick={() => nudge(-step)}>
+          −
+        </StepButton>
+        {/* min-w-0 — flex-1만 주면 긴 값이 버튼을 밀어낸다 */}
+        <input
+          type="text"
+          inputMode={inputMode}
+          aria-label={label}
+          value={raw}
+          onChange={(e) => {
+            setRaw(e.target.value)
+            const parsed = Number(e.target.value)
+            if (e.target.value !== '' && Number.isFinite(parsed)) onChange(parsed)
+          }}
+          onBlur={() => setRaw(String(value))}
+          className="min-w-0 flex-1 rounded bg-transparent text-center text-4xl font-black tabular-nums text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
+        />
+        <StepButton label={`${label} 늘리기`} disabled={value >= max} onClick={() => nudge(step)}>
+          +
+        </StepButton>
+      </div>
     </div>
+  )
+}
+
+/** 44px 탭 대상 — 아이콘 대신 글자를 쓰므로 크기를 키우고 굵게 해서 눌리는 것처럼 보이게 한다 */
+function StepButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string
+  disabled: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-track text-xl font-bold text-ink touch-manipulation disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-brand-ink"
+    >
+      {children}
+    </button>
   )
 }

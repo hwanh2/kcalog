@@ -1,4 +1,5 @@
 import type { ActivityLevel, Goal, MemberResponse } from '../../api/member'
+import { ageFromBirthYear } from '../../lib/age'
 
 const GOAL_LABELS: Record<Goal, string> = { CUT: '감량', MAINTAIN: '유지', BULK: '증량' }
 const ACTIVITY_SHORT: Record<ActivityLevel, string> = {
@@ -65,7 +66,7 @@ export function ProfileSummaryCard({
 /** 만 나이가 아닌 연도 차이 — 생년만 받으므로 정확한 만 나이는 낼 수 없다 */
 function ageOf(birthYear: number | null): string {
   if (birthYear === null) return '-'
-  return `${new Date().getFullYear() - birthYear}세`
+  return `${ageFromBirthYear(birthYear)}세`
 }
 
 function PersonIcon() {

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDashboard } from '../api/dashboard'
@@ -98,6 +99,51 @@ describe('HomePage 대시보드', () => {
     // 탄 115/250 = 46%
     expect(screen.getByText(/115g/)).toBeInTheDocument()
     expect(screen.getByText(/\/ 250g \(46%\)/)).toBeInTheDocument()
+  })
+
+  /*
+    목표 숫자만 보면 "앱이 정해준 값"으로 읽힌다 — 기준선인 유지칼로리와 조절 폭을 여기서 알린다.
+    숫자가 본문에 있으므로 문구가 아니라 **표의 값**을 확인한다 (design D12).
+  */
+  it('칼로리 헤더의 안내는 유지칼로리 기준선과 조절 폭을 보여준다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('오늘의 칼로리')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '유지칼로리 안내 열기' }))
+
+    const guide = await screen.findByRole('dialog', { name: '유지칼로리 안내' })
+    expect(within(guide).getByText(/유지칼로리를 알아야/)).toBeInTheDocument()
+    // 증량은 감량과 대칭이 아니다 — 이 문단이 빠지면 같은 숫자로 오해한다
+    expect(within(guide).getByText('늘릴 때는 더 천천히')).toBeInTheDocument()
+
+    /* 숫자는 단위가 <span>으로 쪼개져 있어 노드 단위로 잡히지 않는다 — 시트 전체 글에서 확인한다.
+       하루 −500 → 한 달 −2.0kg, −300 → −1.2kg (체지방 1kg ≈ 7700kcal) */
+    const text = guide.textContent ?? ''
+    expect(text).toContain('−500')
+    expect(text).toContain('−2.0')
+    expect(text).toContain('−300')
+    expect(text).toContain('−1.2')
+  })
+
+  /*
+    목표를 매일 마주하는 자리다 — 오해도 여기서 생긴다. 다만 문구를 상시로 깔면 잔소리가 되므로
+    (i)를 눌렀을 때만 열려야 한다 (design D9).
+  */
+  it('달성도 옆 안내는 눌러야 열린다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('오늘의 탄·단·지 달성도')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '탄단지 목표 안내 열기' }))
+
+    const guide = await screen.findByRole('dialog', { name: '탄단지 목표 안내' })
+    expect(within(guide).getByText(/일부를 지방으로 바꿔/)).toBeInTheDocument()
+    expect(within(guide).getByText(/모두 포함/)).toBeInTheDocument()
   })
 
   it('목표 초과 — "목표 초과"와 절대값 표시', async () => {
@@ -209,7 +255,7 @@ describe('HomePage 대시보드', () => {
     expect(await screen.findByText(/대시보드를 불러오지 못했어요/)).toBeInTheDocument()
   })
 
-  it('오늘의 칼로리 헤더 — 코칭 한 줄과 리포트 링크', async () => {
+  it('오늘의 칼로리 헤더 — 코칭 한 줄과 카드 전체 리포트 링크', async () => {
     vi.mocked(getBriefing).mockResolvedValue({
       hasData: true,
       headline: '감량 페이스 순조로움',
@@ -222,7 +268,21 @@ describe('HomePage 대시보드', () => {
 
     expect(await screen.findByText('오늘의 칼로리')).toBeInTheDocument()
     expect(await screen.findByText('감량 페이스 순조로움')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /리포트/ })).toHaveAttribute('href', '/app/report')
+    expect(screen.getByRole('link', { name: '리포트 보기' })).toHaveAttribute('href', '/app/report')
+  })
+
+  /*
+    카드 전체가 링크라 (i)를 링크 안에 넣으면 눌러도 리포트로 새어 나간다.
+    링크를 형제로 깔고 버튼을 z-10으로 올린 이유가 이것이다 — 눌러서 시트가 뜨는지로 확인한다.
+  */
+  it('카드가 링크여도 (i)를 누르면 리포트로 새지 않고 안내가 열린다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('오늘의 칼로리')
+    await user.click(screen.getByRole('button', { name: '유지칼로리 안내 열기' }))
+
+    expect(await screen.findByRole('dialog', { name: '유지칼로리 안내' })).toBeInTheDocument()
   })
 
   it('상단 인사말 — 시간대 인사 + 성 뗀 이름 + 님', async () => {

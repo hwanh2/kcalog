@@ -31,6 +31,17 @@ export function CheckIcon({ size = 14 }: { size?: number }) {
   )
 }
 
+/** 안내 열기 — 숫자를 어떻게 읽어야 하는지 설명하는 (i) 버튼 */
+export function InfoIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </svg>
+  )
+}
+
 /** 즐겨찾기 */
 export function StarIcon() {
   return (

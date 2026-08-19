@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -234,7 +234,8 @@ describe('ProfilePage — 나이·성별 편집', () => {
     await openEditSheet(user)
 
     expect(screen.getByLabelText('성별')).toHaveValue('MALE')
-    const age = new Date().getFullYear() - 1990
+    // 화면은 세는나이 — 1990년생이면 올해가 2026년일 때 37세 (lib/age)
+    const age = new Date().getFullYear() - 1990 + 1
     expect(screen.getByLabelText(`출생연도 (${age}세)`)).toHaveValue('1990')
   })
 
@@ -402,5 +403,19 @@ describe('ProfilePage — 설정', () => {
     await user.click(screen.getByRole('button', { name: '로그아웃' }))
 
     expect(signOut).toHaveBeenCalled()
+  })
+})
+
+describe('ProfilePage — 탄단지 안내', () => {
+  it('안내는 눌러야 열린다 — 매일 보는 화면에 상시 노출하지 않는다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(await screen.findByRole('button', { name: '탄단지 목표 안내 열기' }))
+
+    const guide = await screen.findByRole('dialog', { name: '탄단지 목표 안내' })
+    expect(within(guide).getByText(/일부를 지방으로 바꿔/)).toBeInTheDocument()
   })
 })
