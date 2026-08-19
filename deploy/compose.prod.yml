@@ -65,6 +65,7 @@ services:
       - traefik.http.routers.api.rule=Host(`api.kcalog.site`)
       - traefik.http.routers.api.entrypoints=websecure
       - traefik.http.routers.api.tls.certresolver=le
+      - traefik.http.routers.api.service=api
       # 컨테이너 내부 포트. 호스트에 열지 않으므로 Traefik만 이 포트로 접근한다.
       - traefik.http.services.api.loadbalancer.server.port=8080
       # 헬스체크만 관리 포트로 공개 라우팅한다. actuator 전체가 8081로 옮겨갔는데
