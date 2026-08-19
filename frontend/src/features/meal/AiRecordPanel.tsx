@@ -3,6 +3,7 @@ import { createAnalysis } from '../../api/analysis'
 import type { Analysis } from '../../api/analysis'
 import { ApiError } from '../../api/client'
 import type { MealType } from '../../api/meal'
+import { TUTORIAL_IDS } from '../tutorial/steps'
 import { Button } from '../../ui/form'
 import { CameraIcon, CloseIcon, NoteIcon } from '../../ui/icons'
 import { AnalysisResultSheet } from './AnalysisResultSheet'
@@ -103,8 +104,11 @@ export function AiRecordPanel({
 
   return (
     <>
-      {/* 사진은 선택 입력이지만 이 앱의 주된 길이라 넓게 편다 */}
-      <label className="relative block cursor-pointer rounded-2xl bg-track px-4 py-8 text-center">
+      {/* 사진은 선택 입력이지만 이 앱의 주된 길이라 넓게 편다. id는 앱 둘러보기가 비출 자리다 */}
+      <label
+        id={TUTORIAL_IDS.photo}
+        className="relative block cursor-pointer rounded-2xl bg-track px-4 py-8 text-center"
+      >
         {photoUrl ? (
           <>
             {/* 고정 높이(PHOTO_PREVIEW_CLASS) — max-h로 두면 사진 비율에 따라 높이가 달라져
@@ -175,20 +179,23 @@ export function AiRecordPanel({
         )}
       </label>
 
-      <label htmlFor="ai-note" className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-ink">
-        <span className="text-brand-ink">
-          <NoteIcon />
-        </span>
-        무엇을 드셨나요? <span className="font-normal text-muted">(사진 없이 설명만으로도 돼요)</span>
-      </label>
-      <textarea
-        id="ai-note"
-        rows={2}
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="예: 김밥 한 줄이랑 라면 반 개"
-        className="mt-1 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-ink outline-none focus-visible:border-brand-ink focus-visible:ring-2 focus-visible:ring-brand-ink/40"
-      />
+      {/* 라벨과 입력을 함께 감싼다. 앱 둘러보기가 둘을 한 덩어리로 비춘다 */}
+      <div id={TUTORIAL_IDS.note} className="mt-4">
+        <label htmlFor="ai-note" className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+          <span className="text-brand-ink">
+            <NoteIcon />
+          </span>
+          무엇을 드셨나요? <span className="font-normal text-muted">(사진 없이 설명만으로도 돼요)</span>
+        </label>
+        <textarea
+          id="ai-note"
+          rows={2}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="예: 김밥 한 줄이랑 라면 반 개"
+          className="mt-1 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-ink outline-none focus-visible:border-brand-ink focus-visible:ring-2 focus-visible:ring-brand-ink/40"
+        />
+      </div>
 
       {/* 이 안내는 전부 실패 경로(분석 실패·429·음식 미검출)다 — 놓치면 안 되므로 alert로 알린다 */}
       {notice && (

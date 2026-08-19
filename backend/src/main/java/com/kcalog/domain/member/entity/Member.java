@@ -70,6 +70,13 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private boolean muscleGoal;
 
+    /**
+     * 앱 둘러보기 안내를 봤는지. 건너뛴 경우도 참이다 (add-app-tutorial design D12).
+     * onboardingCompleted처럼 파생시킬 수 없어 컬럼으로 둔다.
+     */
+    @Column(nullable = false)
+    private boolean tutorialCompleted;
+
     public static Member signUp(Provider provider, String providerId, String email, String nickname) {
         Member member = new Member();
         member.provider = provider;
@@ -117,6 +124,16 @@ public class Member extends BaseEntity {
         if (dailyKcalTarget != null) {
             this.dailyKcalTarget = dailyKcalTarget;
         }
+    }
+
+    /** 안내를 끝까지 봤거나 건너뛰었다 */
+    public void completeTutorial() {
+        this.tutorialCompleted = true;
+    }
+
+    /** 프로필의 다시 보기 */
+    public void restartTutorial() {
+        this.tutorialCompleted = false;
     }
 
     /** 온보딩 완료 판정 = 일일 칼로리 목표 확정 여부 (design D4) */

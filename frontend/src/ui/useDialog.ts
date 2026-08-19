@@ -27,6 +27,12 @@ function focusableIn(root: HTMLElement): HTMLElement[] {
 const stack: symbol[] = []
 /** 첫 다이얼로그가 열리기 전 body의 overflow — 마지막이 닫힐 때 이 값으로 되돌린다 */
 let savedOverflow = ''
+/**
+ * 스크롤을 **잠근** 다이얼로그의 수. `stack.length`로 세면 안 된다 —
+ * 잠그지 않는 다이얼로그(튜토리얼)가 먼저 열려 있으면 그 위에 뜬 시트가 자기가 첫 번째가
+ * 아니라고 판단해 아예 잠그지 않는다.
+ */
+let lockCount = 0
 
 /**
  * 모달 다이얼로그의 키보드·스크롤 규약을 한 곳에 모은다.
@@ -38,8 +44,11 @@ let savedOverflow = ''
  * - 열려 있는 동안 뒤 배경 스크롤을 잠근다(중첩돼도 마지막 하나가 닫힐 때만 푼다)
  *
  * 라이브러리를 쓰지 않는 이유는 design.md D5 — 구조가 단순해 의존성 비용이 더 크다.
+ *
+ * lockScroll을 끄는 곳은 튜토리얼 오버레이 하나다. 잠그면 화면 밖에 있는 안내 대상을
+ * 스크롤로 데려올 수 없다(add-app-tutorial design D4). 나머지 규약은 그대로 쓴다.
  */
-export function useDialog(onClose: () => void) {
+export function useDialog(onClose: () => void, { lockScroll = true }: { lockScroll?: boolean } = {}) {
   const ref = useRef<HTMLDivElement>(null)
   // 최신 onClose를 참조해, 콜백이 매 렌더 바뀌어도 리스너를 다시 붙이지 않는다
   const closeRef = useRef(onClose)
@@ -95,20 +104,26 @@ export function useDialog(onClose: () => void) {
     document.addEventListener('keydown', onKeyDown)
     // 스크롤 잠금은 **처음 열린 다이얼로그만** 걸고 마지막이 닫힐 때 푼다.
     // 각자 걸었다 풀면 cleanup 순서에 결과가 좌우된다(중첩 시 안쪽이 먼저 풀어버릴 수 있다).
-    if (stack.length === 1) {
-      savedOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
+    if (lockScroll) {
+      if (lockCount === 0) {
+        savedOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+      }
+      lockCount += 1
     }
 
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       const at = stack.lastIndexOf(id)
       if (at !== -1) stack.splice(at, 1)
-      if (stack.length === 0) document.body.style.overflow = savedOverflow
+      if (lockScroll) {
+        lockCount -= 1
+        if (lockCount === 0) document.body.style.overflow = savedOverflow
+      }
       // 시트를 연 버튼이 아직 화면에 있으면 그리로 돌려준다
       if (restoreTo && document.contains(restoreTo)) restoreTo.focus()
     }
-  }, [])
+  }, [lockScroll])
 
   return ref
 }

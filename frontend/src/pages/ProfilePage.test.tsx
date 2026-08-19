@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDashboard } from '../api/dashboard'
-import { getKcalSuggestion, updateMember } from '../api/member'
+import { getKcalSuggestion, restartTutorial, updateMember } from '../api/member'
 import type { MemberResponse } from '../api/member'
 import { getReport } from '../api/report'
 import { getTdee } from '../api/tdee'
@@ -16,6 +16,7 @@ import { ProfilePage } from './ProfilePage'
 vi.mock('../api/member', () => ({
   getKcalSuggestion: vi.fn(),
   updateMember: vi.fn(),
+  restartTutorial: vi.fn().mockResolvedValue({}),
 }))
 vi.mock('../api/weight', () => ({ getWeightSummary: vi.fn() }))
 vi.mock('../api/tdee', () => ({ getTdee: vi.fn() }))
@@ -403,6 +404,18 @@ describe('ProfilePage — 설정', () => {
     await user.click(screen.getByRole('button', { name: '로그아웃' }))
 
     expect(signOut).toHaveBeenCalled()
+  })
+})
+
+describe('ProfilePage. 튜토리얼 다시 보기', () => {
+  it('완료 기록을 지우고 회원 정보를 다시 읽는다. 그래야 홈에서 다시 뜬다', async () => {
+    const user = userEvent.setup()
+    const { reloadMember } = renderProfile()
+
+    await user.click(await screen.findByRole('button', { name: '튜토리얼 다시 보기' }))
+
+    expect(restartTutorial).toHaveBeenCalledOnce()
+    await waitFor(() => expect(reloadMember).toHaveBeenCalledOnce())
   })
 })
 

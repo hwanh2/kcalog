@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.Year;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -268,5 +269,41 @@ class MemberIntegrationTest {
                 .andExpect(status().isBadRequest());
 
         assertThat(memberRepository.findById(member.getId()).orElseThrow().getBirthYear()).isEqualTo(1990);
+    }
+
+    @Test
+    @DisplayName("가입 직후 tutorialCompleted=false, 완료 요청으로 참이 된다")
+    void completeTutorial() throws Exception {
+        mockMvc.perform(get("/api/members/me").header("Authorization", bearer))
+                .andExpect(jsonPath("$.tutorialCompleted").value(false));
+
+        mockMvc.perform(post("/api/members/me/tutorial").header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tutorialCompleted").value(true));
+
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().isTutorialCompleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("다시 보기. 완료 기록을 지우면 다시 거짓이 된다")
+    void restartTutorial() throws Exception {
+        mockMvc.perform(post("/api/members/me/tutorial").header("Authorization", bearer))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/members/me/tutorial").header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tutorialCompleted").value(false));
+
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().isTutorialCompleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("온보딩은 안내 완료 여부를 건드리지 않는다 (온보딩 직후 안내가 떠야 한다)")
+    void onboardingKeepsTutorialPending() throws Exception {
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_ONBOARDING))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.onboardingCompleted").value(true))
+                .andExpect(jsonPath("$.tutorialCompleted").value(false));
     }
 }

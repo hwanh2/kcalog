@@ -79,6 +79,20 @@ public class MemberService {
         return MemberResponse.of(member, latestWeight(memberId));
     }
 
+    @Transactional
+    public MemberResponse completeTutorial(Long memberId) {
+        Member member = findMember(memberId);
+        member.completeTutorial();
+        return MemberResponse.of(member, latestWeight(memberId));
+    }
+
+    @Transactional
+    public MemberResponse restartTutorial(Long memberId) {
+        Member member = findMember(memberId);
+        member.restartTutorial();
+        return MemberResponse.of(member, latestWeight(memberId));
+    }
+
     private Member findMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new NoSuchElementException("member not found: " + memberId));

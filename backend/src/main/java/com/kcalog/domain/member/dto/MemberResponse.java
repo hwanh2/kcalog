@@ -20,7 +20,8 @@ public record MemberResponse(
         Integer dailyKcalTarget,
         BigDecimal latestWeightKg,
         boolean muscleGoal,
-        boolean onboardingCompleted
+        boolean onboardingCompleted,
+        boolean tutorialCompleted
 ) {
     public static MemberResponse of(Member member, BigDecimal latestWeightKg) {
         return new MemberResponse(
@@ -36,6 +37,7 @@ public record MemberResponse(
                 member.getDailyKcalTarget(),
                 latestWeightKg,
                 member.isMuscleGoal(),
-                member.isOnboardingCompleted());
+                member.isOnboardingCompleted(),
+                member.isTutorialCompleted());
     }
 }

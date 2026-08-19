@@ -12,6 +12,7 @@ import { CalorieRing } from '../features/dashboard/CalorieRing'
 import { MacroProgress } from '../features/dashboard/MacroProgress'
 import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
 import { MEAL_TYPE_LABELS, defaultMealType, sortByMealOrder } from '../features/meal/mealDefaults'
+import { TUTORIAL_IDS } from '../features/tutorial/steps'
 import { addDays, todayServiceDate } from '../lib/date'
 import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
@@ -43,7 +44,7 @@ export function HomePage() {
         )}
 
         {dashboard.data && (
-          <Card className="relative">
+          <Card id={TUTORIAL_IDS.calorie} className="relative">
             {/*
               카드 전체가 리포트로 가는 길이다. 링크로 **감싸지** 않고 면만 덮는다 , 
               <a> 안에 (i) 버튼을 넣으면 중첩 인터랙티브라 HTML 규칙에 어긋나고,
@@ -66,7 +67,7 @@ export function HomePage() {
         )}
 
         {dashboard.data && (
-          <Card>
+          <Card id={TUTORIAL_IDS.macro}>
             <MacroProgress
               carbG={Number(dashboard.data.carbG)}
               proteinG={Number(dashboard.data.proteinG)}
@@ -80,7 +81,10 @@ export function HomePage() {
 
         {date === today && <CoachCard />}
 
-        <WeightMiniCard entries={weights.data ?? []} targetWeightKg={targetWeightKg} />
+        {/* 카드 자체가 Link라 id를 두 갈래(기록 있음, 없음)에 각각 달아야 한다. 바깥에서 한 번만 감싼다 */}
+        <div id={TUTORIAL_IDS.weight}>
+          <WeightMiniCard entries={weights.data ?? []} targetWeightKg={targetWeightKg} />
+        </div>
 
         <MealSection meals={meals.data ?? []} date={date} today={today} />
       </div>

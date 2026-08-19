@@ -23,6 +23,9 @@ export function makeMember(overrides: Partial<MemberResponse> = {}): MemberRespo
     latestWeightKg: null,
     muscleGoal: false,
     onboardingCompleted: false,
+    // 기본값을 true로 두는 이유: false면 셸을 그리는 모든 테스트 위에 앱 둘러보기가 덮인다.
+    // 둘러보기를 보는 테스트만 false로 덮어쓴다
+    tutorialCompleted: true,
     ...overrides,
   }
 }

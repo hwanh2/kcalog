@@ -9,6 +9,7 @@ import com.kcalog.domain.member.service.MemberService;
 import com.kcalog.global.common.LoginMemberId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,5 +44,17 @@ public class MemberController {
     public MemberResponse update(@LoginMemberId Long memberId,
                                  @Valid @RequestBody UpdateMemberRequest request) {
         return memberService.updateProfile(memberId, request);
+    }
+
+    /** 앱 둘러보기를 끝냈거나 건너뛰었다 */
+    @PostMapping("/me/tutorial")
+    public MemberResponse completeTutorial(@LoginMemberId Long memberId) {
+        return memberService.completeTutorial(memberId);
+    }
+
+    /** 프로필의 다시 보기. 완료 기록을 지운다 */
+    @DeleteMapping("/me/tutorial")
+    public MemberResponse restartTutorial(@LoginMemberId Long memberId) {
+        return memberService.restartTutorial(memberId);
     }
 }

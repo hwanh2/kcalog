@@ -1,8 +1,21 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 
 /** 카드 표면 — 모서리·그림자·패딩·배경을 한 곳에서 관리 (위치 여백은 호출측 className으로) */
-export function Card({ className = '', children }: { className?: string; children: ReactNode }) {
-  return <div className={`rounded-card bg-surface p-4 shadow-sm ${className}`}>{children}</div>
+/** id는 앱 둘러보기가 비출 자리를 찾는 데 쓴다(add-app-tutorial design D2) */
+export function Card({
+  id,
+  className = '',
+  children,
+}: {
+  id?: string
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div id={id} className={`rounded-card bg-surface p-4 shadow-sm ${className}`}>
+      {children}
+    </div>
+  )
 }
 
 /** 라벨 + 입력 + 오류를 묶는 필드 래퍼 — 폼 전반의 간격·오류 표시를 일관화한다 */
