@@ -86,25 +86,59 @@ final class MealAnalysisPrompt {
                                         "notes", Map.of("type", "string", "description", "사용자 안내(음식 미검출 사유 등)")))));
     }
 
-    /** 사진 분석 — note가 있으면 사진에 보이지 않는 정보로 함께 전달한다 */
-    static Map<String, Object> requestBody(String model, String imageDataUrl, String note,
-                                           List<PersonalCorrection> corrections) {
+    /**
+     * 사진 분석. 재분석이면 직전 추정과 지금까지의 설명이 함께 실린다.
+     * <p>
+     * 참고 자료 순서는 개인 보정, 직전 추정, 사용자 설명이다. 뒤에 올수록 이번 요청에 가깝고,
+     * 충돌하면 사용자가 방금 한 말이 이겨야 한다(design D5).
+     */
+    static Map<String, Object> requestBody(String model, String imageDataUrl, List<String> notes,
+                                           List<PersonalCorrection> corrections, List<PreviousItem> previous) {
         var userContent = new ArrayList<Map<String, Object>>();
         userContent.add(Map.of("type", "text", "text",
                 "이 사진 속 음식을 항목별로 나누어 각각의 섭취량·영양·위치를 추정해 주세요."));
-        addIfPresent(userContent, userNote(note));
         addIfPresent(userContent, personalHistory(corrections));
+        addIfPresent(userContent, previousEstimate(previous));
+        addIfPresent(userContent, userNotes(notes));
         userContent.add(Map.of("type", "image_url", "image_url", Map.of("url", imageDataUrl)));
         return body(model, SYSTEM, userContent, true);
     }
 
     /** 설명만 분석 — 사진이 없으므로 위치 박스를 요구하지 않는다 */
-    static Map<String, Object> textRequestBody(String model, String note, List<PersonalCorrection> corrections) {
+    static Map<String, Object> textRequestBody(String model, List<String> notes,
+                                               List<PersonalCorrection> corrections, List<PreviousItem> previous) {
         var userContent = new ArrayList<Map<String, Object>>();
         userContent.add(Map.of("type", "text", "text",
-                "다음 식사 설명을 항목별로 나누어 각각의 섭취량·영양을 추정해 주세요.\n" + note));
+                "다음 식사 설명을 항목별로 나누어 각각의 섭취량·영양을 추정해 주세요.\n" + String.join("\n", notes)));
         addIfPresent(userContent, personalHistory(corrections));
+        addIfPresent(userContent, previousEstimate(previous));
         return body(model, SYSTEM_TEXT_ONLY, userContent, false);
+    }
+
+    /** 직전 회차의 항목 하나 — 프롬프트에 넣을 값만 추린다(위치 박스와 내부 플래그는 뺀다) */
+    record PreviousItem(String name, String amount, int kcal, String carbG, String proteinG, String fatG) {
+    }
+
+    /**
+     * 직전 추정. 저장된 JSON을 그대로 넣지 않고 항목별 한 줄로 푼다. 모델이 고쳐야 할 것은
+     * 이름·양·영양값이지 좌표가 아니다(design D3).
+     * <p>
+     * "언급되지 않은 항목은 그대로 두세요"가 핵심이다. 이 문장이 없으면 밥 이야기를 했는데
+     * 국의 값까지 바뀌어, 회차를 거듭할수록 손대지 않은 항목이 흔들린다.
+     */
+    private static String previousEstimate(List<PreviousItem> previous) {
+        if (previous == null || previous.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(
+                "직전 추정입니다. 아래 사용자 설명을 반영해 이 값을 고치되, "
+                        + "설명에서 언급되지 않은 항목은 직전 값을 그대로 두세요.\n");
+        for (PreviousItem item : previous) {
+            sb.append("- %s %s: %dkcal, 탄 %sg, 단 %sg, 지 %sg%n"
+                    .formatted(item.name(), item.amount(), item.kcal(),
+                            item.carbG(), item.proteinG(), item.fatG()));
+        }
+        return sb.toString();
     }
 
     private static Map<String, Object> body(String model, String system, List<Map<String, Object>> userContent,
@@ -123,12 +157,23 @@ final class MealAnalysisPrompt {
         }
     }
 
-    /** 사진에 보이지 않는 정보(조리법·섭취량·제외한 재료)를 사용자가 덧붙인 설명 */
-    private static String userNote(String note) {
-        if (note == null || note.isBlank()) {
+    /**
+     * 사진에 보이지 않는 정보(조리법·섭취량·제외한 재료)를 사용자가 적은 설명.
+     * 재분석마다 덧붙은 것을 모두 넘긴다. 최신 것만 주면 모델이 흘린 지시가 영영 사라진다(design D2).
+     */
+    private static String userNotes(List<String> notes) {
+        if (notes == null || notes.isEmpty()) {
             return "";
         }
-        return "사용자 설명(사진에 보이지 않는 정보이니 추정에 반드시 반영하세요): " + note;
+        if (notes.size() == 1) {
+            return "사용자 설명(사진에 보이지 않는 정보이니 추정에 반드시 반영하세요): " + notes.getFirst();
+        }
+        StringBuilder sb = new StringBuilder(
+                "사용자 설명(사진에 보이지 않는 정보이니 추정에 반드시 반영하세요. 적은 순서대로입니다):\n");
+        for (String note : notes) {
+            sb.append("- ").append(note).append('\n');
+        }
+        return sb.toString();
     }
 
     /**

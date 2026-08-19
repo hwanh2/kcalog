@@ -61,12 +61,17 @@ public class AnalysisWorker {
         }
     }
 
-    /** 사진이 있으면 사진+설명으로, 없으면 설명만으로 분석한다(입력 검증은 작업 생성 시점에 끝났다) */
+    /**
+     * 사진이 있으면 사진+설명으로, 없으면 설명만으로 분석한다(입력 검증은 작업 생성 시점에 끝났다).
+     * 재분석이면 직전 추정과 지금까지의 설명이 함께 실린다 — 그래야 "이거보다 더 적어요"가 기준을 갖는다.
+     */
     private MealAnalysisResponse analyze(AnalysisJob job, List<PersonalCorrection> corrections) {
+        List<String> notes = job.allNotes();
+        String previous = job.getPreviousResultJson();
         if (!job.hasImage()) {
-            return mealAnalysisService.analyzeText(job.getNote(), corrections);
+            return mealAnalysisService.analyzeText(notes, corrections, previous);
         }
         StorageService.StoredImage image = storageService.get(job.getImageKey());
-        return mealAnalysisService.analyzeImage(image.bytes(), image.contentType(), job.getNote(), corrections);
+        return mealAnalysisService.analyzeImage(image.bytes(), image.contentType(), notes, corrections, previous);
     }
 }

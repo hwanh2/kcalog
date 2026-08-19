@@ -39,7 +39,7 @@ public class MealAnalysisService {
     /** 동기 분석(레거시 엔드포인트) — 일일 제한 판정 후 이미지 분석. 개인 보정 주입 없음(빈 이력) */
     public MealAnalysisResponse analyze(Long memberId, byte[] image, String contentType) {
         enforceDailyLimit(memberId);
-        return analyzeImage(image, contentType, null, List.of());
+        return analyzeImage(image, contentType, List.of(), List.of(), null);
     }
 
     /**
@@ -57,22 +57,56 @@ public class MealAnalysisService {
 
     /**
      * 사진 분석(제한 판정 없음) — 비동기 워커가 호출. 재시도·NO_FOOD·파싱 실패 처리 포함.
-     * note가 있으면 사진에 보이지 않는 정보로 함께 전달한다.
+     * notes는 사진에 보이지 않는 정보를 담은 사용자 설명 전부이고, previousResultJson은 재분석일 때의 직전 추정이다.
      * corrections가 있으면 개인 보정 이력을 프롬프트에 주입(B) — 이력이 비면 프롬프트는 기존과 동일(eval 유효).
      */
-    public MealAnalysisResponse analyzeImage(byte[] image, String contentType, String note,
-                                             List<PersonalCorrection> corrections) {
+    public MealAnalysisResponse analyzeImage(byte[] image, String contentType, List<String> notes,
+                                             List<PersonalCorrection> corrections, String previousResultJson) {
         AppProperties.Openai openai = props.openai();
         String dataUrl = toDataUrl(image, contentType);
-        Map<String, Object> body = MealAnalysisPrompt.requestBody(openai.model(), dataUrl, note, corrections);
+        Map<String, Object> body = MealAnalysisPrompt.requestBody(
+                openai.model(), dataUrl, notes, corrections, previousItems(previousResultJson));
         return parse(callWithRetry(body));
     }
 
     /** 설명만 분석(제한 판정 없음) — 사진이 없으므로 위치 박스 없이 항목만 낸다 */
-    public MealAnalysisResponse analyzeText(String note, List<PersonalCorrection> corrections) {
+    public MealAnalysisResponse analyzeText(List<String> notes, List<PersonalCorrection> corrections,
+                                            String previousResultJson) {
         AppProperties.Openai openai = props.openai();
-        Map<String, Object> body = MealAnalysisPrompt.textRequestBody(openai.model(), note, corrections);
+        Map<String, Object> body = MealAnalysisPrompt.textRequestBody(
+                openai.model(), notes, corrections, previousItems(previousResultJson));
         return parse(callWithRetry(body));
+    }
+
+    /**
+     * 직전 결과 JSON을 프롬프트에 넣을 항목 목록으로 푼다.
+     * <p>
+     * 읽지 못해도 맥락만 빠질 뿐 재분석은 진행한다. 직전 결과 때문에 이번 요청이 막히면,
+     * 사용자는 일일 횟수만 쓰고 아무것도 못 얻는다.
+     */
+    private List<MealAnalysisPrompt.PreviousItem> previousItems(String previousResultJson) {
+        if (previousResultJson == null || previousResultJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            MealAnalysisResponse previous = objectMapper.readValue(previousResultJson, MealAnalysisResponse.class);
+            return previous.items().stream().map(MealAnalysisService::toPreviousItem).toList();
+        } catch (Exception e) {
+            log.warn("직전 추정을 읽지 못해 맥락 없이 재분석합니다: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    private static MealAnalysisPrompt.PreviousItem toPreviousItem(MealAnalysisResponse.AnalyzedItem item) {
+        String amount = item.amount() == null || item.unit() == null
+                ? ""
+                : item.amount().stripTrailingZeros().toPlainString() + item.unit();
+        return new MealAnalysisPrompt.PreviousItem(item.name(), amount, item.kcal(),
+                plain(item.carbG()), plain(item.proteinG()), plain(item.fatG()));
+    }
+
+    private static String plain(java.math.BigDecimal value) {
+        return value == null ? "0" : value.stripTrailingZeros().toPlainString();
     }
 
     /** OpenAI 호출 실패 시 1회 재시도, 그래도 실패하면 폴백(MealAnalysisException). 파싱 실패는 재시도하지 않는다 */
