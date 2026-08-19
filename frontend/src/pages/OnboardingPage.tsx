@@ -408,10 +408,16 @@ export function OnboardingPage() {
             매일 기록해야 내 몸의 값으로 바뀐다. 다른 설명보다 위에 두고 색을 준다.
           */}
           <section className="rounded-2xl bg-success-soft px-4 py-4">
-            <h2 className="text-[15px] font-bold text-ink">매일 기록해야 정확해져요</h2>
+            <h2 className="text-[15px] font-bold text-ink">2주 뒤엔 내 몸에서 나온 숫자로 바뀌어요</h2>
             <p className="mt-1.5 text-sm leading-[1.75] text-ink/75">
-              지금 숫자는 키·몸무게·나이로 낸 <span className="font-semibold text-ink">추정값</span>이에요.
-              식사와 체중을 매일 남기면 2주 뒤부터{' '}
+              지금 숫자는 키, 몸무게, 나이로 낸 <span className="font-semibold text-ink">추정값</span>
+              이에요. 공식이라 사람마다 10에서 15% 어긋나요. 2,500이 나와도 실제로는 2,200일 수도,
+              2,800일 수도 있어요.
+            </p>
+            {/* 2번 차별점. 이 대비가 없으면 "다들 하는 그 계산"으로 읽히고 넘어간다 */}
+            <p className="mt-2 text-sm leading-[1.75] text-ink/75">
+              <span className="font-semibold text-ink">대부분의 칼로리 앱은 이 추정값을 끝까지 써요.</span>{' '}
+              칼로그는 식사와 체중을 매일 남기면 2주 뒤부터{' '}
               <span className="font-semibold text-ink">실제로 먹은 양과 체중 변화</span>로 유지 칼로리를
               다시 계산해요. 공식이 아니라 내 몸에서 나온 값이 되는 거예요.
             </p>

@@ -44,6 +44,53 @@ const FEATURES = [
   },
 ] as const
 
+/**
+ * 한 줄이 하나의 오해다. 왼쪽이 사람들이 믿는 것, 오른쪽이 그래서 벌어지는 일과 우리 답이다.
+ * `lead`가 붙은 첫 줄은 다른 칼로리 앱과 갈리는 지점이라 크기를 키운다.
+ */
+interface Misread {
+  title: string
+  body: string
+  answer: string
+  lead?: string
+  contrast?: string
+}
+
+const MISREADS: Misread[] = [
+  {
+    lead: '가장 큰 오해',
+    title: '인터넷 계산기 값이 정답인 줄 안다',
+    body: '공식으로 낸 값은 개인차가 10에서 15% 납니다. 2,500이라고 나와도 실제는 2,200일 수도 2,800일 수도 있습니다. 활동량을 한 칸 다르게 고르면 400kcal가 움직입니다. "계산대로 먹었는데 안 빠져요"가 여기서 나옵니다. 공식이 틀린 게 아니라 내 몸이 평균이 아닌 것뿐입니다.',
+    contrast: '대부분의 칼로리 앱은 처음 계산한 추정값을 끝까지 씁니다.',
+    answer:
+      '칼로그는 2주만 기록하면 실제로 먹은 양과 체중 변화로 역산해 진짜 유지 칼로리를 알려줍니다. 공식이 아니라 내 몸에서 나온 값입니다.',
+  },
+  {
+    title: '자기 유지 칼로리를 모른다',
+    body: '"적게 먹어야지"는 아는데 얼마나 적게인지 기준이 없습니다. 그래서 무작정 굶다가 폭식하고, 빠졌다 도로 찝니다.',
+    answer:
+      '키, 몸무게, 나이, 활동량으로 유지 칼로리를 계산하고 목표까지 잡아줍니다. 하루 500kcal를 덜 먹으면 한 달에 2kg이 빠진다는 것까지 숫자로 보여줍니다. 2주 뒤 생각만큼 안 움직이면 거기서 200에서 300kcal만 더 빼면 됩니다.',
+  },
+  {
+    title: '체중이 매일 흔들린다는 걸 모른다',
+    body: '물, 나트륨, 전날 먹은 탄수화물 때문에 하루 만에 1kg 넘게 오르내립니다. 지방이 아닙니다. 어제보다 늘어난 숫자를 보고 실패했다고 느껴 그만두는 것이 가장 흔한 포기 이유입니다.',
+    answer:
+      '하루 숫자가 아니라 추세선을 보여줍니다. 아침에 화장실 다녀와서 재는 것까지 알려주고, 오르내림은 신경 쓰지 않아도 된다고 말해줍니다.',
+  },
+  {
+    title: '단백질을 칼로리 비율로 정하면 안 된다',
+    body: '단백질은 몸 크기에 비례해야 하는데 대부분의 앱이 "칼로리의 30%"로 계산합니다. 그러면 많이 먹는 사람에게 체중 1kg당 2.8g 같은 값이 나옵니다. 근거 있는 범위는 1.6에서 2.2g입니다.',
+    answer:
+      '단백질을 체중에서 먼저 정하고(1kg당 1.2에서 2.0g), 지방을 25%로 두고, 남은 것을 탄수화물이 받습니다. 감량하면서 근육을 지키고 싶으면 "근육량도 목표" 하나만 켜면 됩니다.',
+  },
+  {
+    title: '탄단지를 정확히 맞춰야 한다고 착각한다',
+    body: '세 숫자를 딱 맞추려다 지쳐서 그만둡니다. 실제로는 총 칼로리가 훨씬 중요합니다.',
+    answer:
+      '탄수화물 20g을 덜고 지방 9g을 더하면 총 칼로리가 같다는 것을 숫자와 함께 알려줍니다. 단백질만 확보하면 나머지 둘은 취향껏 나눠도 결과가 크게 다르지 않습니다.',
+  },
+]
+
 const STEPS = [
   { n: '01', title: '식사 사진을 찍는다', body: '카메라 버튼 한 번. 접시를 통째로 담아도 됩니다.' },
   { n: '02', title: 'AI가 읽는다', body: '음식 이름과 양을 추정해 칼로리·탄단지를 계산합니다.' },
@@ -61,6 +108,10 @@ const SCREENS = [
 const TILT = [-4, 2.5, -2, 3.5] as const
 
 const FAQ = [
+  {
+    q: '다른 칼로리 앱과 뭐가 다른가요?',
+    a: '대부분은 처음 공식으로 계산한 추정값을 끝까지 씁니다. 칼로그는 2주치 식사와 체중이 쌓이면 실제로 먹은 양과 체중 변화로 유지 칼로리를 다시 계산해 목표를 고쳐 잡습니다. 단백질을 칼로리 비율이 아니라 체중에서 정하는 것도 다릅니다.',
+  },
   {
     q: '무료인가요?',
     a: '네. 지금은 모든 기능이 무료입니다. AI 분석에는 한 사람당 하루 사용량 제한이 있습니다.',
@@ -172,20 +223,20 @@ export function LandingPage() {
 
               <Reveal delayMs={80}>
                 <h1 className="mt-6 text-balance text-5xl font-extrabold leading-[1.08] tracking-tighter text-on-brand sm:text-6xl lg:text-7xl">
-                  사진 한 장으로
+                  식단 관리는
                   <br />
                   <span className="bg-gradient-to-r from-brand to-carb bg-clip-text text-transparent">
-                    10초 만에
-                  </span>{' '}
-                  기록
+                    하루 섭취량
+                  </span>
+                  부터
                 </h1>
               </Reveal>
 
               <Reveal delayMs={160}>
                 <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-canvas/70 lg:mx-0 lg:text-xl">
-                  찍으면 AI가 음식을 읽고 칼로리와 탄·단·지를 계산합니다.
+                  식사 사진을 찍으면 AI가 칼로리와 탄단지를 계산합니다.
                   <br className="hidden sm:block" />
-                  체중, 주간 리포트, AI 코치까지 한 앱에서.
+                  쌓인 기록으로 하루 목표를 내 몸에 맞게 고쳐 나갑니다.
                 </p>
               </Reveal>
 
@@ -209,7 +260,7 @@ export function LandingPage() {
           </div>
 
           <a
-            href="#flow"
+            href="#why"
             aria-label="아래로 이동"
             className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 rounded-full p-2 text-canvas/50 transition-colors hover:text-canvas focus-visible:ring-2 focus-visible:ring-brand sm:block"
           >
@@ -217,6 +268,69 @@ export function LandingPage() {
               <ChevronDownIcon />
             </span>
           </a>
+        </section>
+
+        {/*
+          히어로가 문제를 던졌으니 답이 바로 와야 한다. 기능 소개(FEATURES)보다 앞에 두는 이유는,
+          기능을 먼저 늘어놓으면 "칼로리 앱 또 하나"로 읽히고 아래로 내려가지 않기 때문이다.
+        */}
+        <section id="why" className="w-full scroll-mt-20 bg-surface py-24 sm:py-28">
+          <div className="mx-auto max-w-5xl px-6">
+            <Reveal>
+              <h2 className="max-w-2xl text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
+                안 빠지는 이유는 대개 정해져 있습니다
+              </h2>
+              <p className="mt-4 max-w-xl text-pretty leading-relaxed text-muted">
+                의지가 모자라서가 아니라, 기준이 없거나 틀렸기 때문입니다.
+              </p>
+            </Reveal>
+
+            {/*
+              카드에 담지 않는다. 다섯 개를 같은 상자에 넣으면 무게가 같아져 어느 것이
+              중요한지 사라지고, 대립하는 내용인데 격자로 늘어놔 대립이 안 읽힌다.
+              왼쪽이 믿고 있는 것, 오른쪽이 그래서 벌어지는 일과 우리 답이다.
+            */}
+            <ul className="mt-16 border-t border-border">
+              {MISREADS.map((item, i) => (
+                <Reveal
+                  key={item.title}
+                  delayMs={i * 60}
+                  as="li"
+                  className="block border-b border-border py-10 sm:py-14"
+                >
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-16">
+                    <div>
+                      {item.lead && (
+                        <p className="mb-3 text-xs font-black tracking-widest text-brand-ink">
+                          {item.lead}
+                        </p>
+                      )}
+                      <h3
+                        className={`text-balance font-extrabold leading-snug ${
+                          item.lead ? 'text-3xl sm:text-4xl' : 'text-2xl'
+                        }`}
+                      >
+                        {item.title}
+                      </h3>
+                    </div>
+
+                    <div>
+                      <p className="text-pretty leading-relaxed text-muted">{item.body}</p>
+                      {item.contrast && (
+                        <p className="mt-4 text-pretty leading-relaxed text-muted">
+                          {item.contrast}
+                        </p>
+                      )}
+                      {/* 답만 세로선을 달아 본문에서 떼어낸다. 색만 바꾸면 같은 문단으로 흘러간다 */}
+                      <p className="mt-6 border-l-2 border-brand pl-5 text-pretty leading-relaxed text-ink">
+                        {item.answer}
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </ul>
+          </div>
         </section>
 
         {/* 찍는 순간과 그 뒤에 벌어지는 일 — 화면 하나와 단계를 나란히 둔다 */}
@@ -236,10 +350,10 @@ export function LandingPage() {
             <div>
               <Reveal>
                 <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
-                  찍고 나서 벌어지는 일
+                  기록이 쉬워야 계속합니다
                 </h2>
                 <p className="mt-4 text-pretty text-lg leading-relaxed text-muted">
-                  검색창도, 그램 수 입력도 없습니다. 세 단계면 오늘 한 끼가 들어갑니다.
+                  검색창도, 그램 수 입력도 없습니다. 사진을 찍으면 세 단계로 한 끼가 들어갑니다.
                 </p>
               </Reveal>
 
@@ -370,7 +484,7 @@ export function LandingPage() {
               <span className="text-xl font-extrabold tracking-tight text-on-brand">칼로그</span>
             </span>
             <span className="text-canvas/60">
-              사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리
+              내 몸에 맞는 하루 섭취량부터 잡는 AI 식단 관리
             </span>
             <span className="text-sm text-canvas/40">
               1인 개발 사이드 프로젝트입니다. 기능과 화면은 계속 바뀝니다.

@@ -26,7 +26,7 @@ export function LoginPage() {
           4.6%는 마크에서 실측한 값이다 — 잔상을 고치면 다시 재야 한다 */}
       <AppMark className="h-16 w-auto -translate-x-[4.6%]" />
       <h1 className="mt-4 text-3xl font-bold text-brand-ink">칼로그</h1>
-      <p className="mt-2 text-muted">사진 한 장으로 10초 안에 기록하는 체중 관리</p>
+      <p className="mt-2 text-muted">내 몸에 맞는 하루 섭취량부터</p>
       {error && (
         <p role="alert" className="mt-4 text-sm text-danger">
           {ERROR_MESSAGES[error] ?? '로그인에 실패했어요. 다시 시도해주세요.'}

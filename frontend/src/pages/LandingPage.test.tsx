@@ -22,11 +22,22 @@ describe('LandingPage', () => {
   it('로그인을 요구하기 전에 서비스 설명과 기능을 보여준다', () => {
     renderLanding({ userAgent: UA.mac })
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('10초')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('하루 섭취량')
     expect(screen.getByText('찍으면 끝나는 식사 기록')).toBeInTheDocument()
     expect(screen.getByText('체중과 주간 리포트')).toBeInTheDocument()
     expect(screen.getByText('AI 코치')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /카카오/ })).not.toBeInTheDocument()
+  })
+
+  /*
+    이 서비스가 다른 칼로리 앱과 갈리는 지점. 랜딩에서 이 대비가 빠지면
+    "사진으로 찍는 칼로리 앱" 하나로 읽히고 설치까지 가지 않는다.
+  */
+  it('공식 추정값을 끝까지 쓰는 다른 앱과의 차이를 랜딩에서 말한다', () => {
+    renderLanding({ userAgent: UA.mac })
+
+    expect(screen.getByText(/대부분의 칼로리 앱은 처음 계산한 추정값을 끝까지 씁니다/)).toBeInTheDocument()
+    expect(screen.getByText(/2주만 기록하면/)).toBeInTheDocument()
   })
 
   it('iOS에서는 공유 → 홈 화면에 추가를 단계별로 안내한다', () => {
@@ -34,6 +45,12 @@ describe('LandingPage', () => {
 
     expect(screen.getByText('공유 버튼 누르기')).toBeInTheDocument()
     expect(screen.getByText('‘홈 화면에 추가’ 선택')).toBeInTheDocument()
+  })
+
+  it('iOS 공유 시트의 ‘더 보기’를 빠뜨리지 않는다 — 시트 첫 화면에는 홈 화면에 추가가 없다', () => {
+    renderLanding({ userAgent: UA.iphone })
+
+    expect(screen.getByText('‘더 보기’ 누르기')).toBeInTheDocument()
   })
 
   it('설치 안내가 특정 브라우저 사용을 요구하지 않는다 — iOS 16.4+는 크롬·엣지에서도 설치된다', () => {
@@ -129,7 +146,7 @@ describe('LandingRoute — 설치된 아이콘으로 들어온 경우', () => {
   it('브라우저로 들어오면 소개 화면을 그대로 보여준다', () => {
     renderRoute({ userAgent: UA.iphone })
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('10초')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('하루 섭취량')
     expect(screen.queryByText('앱 화면')).not.toBeInTheDocument()
   })
 })
