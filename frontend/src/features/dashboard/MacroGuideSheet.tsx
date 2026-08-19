@@ -1,13 +1,14 @@
+import { GuideNote } from '../../ui/GuideNote'
 import { Sheet } from '../../ui/Sheet'
 
 /**
  * 탄단지 목표를 어떻게 읽어야 하는지 (design D9).
- * 홈의 달성도·온보딩 결과·프로필 영양 목표 — 목표 숫자가 보이는 세 곳이 함께 쓴다.
+ * 홈의 달성도, 온보딩 결과, 프로필 영양 목표. 목표 숫자가 보이는 세 곳이 함께 쓴다.
  *
- * 숫자만 보면 두 가지로 오해한다 — "탄수가 왜 이렇게 많지", "고기를 이만큼 먹어야 하나".
+ * 숫자만 보면 두 가지로 오해한다. "탄수가 왜 이렇게 많지", "고기를 이만큼 먹어야 하나".
  * 둘 다 목표를 **기준선이 아니라 처방으로** 읽어서 생긴다.
  *
- * 레이아웃은 유지칼로리 안내와 같은 위계를 쓴다(design D13) — 결론 한 줄, 그 뒤에 항목별 설명.
+ * 레이아웃은 유지칼로리 안내와 같은 위계를 쓴다(design D13). 결론 한 줄, 그 뒤에 항목별 설명.
  */
 export function MacroGuideSheet({ onClose }: { onClose: () => void }) {
   return (
@@ -36,14 +37,5 @@ export function MacroGuideSheet({ onClose }: { onClose: () => void }) {
         </GuideNote>
       </ul>
     </Sheet>
-  )
-}
-
-function GuideNote({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <li className="py-3">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      <p className="mt-0.5 text-sm leading-relaxed text-muted">{children}</p>
-    </li>
   )
 }

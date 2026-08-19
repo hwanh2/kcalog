@@ -81,8 +81,8 @@ class DashboardIntegrationTest {
                 .andExpect(jsonPath("$.carbG").value(115.0))
                 .andExpect(jsonPath("$.dailyKcalTarget").value(2000))
                 .andExpect(jsonPath("$.remainingKcal").value(1000))
-                // 체중 기록이 없는 회원이라 단백질 범위를 적용할 수 없다 — 비율만 쓴다 (design D7)
-                // 2000kcal · 근육량 OFF → 단 2000×0.2/4=100 · 지 2000×0.25/9=55.6→56 · 탄 나머지 1096/4=274
+                // 체중 기록이 없는 회원이라 단백질 범위를 적용할 수 없다. 비율만 쓴다 (design D7)
+                // 2000kcal, 근육량 OFF → 단 2000×0.2/4=100, 지 2000×0.25/9=55.6→56, 탄 나머지 1096/4=274
                 .andExpect(jsonPath("$.carbTargetG").value(274))
                 .andExpect(jsonPath("$.proteinTargetG").value(100))
                 .andExpect(jsonPath("$.fatTargetG").value(56))
@@ -94,10 +94,10 @@ class DashboardIntegrationTest {
 
     /**
      * 대시보드가 weight_log를 실제로 읽는지 본다(design D8). 이 배선이 빠지면 체중을 알면서도
-     * 범위가 적용되지 않아 단백질이 비율값 그대로 나간다 — 이번 change가 고치려던 그 상태다.
+     * 범위가 적용되지 않아 단백질이 비율값 그대로 나간다. 이번 change가 고치려던 그 상태다.
      */
     @Test
-    @DisplayName("체중이 있으면 단백질을 체중으로 자른다 — 상한(체중×2.0)")
+    @DisplayName("체중이 있으면 단백질을 체중으로 자른다. 상한(체중×2.0)")
     void clampsProteinWithWeight() throws Exception {
         weightLogRepository.upsert(member.getId(), LocalDate.parse(DATE), new BigDecimal("70.0"));
         member.completeOnboarding(Gender.MALE, 1995, new BigDecimal("175.0"), ActivityLevel.MID,
@@ -114,7 +114,7 @@ class DashboardIntegrationTest {
     }
 
     @Test
-    @DisplayName("체중이 있으면 단백질을 체중으로 자른다 — 하한(체중×1.2)")
+    @DisplayName("체중이 있으면 단백질을 체중으로 자른다. 하한(체중×1.2)")
     void raisesProteinToLowerBound() throws Exception {
         weightLogRepository.upsert(member.getId(), LocalDate.parse(DATE), new BigDecimal("90.0"));
 

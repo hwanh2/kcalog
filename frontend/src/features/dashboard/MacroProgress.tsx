@@ -34,7 +34,7 @@ export function MacroProgress({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-extrabold">오늘의 탄·단·지 달성도</h2>
         {/*
-          목표를 매일 마주하는 자리다 — "탄수가 왜 이렇게 많지", "고기를 이만큼 먹어야 하나"가
+          목표를 매일 마주하는 자리다. "탄수가 왜 이렇게 많지", "고기를 이만큼 먹어야 하나"가
           생기는 곳도 여기다. 문구를 상시로 깔면 잔소리가 되므로 (i)로만 둔다 (design D9).
         */}
         <button

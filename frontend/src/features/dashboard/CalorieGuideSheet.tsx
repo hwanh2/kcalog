@@ -1,3 +1,4 @@
+import { GuideNote } from '../../ui/GuideNote'
 import { Sheet } from '../../ui/Sheet'
 
 /**
@@ -14,7 +15,7 @@ import { Sheet } from '../../ui/Sheet'
 export function CalorieGuideSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet label="유지칼로리 안내" onClose={onClose}>
-      {/* 줄바꿈은 balance에 맡긴다 — <br>로 고정하면 글자 크기·기기 폭이 달라질 때 한쪽 줄만 짧아진다 */}
+      {/* 줄바꿈은 balance에 맡긴다. <br>로 고정하면 글자 크기, 기기 폭이 달라질 때 한쪽 줄만 짧아진다 */}
       <h2 className="pr-12 text-xl font-black leading-snug text-balance text-ink">
         유지칼로리를 알아야 조절할 수 있어요
       </h2>
@@ -25,7 +26,7 @@ export function CalorieGuideSheet({ onClose }: { onClose: () => void }) {
       </p>
 
       <h3 className="mt-6 text-xs font-bold tracking-wide text-muted">얼마나 덜 먹으면 될까요</h3>
-      {/* 핵심 숫자는 본문 크기에 묻히면 안 된다 — 한 달 결과를 카드에서 가장 큰 글자로 둔다 */}
+      {/* 핵심 숫자는 본문 크기에 묻히면 안 된다. 한 달 결과를 카드에서 가장 큰 글자로 둔다 */}
       <div className="mt-2 grid grid-cols-2 gap-2">
         <DeficitCard perDay="−500" month="−2.0" week="−0.45" />
         <DeficitCard perDay="−300" month="−1.2" week="−0.27" />
@@ -35,7 +36,7 @@ export function CalorieGuideSheet({ onClose }: { onClose: () => void }) {
         싶으면 더 줄여도 되지만, 일주일에 체중의 1%를 넘겨 빠지면 근육도 같이 빠져요.
       </p>
 
-      {/* 증량 카드는 색을 달리 쓴다 — 감량과 나란히 같은 색으로 두면 대칭처럼 읽힌다 */}
+      {/* 증량 카드는 색을 달리 쓴다. 감량과 나란히 같은 색으로 두면 대칭처럼 읽힌다 */}
       <div className="mt-3 rounded-2xl bg-track p-4">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-sm font-semibold text-ink">늘릴 때는 더 천천히</h3>
@@ -70,7 +71,7 @@ export function CalorieGuideSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** 하루 적자 → 한 달 결과. 한 달 값이 가장 크고, 하루·주는 그 근거로 위아래에 붙는다 */
+/** 하루 적자 → 한 달 결과. 한 달 값이 가장 크고, 하루, 주는 그 근거로 위아래에 붙는다 */
 function DeficitCard({ perDay, month, week }: { perDay: string; month: string; week: string }) {
   return (
     <div className="rounded-2xl bg-brand-soft p-3.5">
@@ -78,7 +79,7 @@ function DeficitCard({ perDay, month, week }: { perDay: string; month: string; w
         하루 {perDay}
         <span className="ml-0.5 font-semibold">kcal</span>
       </p>
-      {/* "한 달"을 큰 숫자와 같은 줄에 둔다 — 아래 작은 줄로 내리면 무엇의 값인지 안 읽힌다 */}
+      {/* "한 달"을 큰 숫자와 같은 줄에 둔다. 아래 작은 줄로 내리면 무엇의 값인지 안 읽힌다 */}
       <p className="mt-1.5 flex items-baseline gap-1">
         <span className="text-sm font-bold text-muted">한 달</span>
         <span className="text-2xl font-black leading-none tabular-nums text-ink">
@@ -88,14 +89,5 @@ function DeficitCard({ perDay, month, week }: { perDay: string; month: string; w
       </p>
       <p className="mt-1 text-[11px] font-medium text-muted">일주일 {week}kg</p>
     </div>
-  )
-}
-
-function GuideNote({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <li className="py-3">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      <p className="mt-0.5 text-sm leading-relaxed text-muted">{children}</p>
-    </li>
   )
 }

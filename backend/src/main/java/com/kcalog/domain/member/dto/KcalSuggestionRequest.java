@@ -24,7 +24,7 @@ public record KcalSuggestionRequest(
         @NotNull @DecimalMin(WEIGHT_KG_MIN) @DecimalMax(WEIGHT_KG_MAX) BigDecimal weightKg,
         @NotNull ActivityLevel activityLevel,
         @NotNull Goal goal,
-        // 탄단지 비율을 가른다. 누락은 false로 읽는다 — 이 필드를 모르는 구버전 앱을 400으로 막지 않는다
+        // 탄단지 비율을 가른다. 누락은 false로 읽는다. 이 필드를 모르는 구버전 앱을 400으로 막지 않는다
         Boolean muscleGoal
 ) {
     public boolean muscleGoalOrDefault() {

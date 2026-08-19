@@ -26,7 +26,7 @@ export function WizardShell({
   onNext: () => void
   nextLabel?: string
   nextDisabled?: boolean
-  /** 몇 번째 단계인지 감춘다 — 마지막 화면은 더 물을 것이 없어 진행 표시가 할 말이 없다 */
+  /** 몇 번째 단계인지 감춘다. 마지막 화면은 더 물을 것이 없어 진행 표시가 할 말이 없다 */
   showSteps?: boolean
   children: ReactNode
 }) {
@@ -63,12 +63,12 @@ export function WizardShell({
       <div className="mt-6 flex-1">{children}</div>
 
       {/*
-        하단은 화면에 붙인다 — 마지막 단계의 설명이 길어지면서 '시작하기'가 스크롤 아래로
+        하단은 화면에 붙인다. 마지막 단계의 설명이 길어지면서 '시작하기'가 스크롤 아래로
         밀려났다. 설명을 접거나 (i)로 숨기는 대신 버튼을 항상 손 닿는 곳에 둔다.
         sticky는 일반 흐름에서 자리를 차지하므로 본문 마지막 줄을 가리지 않는다.
       */}
       <div className="sticky bottom-0 -mx-5 mt-6 bg-canvas px-5 pb-[env(safe-area-inset-bottom)] pt-3">
-        {/* 내용이 버튼 뒤로 딱 잘려 사라지지 않게 — 위로 갈수록 투명해지는 띠를 한 겹 얹는다 */}
+        {/* 내용이 버튼 뒤로 딱 잘려 사라지지 않게. 위로 갈수록 투명해지는 띠를 한 겹 얹는다 */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -top-8 h-8 bg-gradient-to-t from-canvas to-transparent"
@@ -158,14 +158,14 @@ export function OptionCard({
 }
 
 /**
- * 스테퍼 + 직접 입력 — 양쪽 버튼으로 한 칸씩 옮기고, 큰 숫자를 눌러 바로 칠 수도 있다.
+ * 스테퍼 + 직접 입력. 양쪽 버튼으로 한 칸씩 옮기고, 큰 숫자를 눌러 바로 칠 수도 있다.
  *
  * 슬라이더를 걷어낸 자리다. 드래그는 손가락으로 1cm를 맞추기 어려웠고, 화면 폭이 좁을수록
  * 한 픽셀이 여러 칸을 건너뛰었다. 버튼은 눌린 만큼만 움직인다.
  *
  * 입력칸을 비운 상태를 허용해야 지우고 다시 칠 수 있어, 표시 문자열을 따로 들고 있다가
  * 숫자로 읽히는 동안만 부모에 올린다(부모는 항상 마지막 유효 숫자를 갖는다).
- * 초점을 잃을 때 비어 있으면 마지막 값으로 되돌린다 — 빈 칸으로 다음 단계에 가지 않게.
+ * 초점을 잃을 때 비어 있으면 마지막 값으로 되돌린다. 빈 칸으로 다음 단계에 가지 않게.
  */
 export function StepperField({
   label,
@@ -190,7 +190,7 @@ export function StepperField({
   // 버튼 등 밖에서 값이 바뀌면 표시도 따라간다
   useEffect(() => setRaw(String(value)), [value])
 
-  /* 버튼은 범위를 넘지 않는다. 직접 입력은 막지 않는다 — 범위 검증은 '다음'에서 문구와 함께 알린다 */
+  /* 버튼은 범위를 넘지 않는다. 직접 입력은 막지 않는다. 범위 검증은 '다음'에서 문구와 함께 알린다 */
   const nudge = (delta: number) => onChange(Math.min(max, Math.max(min, value + delta)))
 
   return (
@@ -203,7 +203,7 @@ export function StepperField({
         <StepButton label={`${label} 줄이기`} disabled={value <= min} onClick={() => nudge(-step)}>
           −
         </StepButton>
-        {/* min-w-0 — flex-1만 주면 긴 값이 버튼을 밀어낸다 */}
+        {/* min-w-0. flex-1만 주면 긴 값이 버튼을 밀어낸다 */}
         <input
           type="text"
           inputMode={inputMode}
@@ -225,7 +225,7 @@ export function StepperField({
   )
 }
 
-/** 44px 탭 대상 — 아이콘 대신 글자를 쓰므로 크기를 키우고 굵게 해서 눌리는 것처럼 보이게 한다 */
+/** 44px 탭 대상. 아이콘 대신 글자를 쓰므로 크기를 키우고 굵게 해서 눌리는 것처럼 보이게 한다 */
 function StepButton({
   label,
   disabled,

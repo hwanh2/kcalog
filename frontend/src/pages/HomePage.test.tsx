@@ -102,7 +102,7 @@ describe('HomePage 대시보드', () => {
   })
 
   /*
-    목표 숫자만 보면 "앱이 정해준 값"으로 읽힌다 — 기준선인 유지칼로리와 조절 폭을 여기서 알린다.
+    목표 숫자만 보면 "앱이 정해준 값"으로 읽힌다. 기준선인 유지칼로리와 조절 폭을 여기서 알린다.
     숫자가 본문에 있으므로 문구가 아니라 **표의 값**을 확인한다 (design D12).
   */
   it('칼로리 헤더의 안내는 유지칼로리 기준선과 조절 폭을 보여준다', async () => {
@@ -116,10 +116,10 @@ describe('HomePage 대시보드', () => {
 
     const guide = await screen.findByRole('dialog', { name: '유지칼로리 안내' })
     expect(within(guide).getByText(/유지칼로리를 알아야/)).toBeInTheDocument()
-    // 증량은 감량과 대칭이 아니다 — 이 문단이 빠지면 같은 숫자로 오해한다
+    // 증량은 감량과 대칭이 아니다. 이 문단이 빠지면 같은 숫자로 오해한다
     expect(within(guide).getByText('늘릴 때는 더 천천히')).toBeInTheDocument()
 
-    /* 숫자는 단위가 <span>으로 쪼개져 있어 노드 단위로 잡히지 않는다 — 시트 전체 글에서 확인한다.
+    /* 숫자는 단위가 <span>으로 쪼개져 있어 노드 단위로 잡히지 않는다. 시트 전체 글에서 확인한다.
        하루 −500 → 한 달 −2.0kg, −300 → −1.2kg (체지방 1kg ≈ 7700kcal) */
     const text = guide.textContent ?? ''
     expect(text).toContain('−500')
@@ -129,7 +129,7 @@ describe('HomePage 대시보드', () => {
   })
 
   /*
-    목표를 매일 마주하는 자리다 — 오해도 여기서 생긴다. 다만 문구를 상시로 깔면 잔소리가 되므로
+    목표를 매일 마주하는 자리다. 오해도 여기서 생긴다. 다만 문구를 상시로 깔면 잔소리가 되므로
     (i)를 눌렀을 때만 열려야 한다 (design D9).
   */
   it('달성도 옆 안내는 눌러야 열린다', async () => {
@@ -255,7 +255,7 @@ describe('HomePage 대시보드', () => {
     expect(await screen.findByText(/대시보드를 불러오지 못했어요/)).toBeInTheDocument()
   })
 
-  it('오늘의 칼로리 헤더 — 코칭 한 줄과 카드 전체 리포트 링크', async () => {
+  it('오늘의 칼로리 헤더. 코칭 한 줄과 카드 전체 리포트 링크', async () => {
     vi.mocked(getBriefing).mockResolvedValue({
       hasData: true,
       headline: '감량 페이스 순조로움',
@@ -273,7 +273,7 @@ describe('HomePage 대시보드', () => {
 
   /*
     카드 전체가 링크라 (i)를 링크 안에 넣으면 눌러도 리포트로 새어 나간다.
-    링크를 형제로 깔고 버튼을 z-10으로 올린 이유가 이것이다 — 눌러서 시트가 뜨는지로 확인한다.
+    링크를 형제로 깔고 버튼을 z-10으로 올린 이유가 이것이다. 눌러서 시트가 뜨는지로 확인한다.
   */
   it('카드가 링크여도 (i)를 누르면 리포트로 새지 않고 안내가 열린다', async () => {
     const user = userEvent.setup()

@@ -63,9 +63,9 @@ public class Member extends BaseEntity {
     private Integer dailyKcalTarget;
 
     /**
-     * 근육량 목표 여부 — 탄단지 목표의 비율을 가른다.
+     * 근육량 목표 여부. 탄단지 목표의 비율을 가른다.
      * goal은 체중이 어느 방향으로 갈지이고, 이 값은 그 체중을 근육으로 채우고 싶은지다.
-     * activityLevel도 아니다 — 이미 유지칼로리에 계수로 곱해져 있어 여기에 다시 쓰면 두 번 반영된다.
+     * activityLevel도 아니다. 이미 유지칼로리에 계수로 곱해져 있어 여기에 다시 쓰면 두 번 반영된다.
      */
     @Column(nullable = false)
     private boolean muscleGoal;

@@ -31,7 +31,7 @@ export function CheckIcon({ size = 14 }: { size?: number }) {
   )
 }
 
-/** 안내 열기 — 숫자를 어떻게 읽어야 하는지 설명하는 (i) 버튼 */
+/** 안내 열기. 숫자를 어떻게 읽어야 하는지 설명하는 (i) 버튼 */
 export function InfoIcon({ size = 16 }: { size?: number }) {
   return (
     <svg {...base} width={size} height={size}>

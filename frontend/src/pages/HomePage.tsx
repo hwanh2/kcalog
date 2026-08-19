@@ -45,7 +45,7 @@ export function HomePage() {
         {dashboard.data && (
           <Card className="relative">
             {/*
-              카드 전체가 리포트로 가는 길이다. 링크로 **감싸지** 않고 면만 덮는다 —
+              카드 전체가 리포트로 가는 길이다. 링크로 **감싸지** 않고 면만 덮는다 , 
               <a> 안에 (i) 버튼을 넣으면 중첩 인터랙티브라 HTML 규칙에 어긋나고,
               버튼을 눌러도 클릭이 링크로 새어 올라간다. 형제로 두면 그럴 일이 없다.
             */}
@@ -181,11 +181,11 @@ function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
   const headline = withCoaching && briefing?.hasData ? briefing.headline : ''
   const [guideOpen, setGuideOpen] = useState(false)
   return (
-    /* items-start — 코칭 한 줄이 붙어 두 줄이 되어도 (i)는 첫 줄에 머문다.
+    /* items-start. 코칭 한 줄이 붙어 두 줄이 되어도 (i)는 첫 줄에 머문다.
        달성도 카드의 (i)와 카드 위쪽에서 같은 높이로 맞춘다 */
     <div className="flex items-start justify-between">
       <div className="min-w-0">
-        {/* 카드를 누르면 리포트로 간다는 것을 알리는 표시 — 화살표가 없으면 누를 수 있는지 모른다 */}
+        {/* 카드를 누르면 리포트로 간다는 것을 알리는 표시. 화살표가 없으면 누를 수 있는지 모른다 */}
         <p className="flex items-center gap-0.5 text-sm font-bold text-ink">
           오늘의 칼로리
           <span aria-hidden className="text-muted">
@@ -195,9 +195,9 @@ function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
         {headline && <p className="truncate text-xs font-medium text-success">{headline}</p>}
       </div>
       {/*
-        목표 숫자만 보면 "앱이 정해준 값"으로 읽힌다 — 유지칼로리라는 기준선이 있고
+        목표 숫자만 보면 "앱이 정해준 값"으로 읽힌다. 유지칼로리라는 기준선이 있고
         목표는 거기서 얼마나 뺄지 더할지를 정한 결과라는 것을 여기서 알린다 (design D12).
-        z-10 — 카드를 덮은 리포트 링크보다 위에 있어야 눌린다.
+        z-10. 카드를 덮은 리포트 링크보다 위에 있어야 눌린다.
       */}
       <button
         type="button"

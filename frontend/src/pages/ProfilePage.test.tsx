@@ -234,7 +234,7 @@ describe('ProfilePage — 나이·성별 편집', () => {
     await openEditSheet(user)
 
     expect(screen.getByLabelText('성별')).toHaveValue('MALE')
-    // 화면은 세는나이 — 1990년생이면 올해가 2026년일 때 37세 (lib/age)
+    // 화면은 세는나이. 1990년생이면 올해가 2026년일 때 37세 (lib/age)
     const age = new Date().getFullYear() - 1990 + 1
     expect(screen.getByLabelText(`출생연도 (${age}세)`)).toHaveValue('1990')
   })
@@ -406,8 +406,8 @@ describe('ProfilePage — 설정', () => {
   })
 })
 
-describe('ProfilePage — 탄단지 안내', () => {
-  it('안내는 눌러야 열린다 — 매일 보는 화면에 상시 노출하지 않는다', async () => {
+describe('ProfilePage. 탄단지 안내', () => {
+  it('안내는 눌러야 열린다. 매일 보는 화면에 상시 노출하지 않는다', async () => {
     const user = userEvent.setup()
     renderProfile()
 

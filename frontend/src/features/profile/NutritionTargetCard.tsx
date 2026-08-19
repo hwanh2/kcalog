@@ -5,7 +5,7 @@ import { MacroGuideSheet } from '../dashboard/MacroGuideSheet'
 
 /**
  * 영양 목표 — 유지 칼로리(TDEE)와 목표 섭취를 나란히 두고 차이를 보여준다.
- * 탄단지 목표(g)는 서버가 칼로리 목표·체중·근육량 목표에서 파생해 내려준 값을 그대로 쓴다
+ * 탄단지 목표(g)는 서버가 칼로리 목표, 체중, 근육량 목표에서 파생해 내려준 값을 그대로 쓴다
  * (프론트에 비율 상수를 복제하지 않는다).
  */
 export function NutritionTargetCard({

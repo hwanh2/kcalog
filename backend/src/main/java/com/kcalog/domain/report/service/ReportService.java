@@ -58,7 +58,7 @@ public class ReportService {
         Range range = resolveRange(period, a, memberId, zone);
         int rangeDays = (int) ChronoUnit.DAYS.between(range.start(), range.end()) + 1;
         Integer target = member.getDailyKcalTarget();
-        // 단백질 목표를 체중으로 자르려면 최근 체중이 필요하다 — 아래 cut 판정과 같은 값을 쓴다
+        // 단백질 목표를 체중으로 자르려면 최근 체중이 필요하다. 아래 cut 판정과 같은 값을 쓴다
         WeightLog latest = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).orElse(null);
         MacroTargetG macro = MacroTargetG.from(target,
                 latest == null ? null : latest.getWeightKg(), member.isMuscleGoal());

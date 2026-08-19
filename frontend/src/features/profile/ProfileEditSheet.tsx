@@ -26,7 +26,7 @@ const GENDER_LABELS: Record<Gender, string> = { MALE: '남성', FEMALE: '여성'
 /**
  * 입력한 출생연도를 나이로 환산해 라벨에 붙인다 — 프로필 카드는 "나이 32세"로 보여주는데
  * 여기서 "출생연도 1994"만 물으면 같은 값인지 확신할 수 없다. 범위를 벗어나면 붙이지 않는다.
- * 프로필 카드와 같은 환산을 쓴다(lib/age — 세는나이. 생년만 받으므로 만 나이는 낼 수 없다).
+ * 프로필 카드와 같은 환산을 쓴다(lib/age. 세는나이. 생년만 받으므로 만 나이는 낼 수 없다).
  */
 function ageSuffix(birthYear: string): string {
   const parsed = toNumber(birthYear)
@@ -94,7 +94,7 @@ export function ProfileEditSheet({
       activityLevel: activityLevel as ActivityLevel,
       goal: goal as Goal,
       // 이 시트가 쓰는 것은 제안 칼로리뿐이고 근육량 목표는 거기 영향을 주지 않는다.
-      // 그래도 저장값을 그대로 실어 보낸다 — 응답의 탄단지가 회원의 실제 목표와 어긋나지 않게
+      // 그래도 저장값을 그대로 실어 보낸다. 응답의 탄단지가 회원의 실제 목표와 어긋나지 않게
       muscleGoal: member.muscleGoal,
     })
       .then((r) => {

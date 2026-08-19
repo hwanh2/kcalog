@@ -17,7 +17,7 @@ export interface MemberResponse {
   targetWeightKg: number | null
   dailyKcalTarget: number | null
   latestWeightKg: number | null
-  /** 근육량 목표 여부 — 탄단지 비율을 가른다 */
+  /** 근육량 목표 여부. 탄단지 비율을 가른다 */
   muscleGoal: boolean
   onboardingCompleted: boolean
 }

@@ -24,7 +24,7 @@ public class DashboardService {
 
     private final MealService mealService;
     private final MemberRepository memberRepository;
-    /** 단백질 목표를 체중으로 자르기 위해 필요하다 — 체중은 member가 아니라 weight_log가 소유한다 */
+    /** 단백질 목표를 체중으로 자르기 위해 필요하다. 체중은 member가 아니라 weight_log가 소유한다 */
     private final WeightLogRepository weightLogRepository;
 
     @Transactional(readOnly = true)
@@ -41,7 +41,7 @@ public class DashboardService {
         Integer target = member.getDailyKcalTarget();
         // 목표 초과면 음수 잔여. 목표 미설정(온보딩 미완)이면 잔여도 null
         Integer remaining = target != null ? target - totalKcal : null;
-        // 탄단지 목표는 칼로리 목표·체중·근육량 목표 여부에서 파생 (목표 없으면 세 값 모두 null).
+        // 탄단지 목표는 칼로리 목표, 체중, 근육량 목표 여부에서 파생 (목표 없으면 세 값 모두 null).
         // 체중 기록이 없으면 단백질 범위를 적용할 수 없어 비율만 쓴다 (design D7)
         BigDecimal weightKg = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId)
                 .map(WeightLog::getWeightKg)

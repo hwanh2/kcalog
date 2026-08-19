@@ -165,7 +165,7 @@ html {
   animation: sweep-x 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 접시에 담기는 한 조각 — 위에서 떨어져 자리를 잡는다(온보딩 플랜 만들기, design D20).
+/* 접시에 담기는 한 조각. 위에서 떨어져 자리를 잡는다(온보딩 플랜 만들기, design D20).
    SVG 안에서 transform을 쓰므로 transform-box: fill-box가 필요하다(sweep-x와 같은 이유). */
 @keyframes drop-in {
   from {
@@ -223,9 +223,9 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   /*
-    한국어는 어절 단위로 읽는다 — 기본값(break-word 계열)은 "감량"을 "감/량"으로 쪼개
+    한국어는 어절 단위로 읽는다. 기본값(break-word 계열)은 "감량"을 "감/량"으로 쪼개
     좁은 칸일수록 문장이 읽히지 않는다. keep-all로 어절을 지킨다.
-    다만 칸보다 긴 한 덩어리(URL·영문 단어)까지 지키면 넘치므로 그때만 끊는다.
+    다만 칸보다 긴 한 덩어리(URL, 영문 단어)까지 지키면 넘치므로 그때만 끊는다.
   */
   word-break: keep-all;
   overflow-wrap: break-word;

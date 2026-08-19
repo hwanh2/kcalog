@@ -26,8 +26,8 @@ export function OnboardingPage() {
   const [weightKg, setWeightKg] = useState(BODY_DEFAULTS.MALE.weightKg)
   const [age, setAge] = useState(AGE_DEFAULT)
   /*
-    성별을 고르면 그 성별의 평균에서 시작한다. 다만 2단계에서 이미 고친 값이 있으면 덮지 않는다 —
-    되돌아가 성별만 바꿨을 뿐인데 방금 맞춰둔 키·몸무게가 날아가면 안 된다.
+    성별을 고르면 그 성별의 평균에서 시작한다. 다만 2단계에서 이미 고친 값이 있으면 덮지 않는다 , 
+    되돌아가 성별만 바꿨을 뿐인데 방금 맞춰둔 키, 몸무게가 날아가면 안 된다.
   */
   const [bodyTouched, setBodyTouched] = useState(false)
 
@@ -51,7 +51,7 @@ export function OnboardingPage() {
   /** 5단계에 도착했지만 아직 결과를 보여주지 않는 동안 */
   const [building, setBuilding] = useState(false)
 
-  // 화면은 세는나이 — 2002년생이면 25세다 (lib/age)
+  // 화면은 세는나이. 2002년생이면 25세다 (lib/age)
   const birthYear = birthYearFromAge(age)
 
   /**
@@ -83,7 +83,7 @@ export function OnboardingPage() {
     }
 
     setBusy(true)
-    // 결과를 기다리는 동안 5단계에 먼저 도착시킨다 — 무엇을 계산 중인지 그 화면이 보여준다
+    // 결과를 기다리는 동안 5단계에 먼저 도착시킨다. 무엇을 계산 중인지 그 화면이 보여준다
     setStep(5)
     setBuilding(true)
     try {
@@ -97,7 +97,7 @@ export function OnboardingPage() {
       setSuggestion(result)
       setKcalInput(String(result.dailyKcalTarget))
     } catch {
-      // 실패하면 값이 보이는 화면으로 되돌린다 — 빈 5단계에 남겨두면 할 수 있는 것이 없다
+      // 실패하면 값이 보이는 화면으로 되돌린다. 빈 5단계에 남겨두면 할 수 있는 것이 없다
       setStep(4)
       setGlobalError('계산에 실패했어요. 잠시 후 다시 시도해주세요.')
     } finally {
@@ -247,7 +247,7 @@ export function OnboardingPage() {
   if (step === 4) {
     const wantsTargetWeight = goal === 'CUT' || goal === 'BULK'
     /*
-      고른 방향과 목표 체중이 서로 어긋난 경우 — 감량인데 지금보다 무겁거나, 증량인데 가볍다.
+      고른 방향과 목표 체중이 서로 어긋난 경우. 감량인데 지금보다 무겁거나, 증량인데 가볍다.
       막지는 않는다. 지금 체중을 잘못 넣었을 수도, 정말 그렇게 하려는 것일 수도 있어
       어느 쪽인지 우리가 알 수 없다. 넘어가기 전에 한 번 보여주기만 한다.
     */
@@ -284,7 +284,7 @@ export function OnboardingPage() {
         </div>
 
         {/*
-          방향(감량·유지·증량) 바로 아래 — 방향은 체중이 어디로 갈지이고 이 토글은
+          방향(감량, 유지, 증량) 바로 아래. 방향은 체중이 어디로 갈지이고 이 토글은
           그 체중을 근육으로 채우고 싶은지다. 나란히 두어야 둘의 차이가 읽힌다 (design D4)
         */}
         <div className="mt-3 border-t border-border pt-2">
@@ -309,7 +309,7 @@ export function OnboardingPage() {
               <span className="text-sm text-muted">kg</span>
             </div>
             {errors.targetWeightKg && <p className="mt-1 text-sm text-danger">{errors.targetWeightKg}</p>}
-            {/* 오류가 아니라 확인 요청이다 — 진행을 막지 않으므로 alert이 아니라 status */}
+            {/* 오류가 아니라 확인 요청이다. 진행을 막지 않으므로 alert이 아니라 status */}
             {targetConflict && (
               <p role="status" className="mt-2 text-xs leading-relaxed text-brand-ink">
                 {targetConflict} (지금 {weightKg}kg)
@@ -329,15 +329,15 @@ export function OnboardingPage() {
         : '유지라 유지 칼로리 그대로'
 
   /*
-    탄단지를 어떻게 잡았는지 — 비율만 말하면 "왜 하필 그 비율"이 남는다.
+    탄단지를 어떻게 잡았는지. 비율만 말하면 "왜 하필 그 비율"이 남는다.
     단백질은 체중에서, 지방은 목표 칼로리의 25%에서, 탄수는 나머지에서 나온다(design D1).
-    단백질 g/kg는 실제 값에서 되짚어 보여준다 — 상·하한에 잘렸을 때도 화면과 어긋나지 않는다.
+    단백질 g/kg는 실제 값에서 되짚어 보여준다. 상, 하한에 잘렸을 때도 화면과 어긋나지 않는다.
   */
   const proteinPerKg = suggestion ? (suggestion.proteinTargetG / weightKg).toFixed(1) : ''
   const macroNote = `단백질 체중 1kg당 ${proteinPerKg}g · 지방 25% · 나머지 탄수화물`
 
   /*
-    만드는 동안은 위저드 셸을 벗는다 — 단계 번호·뒤로가기·진행 막대·CTA는 지금 손댈 수 없고,
+    만드는 동안은 위저드 셸을 벗는다. 단계 번호, 뒤로가기, 진행 막대, CTA는 지금 손댈 수 없고,
     시선을 진행 문구에서 뺏는다. 제목도 "준비됐어요"가 아니어야 화면이 스스로와 맞는다.
   */
   if (building) {
@@ -349,7 +349,7 @@ export function OnboardingPage() {
       step={5}
       total={TOTAL_STEPS}
       title="맞춤 플랜이 준비됐어요"
-      /* 마지막 화면은 더 물을 것이 없다 — 몇 번째인지가 할 말이 없고, 결과에서 시선만 나눈다 */
+      /* 마지막 화면은 더 물을 것이 없다. 몇 번째인지가 할 말이 없고, 결과에서 시선만 나눈다 */
       showSteps={false}
       onBack={() => setStep(4)}
       onNext={() => void submit()}
@@ -358,7 +358,7 @@ export function OnboardingPage() {
     >
       {notice}
       {suggestion && (
-        /* animate-settle-in — 만드는 동안 기다린 결과라 툭 나타나지 않고 자리를 잡는다 */
+        /* animate-settle-in. 만드는 동안 기다린 결과라 툭 나타나지 않고 자리를 잡는다 */
         <div className="animate-settle-in space-y-3">
           <div className="rounded-2xl bg-brand p-4 text-on-brand">
             <p className="text-xs font-semibold text-on-brand/80">일일 유지 칼로리 (TDEE)</p>
@@ -366,7 +366,7 @@ export function OnboardingPage() {
               {suggestion.maintenanceKcal.toLocaleString()}
               <span className="ml-1 text-base font-bold">kcal</span>
             </p>
-            {/* 이 숫자가 왜 중요한지 — 목표는 여기서 얼마나 빼고 더할지를 정한 결과다 */}
+            {/* 이 숫자가 왜 중요한지. 목표는 여기서 얼마나 빼고 더할지를 정한 결과다 */}
             <p className="mt-1.5 text-xs text-on-brand/80">먹어도 체중이 그대로인 칼로리예요</p>
           </div>
 
@@ -376,7 +376,7 @@ export function OnboardingPage() {
             </label>
             <div className="flex items-baseline gap-1">
               {/*
-                폭을 값 길이에 맞춘다 — w-32로 고정했더니 네 자리보다 짧을 때 남은 자리만큼
+                폭을 값 길이에 맞춘다. w-32로 고정했더니 네 자리보다 짧을 때 남은 자리만큼
                 'kcal'이 멀리 떨어졌다. tabular-nums라 숫자 한 자가 정확히 1ch다.
               */}
               <input
@@ -390,7 +390,7 @@ export function OnboardingPage() {
               <span className="text-base font-bold text-muted">kcal</span>
             </div>
             {errors.dailyKcalTarget && <p className="mt-1 text-sm text-danger">{errors.dailyKcalTarget}</p>}
-            {/* 제안값이 어디서 나왔는지 — 유지 칼로리에서 방향만큼 조정한 결과다 */}
+            {/* 제안값이 어디서 나왔는지. 유지 칼로리에서 방향만큼 조정한 결과다 */}
             <p className="mt-1 text-xs text-muted">{targetNote}</p>
 
             <p className="mt-3 text-xs text-muted">탄단지 목표</p>
@@ -399,12 +399,12 @@ export function OnboardingPage() {
               <MacroCell label="단" grams={suggestion.proteinTargetG} className="bg-protein-soft text-protein-ink" />
               <MacroCell label="지" grams={suggestion.fatTargetG} className="bg-fat-soft text-fat-ink" />
             </div>
-            {/* 비율이 아니라 무엇을 기준으로 잡았는지 — 단백질은 체중, 지방은 비율, 탄수는 나머지 */}
+            {/* 비율이 아니라 무엇을 기준으로 잡았는지. 단백질은 체중, 지방은 비율, 탄수는 나머지 */}
             <p className="mt-2 text-xs text-muted">{macroNote}</p>
           </div>
 
           {/*
-            이 앱에서 가장 중요한 한 가지 — 여기 숫자는 공식으로 낸 추정이고,
+            이 앱에서 가장 중요한 한 가지. 여기 숫자는 공식으로 낸 추정이고,
             매일 기록해야 내 몸의 값으로 바뀐다. 다른 설명보다 위에 두고 색을 준다.
           */}
           <section className="rounded-2xl bg-success-soft px-4 py-4">
@@ -422,7 +422,7 @@ export function OnboardingPage() {
           </section>
 
           {/*
-            카드 안 한 줄은 "무엇"만 말한다. "왜"는 여기서 이어 받는다 —
+            카드 안 한 줄은 "무엇"만 말한다. "왜"는 여기서 이어 받는다 , 
             접거나 (i)로 숨기지 않는 이유는 이 숫자를 처음 보는 자리이기 때문이다.
             스크롤해야 닿는 위치라 급한 사람은 그냥 시작하면 된다 (design D19).
           */}
@@ -457,7 +457,7 @@ export function OnboardingPage() {
   )
 }
 
-/** 제목과 본문의 크기·색을 벌리고 줄간격을 넓혔다 — 같은 굵기로 붙여 두면 글 덩어리로만 보인다 */
+/** 제목과 본문의 크기, 색을 벌리고 줄간격을 넓혔다. 같은 굵기로 붙여 두면 글 덩어리로만 보인다 */
 function PlanNote({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <li className="py-4">

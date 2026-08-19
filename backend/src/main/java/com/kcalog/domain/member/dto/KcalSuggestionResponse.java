@@ -16,7 +16,7 @@ public record KcalSuggestionResponse(
         int fatTargetG
 ) {
     /**
-     * 체중·근육량 목표 여부를 함께 받는다 — 대시보드가 보여줄 값과 어긋나면
+     * 체중, 근육량 목표 여부를 함께 받는다. 대시보드가 보여줄 값과 어긋나면
      * 온보딩 마지막 화면에서 본 숫자가 거짓말이 된다.
      */
     public static KcalSuggestionResponse of(double maintenance, int dailyKcalTarget,
