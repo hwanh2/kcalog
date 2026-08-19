@@ -12,6 +12,29 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+# node exporter 두 대(이 VM용, 로컬에서 앱 서버를 흉내내는 용)가 같은 인자로 돌아야 한다.
+# 따로 적어두면 한쪽만 고쳐져 시계열 구성이 갈리고, "로컬에서 확인한 것"이 운영과 달라진다(D12).
+x-node-exporter: &node-exporter
+  image: prom/node-exporter:v1.9.1
+  restart: unless-stopped
+  command:
+    - --path.rootfs=/host
+    # 도커가 만드는 overlay 마운트가 수백 개라 그대로 두면 시계열이 그만큼 늘어난다
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+)($$|/)
+    # 이 서버에 없는 장치들. 켜두면 빈 시계열만 늘어난다
+    - --no-collector.mdadm
+    - --no-collector.nfs
+    - --no-collector.nfsd
+    - --no-collector.zfs
+    - --no-collector.infiniband
+  pid: host
+  volumes:
+    # rslave(마운트 전파)를 쓰지 않는다. 표준 예제에는 있지만 macOS Docker Desktop이
+    # 지원하지 않아 로컬에서 뜨지 않고, 그러면 로컬에서 확인한 파일과 운영 파일이 달라진다(D12).
+    # 대가는 컨테이너가 뜬 뒤에 새로 생긴 마운트를 못 본다는 것뿐이라 감수한다.
+    - /:/host:ro
+  logging: *default-logging
+
 services:
   loki:
     image: grafana/loki:3.5.1
@@ -51,28 +74,11 @@ services:
   # 특히 디스크가 중요하다. 차면 Loki가 죽는 대신 로그를 못 받는 상태로 조용히 버티는데(D8),
   # 그걸 감지할 수단이 이것뿐이다.
   node-exporter:
-    image: prom/node-exporter:v1.9.1
+    <<: *node-exporter
     container_name: kcalog-node-exporter
-    restart: unless-stopped
-    command:
-      - --path.rootfs=/host
-      # 도커가 만드는 overlay 마운트가 수백 개라 그대로 두면 시계열이 그만큼 늘어난다
-      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+)($$|/)
-      - --no-collector.mdadm
-      - --no-collector.nfs
-      - --no-collector.nfsd
-      - --no-collector.zfs
-      - --no-collector.infiniband
-    pid: host
-    volumes:
-      # rslave(마운트 전파)를 쓰지 않는다. 표준 예제에는 있지만 macOS Docker Desktop이
-      # 지원하지 않아 로컬에서 뜨지 않고, 그러면 로컬에서 확인한 파일과 운영 파일이 달라진다(D12).
-      # 대가는 컨테이너가 뜬 뒤에 새로 생긴 마운트를 못 본다는 것뿐이라 감수한다.
-      - /:/host:ro
     # 포트를 열지 않는다. 같은 compose 네트워크의 Prometheus만 부르면 된다.
     expose:
       - '9100'
-    logging: *default-logging
 
   grafana:
     image: grafana/grafana:12.1.1
@@ -109,22 +115,11 @@ services:
   # 로컬 확인용. 운영에서 앱 서버의 node exporter는 compose.prod.yml에 있고 9100을 호스트에 연다.
   # 맥에는 서버가 한 대뿐이라, Prometheus가 `kcalog-backend:9100`으로 찾아갈 수 있게 그 포트를 열어 흉내낸다.
   node-exporter-app:
+    <<: *node-exporter
     profiles: [local]
-    image: prom/node-exporter:v1.9.1
     container_name: kcalog-node-exporter-app
-    restart: unless-stopped
-    command:
-      - --path.rootfs=/host
-      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+)($$|/)
-    pid: host
-    volumes:
-      # rslave(마운트 전파)를 쓰지 않는다. 표준 예제에는 있지만 macOS Docker Desktop이
-      # 지원하지 않아 로컬에서 뜨지 않고, 그러면 로컬에서 확인한 파일과 운영 파일이 달라진다(D12).
-      # 대가는 컨테이너가 뜬 뒤에 새로 생긴 마운트를 못 본다는 것뿐이라 감수한다.
-      - /:/host:ro
     ports:
       - '127.0.0.1:9100:9100'
-    logging: *default-logging
 
   # 로컬 확인용. 운영에서 Alloy는 앱 서버(compose.prod.yml)에 있다.
   # 로그를 읽으려면 그 서버의 도커 소켓에 붙어야 하기 때문이다.
