@@ -54,7 +54,12 @@ PR 하나로 간다. 아래 순서는 리뷰 단위가 아니라 **작업 순서
 - [x] 4.1 `./gradlew test` 통과 (265개, 실패 0)
 - [ ] 4.2 👤 배포 후 `https://api.kcalog.site/actuator/health`가 200 UP인지
   - **배포 워크플로의 기동 확인이 이 경로를 쓴다.** 실패하면 배포 전체가 막힌다 (Risks)
-- [ ] 4.3 👤 배포 후 `https://api.kcalog.site/actuator/prometheus`가 **외부에서 안 보이는지**
+- [x] 4.3 👤 배포 후 `https://api.kcalog.site/actuator/prometheus`가 **외부에서 안 보이는지**
+- [x] 4.6 🔴 배포 후 **API 경로가 살아 있는지** (`/api/auth/refresh`가 401을 주는지)
+  - 실제로 여기서 사고가 났다. 라우터를 둘로 늘리면서 `api` 라우터에 `service`를 지정하지 않아
+    Traefik이 자동 연결에 실패했고, `health`만 살아서 워크플로의 기동 확인은 통과했다.
+    배포는 성공으로 끝나고 `/api/**` 전체가 404였다
+  - 헬스체크는 앱이 떴는지만 본다. **라우팅이 맞는지는 보지 않는다**
 - [ ] 4.4 👤 운영 로그가 JSON 한 줄로 나오는지 (`docker logs kcalog-backend | tail -1 | jq .`)
 - [x] 4.5 예외 로그의 스택 트레이스가 **한 건 안에** 담기는지 (로컬에서 확인: 26줄이 error.stack_trace 한 필드에)
   - ⚠️ 그 줄에는 requestId가 없다. Tomcat이 필터 바깥에서 찍기 때문이다. 스레드 이름으로 잇는다 (design 구현 이탈)
