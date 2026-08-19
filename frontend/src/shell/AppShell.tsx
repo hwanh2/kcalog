@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { CoachFab } from '../features/coach/CoachFab'
 import { tapHaptic } from '../lib/haptics'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import { AppMark } from '../ui/AppMark'
@@ -12,14 +13,15 @@ const TABS = [
   { to: '/app/records', label: '음식기록', end: false, icon: MealIcon },
   { to: '/app/weight', label: '체중', end: false, icon: ScaleIcon },
   { to: '/app/report', label: '리포트', end: false, icon: ChartIcon },
-  { to: '/app/ai-pt', label: 'AI PT', end: false, icon: BotIcon },
+  { to: '/app/ai-pt', label: 'AI PT', end: false, icon: SproutTabIcon },
 ] as const
 
-/** 인증·온보딩 완료 회원용 셸 — 상단 헤더 + 하단 5탭 + 우하단 카메라 FAB (v2 목업 기준).
-    FAB은 촬영 화면에서는 숨긴다(목업과 동일) */
+/** 인증·온보딩 완료 회원용 셸. 상단 헤더 + 하단 5탭 + 우하단 코치 FAB.
+    코치는 음식기록 탭(기록 화면을 가린다)과 AI PT 탭(이미 그 화면이다)에서 숨긴다(design D12) */
 export function AppShell() {
   const { pathname } = useLocation()
   const isRecords = pathname === '/app/records'
+  const isCoachTab = pathname === '/app/ai-pt'
 
   /*
     화면을 옮기면 맨 위에서 시작한다. 브라우저는 전체 문서 스크롤을 그대로 두므로,
@@ -92,19 +94,8 @@ export function AppShell() {
         <Outlet />
       </main>
 
-      {/* 등록 경로는 음식기록 탭 하나로 모은다 — FAB은 그 탭으로 보내며 촬영을 바로 연다(design D13) */}
-      {!isRecords && (
-        <Link
-          to="/app/records?camera=1"
-          aria-label="식사 촬영"
-          /* 아래 여백은 내비 높이(55px) + 안전 영역 + 한 칸 띄움이다. 고정값(bottom-20 = 80px)만
-             두면 `env(safe-area-inset-bottom)`이 있는 기기에서 내비가 89px까지 두꺼워져 FAB이
-             그 위에 얹힌다 — 본문 아래 여백과 같은 함정이다(design D24) */
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-brand-dark to-brand text-on-brand shadow-xl touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2"
-        >
-          <CameraIcon />
-        </Link>
-      )}
+      {/* 이 자리는 코치의 것이다. 촬영은 홈의 촬영 카드와 음식기록 탭이 맡는다 */}
+      {!isRecords && !isCoachTab && <CoachFab />}
 
       {/* 위쪽 모서리만 둥글게 — 아래는 화면 끝에 붙으므로 라운드가 필요 없다. 경계는 선 대신 그림자로 */}
       <nav
@@ -177,22 +168,15 @@ function ChartIcon() {
   )
 }
 
-function BotIcon() {
+/* 코치와 같은 새싹. 탭 아이콘은 선택 여부에 따라 색이 바뀌어야 해서
+   FAB의 다색 그림 대신 currentColor 실루엣으로 그린다 */
+function SproutTabIcon() {
   return (
     <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="8" width="16" height="12" rx="3" />
-      <path d="M12 8V4M8 4h8" />
-      <circle cx="9" cy="14" r="0.5" fill="currentColor" />
-      <circle cx="15" cy="14" r="0.5" fill="currentColor" />
-    </svg>
-  )
-}
-
-function CameraIcon() {
-  return (
-    <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
-      <circle cx="12" cy="13" r="3.5" />
+      <path d="M11.6 11.2C7.9 11.2 5.6 9 5.6 5.9c3.7 0 6 2.2 6 5.3Z" />
+      <path d="M12.4 9.8c3.4 0 5.6-2 5.6-4.7-3.2 0-5.6 1.9-5.6 4.7Z" />
+      <path d="M12 12.4v-2" />
+      <path d="M5.8 13.4h12.4l-1.4 6.5a1.6 1.6 0 0 1-1.6 1.3H8.8a1.6 1.6 0 0 1-1.6-1.3z" />
     </svg>
   )
 }

@@ -24,6 +24,12 @@ export const SURFACE = {
   fat: '#06b6d4',
   fatSoft: '#cffafe',
   successSoft: '#ecfdf5',
+  /* 코치 캐릭터(새싹) — 그림에만 쓰는 면이라 대비 기준의 대상이 아니다 */
+  sprout: '#4fa84f',
+  sproutLight: '#7fd07f',
+  sproutDark: '#3d8c3d',
+  sproutBlush: '#ffb98c',
+  sproutFace: '#6b3410',
   /** 파괴적 확인 버튼의 바탕 — INK.danger와 같은 값이지만 쓰임이 면이라 여기에도 둔다 */
   danger: '#b91c1c',
 } as const

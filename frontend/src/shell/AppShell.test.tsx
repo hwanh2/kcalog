@@ -6,6 +6,11 @@ import { RequireAuth } from '../auth/RequireAuth'
 import { makeMember, renderWithAuth } from '../test/utils'
 import { AppShell } from './AppShell'
 
+vi.mock('../api/coach', () => ({
+  getPraise: vi.fn(() => Promise.resolve({ praise: null })),
+  dismissPraise: vi.fn(),
+}))
+
 const completed = { status: 'authed' as const, member: makeMember({ onboardingCompleted: true }) }
 
 /** RequireAuth → AppShell 중첩 라우트를 그대로 재현 (온보딩은 셸 밖) */
@@ -28,14 +33,14 @@ function shellRoutes() {
 }
 
 describe('AppShell', () => {
-  it('5탭·카메라 FAB과 현재 화면을 함께 렌더한다', () => {
+  it('5탭과 코치, 현재 화면을 함께 렌더한다', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
 
     expect(screen.getByText('홈 화면')).toBeInTheDocument()
     for (const name of ['홈', '음식기록', '체중', '리포트', 'AI PT']) {
       expect(screen.getByRole('link', { name })).toBeInTheDocument()
     }
-    expect(screen.getByRole('link', { name: '식사 촬영' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'AI 코치' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /프로필/ })).toBeInTheDocument()
   })
 
@@ -47,11 +52,18 @@ describe('AppShell', () => {
     expect(screen.queryByText(/\.ai/)).not.toBeInTheDocument()
   })
 
-  it('음식기록 탭에서는 카메라 FAB을 숨긴다 — 등록은 그 화면 안에서 한다', () => {
+  it('음식기록 탭에서는 코치를 숨긴다 — 고정 버튼이 기록 화면을 가린다', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app/records' })
 
     expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: '식사 촬영' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'AI 코치' })).not.toBeInTheDocument()
+  })
+
+  it('AI PT 탭에서도 코치를 숨긴다 — 이미 그 화면이다', () => {
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app/ai-pt' })
+
+    expect(screen.getByText('AI PT 화면')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'AI 코치' })).not.toBeInTheDocument()
   })
 
   it('프로필 화면에서는 프로필 아이콘을 감춘다 — 이미 그 화면이다', () => {
@@ -118,15 +130,15 @@ describe('AppShell', () => {
     }
   })
 
-  it('카메라 FAB을 누르면 음식기록 탭으로 이동한다(촬영 자동 열기 신호와 함께)', async () => {
+  it('코치를 누르면 AI PT 탭으로 이동한다', async () => {
     const user = userEvent.setup()
     renderWithAuth(shellRoutes(), { state: completed, path: '/app/weight' })
 
-    const fab = screen.getByRole('link', { name: '식사 촬영' })
-    expect(fab).toHaveAttribute('href', '/app/records?camera=1')
+    const fab = screen.getByRole('link', { name: 'AI 코치' })
+    expect(fab).toHaveAttribute('href', '/app/ai-pt')
 
     await user.click(fab)
-    expect(screen.getByText('음식기록 화면')).toBeInTheDocument()
+    expect(screen.getByText('AI PT 화면')).toBeInTheDocument()
   })
 
   it('AI PT 탭으로 전환된다', async () => {

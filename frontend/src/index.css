@@ -33,6 +33,14 @@
   --color-fat-soft: #cffafe;
   --color-success-soft: #ecfdf5;
 
+  /* 코치 캐릭터(새싹) 전용 — 그림에만 쓰는 면이라 글씨 대비 기준의 대상이 아니다.
+     화분은 brand 계열을 그대로 써서 새 색을 필요 이상으로 늘리지 않았다 */
+  --color-sprout: #4fa84f;
+  --color-sprout-light: #7fd07f;
+  --color-sprout-dark: #3d8c3d;
+  --color-sprout-blush: #ffb98c;
+  --color-sprout-face: #6b3410;
+
   /* 글씨 — 매크로는 Tailwind 700 단계(앰버·로즈·시안) */
   /* 브랜드 글씨·포커스 링 — brand의 색조를 유지한 채 명도만 12% 내린 값.
      ⚠️ 흰 배경 3.64:1로 본문 기준(4.5)에는 미달이며 의도된 예외다(tokens.ts KNOWN_EXCEPTIONS).

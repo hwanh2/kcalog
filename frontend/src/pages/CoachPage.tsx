@@ -14,6 +14,7 @@ import type {
   RecommendationCategory,
 } from '../api/coach'
 import { CoachMarkdown } from '../features/coach/CoachMarkdown'
+import { SproutIcon } from '../features/coach/SproutIcon'
 import { useMutationWithError } from '../lib/useMutationWithError'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { Card } from '../ui/form'
@@ -32,7 +33,16 @@ export function CoachPage() {
     <section>
       {/* 제목은 하단 탭이 말한다(app-shell 스펙). "개인 코칭" 라벨도 함께 뺀다 —
           제목이 사라진 자리에 홀로 남으면 무엇에 붙은 설명인지 알 수 없다 */}
-      <h1 className="sr-only">AI PT</h1>
+      <h1 className="sr-only">AI PT (베타 기능)</h1>
+
+      {/*
+        아직 다듬는 중이라는 표시. 코치의 말이 어긋나도 "원래 이런가" 싶지 않게 미리 알린다.
+        브리핑 카드 안이 아니라 밖에 두는 이유는, 데이터가 없으면 카드가 그려지지 않아
+        표시까지 함께 사라지기 때문이다.
+      */}
+      <p className="mb-1.5 inline-block rounded-full bg-track px-2 py-0.5 text-[10px] font-bold text-muted">
+        베타 기능
+      </p>
 
       {briefing && <Briefing briefing={briefing} />}
       <Chat />
@@ -47,9 +57,9 @@ function Briefing({ briefing }: { briefing: CoachingBriefing }) {
   const { stats } = briefing
   return (
     // 위 여백은 셸의 <main pt-4>가 준다 — 여기서 또 얹으면 이 화면만 아래로 밀린다(design D8)
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div
-        className="rounded-2xl p-4 text-white shadow-sm"
+        className="rounded-2xl p-3.5 text-white shadow-sm"
         style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}
       >
         <p className="text-xs font-semibold text-white/80">오늘의 브리핑</p>
@@ -70,7 +80,8 @@ function Briefing({ briefing }: { briefing: CoachingBriefing }) {
 
 function StatCell({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="rounded-xl bg-canvas p-3 text-center">
+    // 페이지 바탕 위에 놓이므로 surface로 띄운다. canvas는 바탕과 같은 색이라 칸이 보이지 않았다
+    <div className="rounded-tile bg-surface p-2.5 text-center shadow-sm">
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 font-bold text-ink">
         {value}
@@ -89,7 +100,7 @@ const CATEGORY_STYLE: Record<RecommendationCategory, { icon: string; bg: string 
 
 function Recommendations({ items }: { items: CoachingRecommendation[] }) {
   return (
-    <div className="mt-4">
+    <div className="mt-3">
       <p className="font-semibold text-ink">오늘의 추천</p>
       <div className="mt-2 space-y-2">
         {items.map((rec, i) => {
@@ -212,12 +223,14 @@ function Chat() {
   }
 
   return (
-    <div className="mt-4">
+    <div className="mt-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft">🤖</span>
+          {/* 우하단 코치와 같은 얼굴이다. 다른 그림을 쓰면 둘이 같은 존재로 읽히지 않는다.
+              원 배경을 두지 않는다: 그림 자체가 이미 형태라 테두리처럼 한 겹 더 두르면 갇혀 보인다 */}
+          <SproutIcon size={32} />
           <div>
-            <p className="text-sm font-semibold text-ink">AI 코치</p>
+            <p className="text-sm font-semibold text-ink">코치</p>
             <p className="text-[11px] text-success">데이터 분석 중 · 온라인</p>
           </div>
         </div>
@@ -236,7 +249,7 @@ function Chat() {
 
       <div
         ref={listRef}
-        className="mt-2 max-h-80 min-h-40 space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-3"
+        className="mt-2 max-h-80 min-h-40 space-y-2.5 overflow-y-auto rounded-2xl bg-surface p-2.5 shadow-sm"
       >
         {messages.length === 0 && !pending && (
           <p className="py-8 text-center text-sm text-muted">
@@ -265,7 +278,7 @@ function Chat() {
             type="button"
             onClick={() => void submit(q)}
             disabled={busy}
-            className="shrink-0 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:border-brand disabled:opacity-50"
+            className="shrink-0 rounded-full bg-track px-3 py-1.5 text-xs font-medium text-ink hover:bg-brand-soft disabled:opacity-50"
           >
             {q}
           </button>
@@ -277,7 +290,7 @@ function Chat() {
           e.preventDefault()
           void submit(input)
         }}
-        className="mt-2 flex items-center gap-2 rounded-2xl border border-border bg-surface p-1.5"
+        className="mt-2 flex items-center gap-2 rounded-2xl bg-track p-1.5"
       >
         <input
           value={input}

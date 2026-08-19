@@ -32,7 +32,7 @@
 ## 영향
 
 - 스펙: `praise`(신규), `app-shell`(수정: 카메라 FAB이 코치 FAB으로)
-- 백엔드: `domain/coaching/{entity,repository,service,dto,controller}`에 칭찬 추가, `V20__praise.sql`
+- 백엔드: `domain/coaching/{entity,repository,service,dto,controller}`에 칭찬 추가, `V21__praise.sql`
 - 프론트: `features/coach/{CoachFab,SproutIcon}`(신규), `api/coach`, `shell/AppShell`
 - 디자인 토큰: 새싹 색 추가(`index.css`의 `@theme`와 `theme/tokens.ts` 양쪽)
 - 의존성 변화 없음
