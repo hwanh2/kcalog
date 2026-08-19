@@ -1,0 +1,197 @@
+{
+  "uid": "kcalog-ops",
+  "title": "kcalog 운영",
+  "tags": ["kcalog"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "백엔드",
+      "description": "Prometheus가 긁으러 갔다 실패하면 0이 된다. 컨테이너는 살아 있는데 응답만 못 하는 상태도 여기서 잡힌다.",
+      "gridPos": { "h": 5, "w": 5, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "up{job=\"kcalog-backend\"}" }],
+      "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "응답 없음", "index": 0 }, "1": { "text": "정상", "index": 1 } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "최근 5분 에러 로그",
+      "description": "0이 아니면 로그 패널로 내려가 무엇이 터졌는지 본다.",
+      "gridPos": { "h": 5, "w": 5, "x": 5, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{ "refId": "A", "expr": "sum(count_over_time({app=\"kcalog\", level=\"ERROR\"}[5m]))", "queryType": "instant" }],
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 10 }] }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "CPU",
+      "gridPos": { "h": 5, "w": 14, "x": 10, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "process_cpu_usage{job=\"kcalog-backend\"}", "legendFormat": "프로세스" }],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1, "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "요청률 (엔드포인트별)",
+      "description": "인증 전에 막힌 요청은 핸들러까지 가지 못해 uri가 UNKNOWN으로 묶인다.",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{job=\"kcalog-backend\"}[1m])) by (uri)", "legendFormat": "{{uri}}" }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "상태코드별 요청률",
+      "description": "5xx가 올라가면 서버가 깨진 것이고, 4xx만 올라가면 부르는 쪽 문제이거나 인증 만료다.",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{job=\"kcalog-backend\"}[1m])) by (status)", "legendFormat": "{{status}}" }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 10, "stacking": { "mode": "normal" } } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "응답시간",
+      "description": "p95는 쓰지 않는다. 히스토그램 버킷을 켜면 시계열이 엔드포인트마다 수십 배로 늘어 1GB 서버에 부담이다. 평균으로 추세를 보고, 최대로 튀는 요청을 잡는다.",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"kcalog-backend\"}[5m])) / sum(rate(http_server_requests_seconds_count{job=\"kcalog-backend\"}[5m]))",
+          "legendFormat": "평균"
+        },
+        {
+          "refId": "B",
+          "expr": "max(http_server_requests_seconds_max{job=\"kcalog-backend\"})",
+          "legendFormat": "최대"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 5 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "JVM 힙",
+      "description": "다음 change에서 컨테이너 메모리 제한 값을 정할 근거다. 2주쯤 실제 최고치를 보고 잡는다. 지금은 제한이 없어 최대 힙이 VM 전체의 70퍼센트(약 1.3GB)로 계산된다.",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum(jvm_memory_used_bytes{job=\"kcalog-backend\", area=\"heap\"})", "legendFormat": "사용" },
+        { "refId": "B", "expr": "sum(jvm_memory_committed_bytes{job=\"kcalog-backend\", area=\"heap\"})", "legendFormat": "확보" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "DB 커넥션 풀",
+      "description": "대기(pending)가 0보다 크면 요청이 DB 연결을 기다리는 중이다. JVM은 살아 있는데 응답이 안 나가는 상태의 흔한 원인이다.",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "hikaricp_connections_active{job=\"kcalog-backend\"}", "legendFormat": "사용 중" },
+        { "refId": "B", "expr": "hikaricp_connections_idle{job=\"kcalog-backend\"}", "legendFormat": "놀고 있음" },
+        { "refId": "C", "expr": "hikaricp_connections_pending{job=\"kcalog-backend\"}", "legendFormat": "대기" }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 9,
+      "type": "logs",
+      "title": "최근 에러와 경고",
+      "description": "요청 식별자로 좁히려면 Explore에서 | json | requestId = \"...\" 를 덧붙인다. 스택 트레이스 줄에는 식별자가 없으므로 그때는 process_thread_name으로 잇는다.",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 19 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{ "refId": "A", "expr": "{app=\"kcalog\", level=~\"ERROR|WARN\"}" }],
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "서버 디스크",
+      "description": "모니터링 서버가 차면 Loki가 죽는 대신 로그를 못 받는 상태로 조용히 버틴다. 알림 임계는 85퍼센트다.",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})",
+          "legendFormat": "{{host}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": { "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 85 }] }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "서버 메모리",
+      "description": "JVM 힙 패널과 함께 본다. 힙이 늘면서 서버 전체가 말라가는지, 그래서 스왑으로 밀리는지가 여기서 보인다.",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+          "legendFormat": "{{host}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      }
+    }
+  ]
+}

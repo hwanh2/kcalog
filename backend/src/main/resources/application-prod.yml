@@ -1,4 +1,14 @@
 # 운영 프로파일 — 시크릿은 기본값 없이 환경변수 필수. 미주입 시 기동이 실패해야 한다 (fail-closed).
+
+# 로그를 JSON 한 줄로 찍는다. 수집기는 줄 단위로 자르므로 평문이면 예외 하나가 수십 건으로
+# 쪼개져 흩어지고, 동시 요청의 로그와 섞여 스택 트레이스를 이어 붙일 수 없다.
+# JSON이면 줄바꿈이 문자로 들어가 물리적으로 한 줄이 된다 (add-observability D5).
+# **운영에서만** 켠다. 로컬은 사람이 읽는 평문이어야 한다.
+logging:
+  structured:
+    format:
+      console: ecs
+
 spring:
   datasource:
     url: ${DB_URL}

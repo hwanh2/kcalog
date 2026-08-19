@@ -90,6 +90,8 @@ jobs:
           BACKUP_ENDPOINT: ${{ secrets.BACKUP_ENDPOINT }}
           BACKUP_ACCESS_KEY: ${{ secrets.BACKUP_ACCESS_KEY }}
           BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+          # 로그를 보낼 모니터링 VM의 Loki 주소. 없으면 Alloy가 뜨자마자 죽는다
+          LOKI_URL: ${{ secrets.LOKI_URL }}
         run: |
           umask 077
           {
@@ -112,6 +114,7 @@ jobs:
             printf 'BACKUP_ENDPOINT=%s\n' "$BACKUP_ENDPOINT"
             printf 'BACKUP_ACCESS_KEY=%s\n' "$BACKUP_ACCESS_KEY"
             printf 'BACKUP_SECRET_KEY=%s\n' "$BACKUP_SECRET_KEY"
+            printf 'LOKI_URL=%s\n' "$LOKI_URL"
           } > env.prod
 
       - name: 구성·시크릿 전송
@@ -120,7 +123,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'mkdir -p ~/kcalog'
-          scp -i ~/.ssh/deploy_key deploy/compose.prod.yml deploy/backup.sh "$SSH_USER@$SSH_HOST:~/kcalog/"
+          scp -i ~/.ssh/deploy_key deploy/compose.prod.yml deploy/backup.sh deploy/alloy.alloy "$SSH_USER@$SSH_HOST:~/kcalog/"
           scp -i ~/.ssh/deploy_key env.prod "$SSH_USER@$SSH_HOST:~/kcalog/.env"
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'chmod 600 ~/kcalog/.env && chmod +x ~/kcalog/backup.sh'
 

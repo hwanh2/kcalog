@@ -1,0 +1,33 @@
+# 긁어갈 대상은 백엔드의 관리 포트 하나뿐이다. 앱 포트(8080)에는 actuator가 없다 (D4).
+#
+# `kcalog-backend`가 어디를 가리키는지는 compose의 extra_hosts가 정한다 (D12).
+# 이 파일은 로컬과 운영에서 같다.
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: kcalog-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['kcalog-backend:8081']
+        labels:
+          app: kcalog
+
+  # 서버 자체의 디스크, 메모리, CPU. micrometer는 JVM 안만 보므로 기계가 말라죽는 것을 못 본다.
+  # host 라벨로 두 서버를 구분한다.
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          host: monitoring
+      # 앱 서버. `kcalog-backend`가 어디를 가리키는지는 compose의 extra_hosts가 정한다.
+      - targets: ['kcalog-backend:9100']
+        labels:
+          host: app
+          app: kcalog
+
+  # Prometheus 자신. 수집이 멈췄는지 판단할 기준선이 필요하다.
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

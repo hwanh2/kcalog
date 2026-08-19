@@ -94,4 +94,35 @@ class ConfigurationSanityCheckTest {
     void passesWhenFullyConfigured() {
         assertThat(prod(healthy())).isEmpty();
     }
+
+    /**
+     * 지표를 감추는 근거는 경로가 아니라 포트다. SecurityConfig가 {@code /actuator/**}를 인증 없이
+     * 열어두므로(Prometheus가 긁어가야 한다), 포트가 분리되지 않으면 그 규칙이 그대로 공개 도메인에
+     * 걸려 힙, 커넥션 풀, 엔드포인트별 호출량이 노출된다.
+     */
+    @Test
+    @DisplayName("관리 포트가 애플리케이션 포트와 다르면 통과한다")
+    void 관리_포트가_분리되면_통과() {
+        assertThat(ConfigurationSanityCheck.managementPortSeparated("8080", "8081")).isTrue();
+    }
+
+    @Test
+    @DisplayName("관리 포트가 설정되지 않으면 막는다 (actuator가 애플리케이션 포트로 돌아온다)")
+    void 관리_포트_미설정이면_차단() {
+        assertThat(ConfigurationSanityCheck.managementPortSeparated("8080", null)).isFalse();
+        assertThat(ConfigurationSanityCheck.managementPortSeparated("8080", "  ")).isFalse();
+    }
+
+    @Test
+    @DisplayName("관리 포트가 애플리케이션 포트와 같으면 막는다")
+    void 같은_포트면_차단() {
+        assertThat(ConfigurationSanityCheck.managementPortSeparated("8080", "8080")).isFalse();
+    }
+
+    @Test
+    @DisplayName("server.port를 지정하지 않았으면 기본값 8080과 비교한다")
+    void 서버_포트_미지정이면_기본값과_비교() {
+        assertThat(ConfigurationSanityCheck.managementPortSeparated(null, "8080")).isFalse();
+        assertThat(ConfigurationSanityCheck.managementPortSeparated(null, "8081")).isTrue();
+    }
 }

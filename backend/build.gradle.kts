@@ -21,6 +21,8 @@ repositories {
 dependencies {
 	// 헬스체크 — 배포 파이프라인·리버스 프록시가 기동 성공을 판정하는 근거
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	// 지표를 Prometheus 형식으로 내놓는다. 레지스트리만 있으면 되고 코드에서 참조하지 않는다
+	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.springframework.boot:spring-boot-starter-security")

@@ -1,0 +1,94 @@
+# 알림 규칙과 보낼 곳. 화면에서 만들면 이 VM에만 남으므로 파일로 둔다 (D11).
+#
+# 넣은 것은 **행동이 필요한 것뿐**이다. 알림 설계의 흔한 실패는 알림 피로이고,
+# 하루에 몇 번씩 오면 사람은 곧 안 본다. 그러면 진짜 장애를 놓친다 (D10).
+#
+# 에러 급증 알림은 일부러 넣지 않았다. 평소 에러가 몇 건인지 모르는 상태에서 임계값을 잡으면
+# 오탐이 쏟아진다. 2주쯤 관찰한 뒤에 넣는다.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: slack
+    receivers:
+      - uid: slack
+        type: slack
+        settings:
+          # 값은 .env의 SLACK_WEBHOOK_URL에서 온다. 이메일 대신 웹훅을 고른 이유는 D10에 있다.
+          url: $SLACK_WEBHOOK_URL
+
+policies:
+  - orgId: 1
+    receiver: slack
+    group_by: [alertname]
+    # 같은 알림을 4시간마다 다시 보낸다. 계속 울리면 무시하게 되고, 아예 안 울리면 잊는다.
+    repeat_interval: 4h
+
+groups:
+  - orgId: 1
+    name: kcalog
+    folder: kcalog
+    interval: 1m
+    rules:
+      - uid: backend-down
+        title: 백엔드가 응답하지 않음
+        condition: THRESHOLD
+        # Prometheus가 긁으러 갔다 실패하면 up이 0이 된다. 컨테이너는 살아 있는데
+        # 응답만 못 하는 상태도 여기서 잡힌다 (D3에서 pull을 고른 이유).
+        data:
+          - refId: QUERY
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: QUERY
+              expr: up{job="kcalog-backend"}
+              instant: true
+          - refId: THRESHOLD
+            datasourceUid: __expr__
+            model:
+              refId: THRESHOLD
+              type: threshold
+              expression: QUERY
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+        # 지표가 아예 안 오는 것도 장애다. 조용히 넘어가면 감시가 죽은 것과 구분되지 않는다.
+        noDataState: Alerting
+        execErrState: Alerting
+        # 배포 중 컨테이너 교체로 수 초 끊기는 것까지 알리지 않는다
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: kcalog 백엔드가 2분 넘게 응답하지 않습니다
+          description: 컨테이너 상태와 로그를 확인할 것. docker compose ps / docker logs kcalog-backend
+
+      - uid: disk-filling
+        title: 디스크가 차고 있음
+        condition: THRESHOLD
+        # 🔴 모니터링 서버의 디스크가 차면 Loki는 죽는 대신 **로그를 못 받는 상태로 조용히 버틴다**(D8).
+        # 정작 장애 때 로그가 없으므로, 차기 전에 알아야 한다.
+        data:
+          - refId: QUERY
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: QUERY
+              expr: 100 * (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})
+              instant: true
+          - refId: THRESHOLD
+            datasourceUid: __expr__
+            model:
+              refId: THRESHOLD
+              type: threshold
+              expression: QUERY
+              conditions:
+                - evaluator: { type: gt, params: [85] }
+        noDataState: NoData
+        execErrState: Alerting
+        # 디스크는 갑자기 차지 않는다. 짧게 튀는 값에 반응할 이유가 없다.
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.host }} 서버 디스크가 85퍼센트를 넘었습니다'
+          description: 보관 기간(30일)이 도는지, 오래된 도커 이미지가 쌓였는지 확인할 것

@@ -1,0 +1,44 @@
+# 단일 인스턴스 Loki. 파일시스템에 저장하고 클러스터 기능은 전부 끈다.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  # 기본 로그 수준이 info면 요청마다 한 줄씩 남아, 모니터링 스택이 자기 로그로 디스크를 먹는다
+  log_level: warn
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2026-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # 30일. "이게 언제부터 이랬지"에 답하려면 지난달과 비교할 수 있어야 한다 (D8)
+  retention_period: 720h
+  # 스트림 수 상한. 라벨을 잘못 늘리면 여기서 막힌다. 1GB 서버가 조용히 죽는 것보다
+  # 로그가 거부되며 이유가 남는 편이 낫다. 정상 운영이면 스트림은 15개 수준이다 (D6)
+  max_streams_per_user: 1000
+
+# 🔴 이 블록이 없으면 로그가 영원히 쌓인다.
+# limits_config의 retention_period만으로는 아무것도 지워지지 않는다. 실제로 지우는 것은 compactor다.
+# 놓치면 디스크가 차고, 그때 Loki는 죽는 대신 **로그를 못 받는 상태로 조용히 버틴다.**
+# 정작 장애가 났을 때 로그가 없다 (D8).
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: filesystem

@@ -79,3 +79,52 @@ git checkout release && git merge main && git push origin release
 - **운영 배포 이후 적용된 Flyway 마이그레이션은 수정 금지** (체크섬 불일치로 기동 실패). 항상 새 버전 파일로.
 
 전체 절차와 수동 준비 작업(도메인·DNS·VM·R2·카카오 설정)은 `openspec/changes/add-deployment/tasks.md` 참고.
+
+## 모니터링
+
+```
+[앱 서버 t3.small]                    [모니터링 VM t3.micro]
+  backend  ─┐                           Loki        로그 30일
+  db        ├─ Alloy ── 로그 push ──→    Prometheus  지표 30일
+  traefik  ─┘                           Grafana     조회, 알림
+  node-exporter ↑                           │
+     └────── 지표 pull (8081, 9100) ────────┘
+```
+
+감시자는 감시 대상과 함께 죽으면 안 되므로 **서버를 나눈다.** 구성은 `deploy/monitoring/`에 있고, 앱 서버 쪽 Alloy와 node-exporter는 `deploy/compose.prod.yml`에 있어 배포 워크플로가 함께 올린다.
+
+### 보는 방법
+
+Grafana는 인터넷에 열지 않는다. **Tailscale 안에서만** 보인다.
+
+```
+http://<모니터링 VM의 Tailscale 주소>:3000
+```
+
+평소 보는 화면은 대시보드 `kcalog 운영` 하나다. 위 두 칸(백엔드 상태, 최근 5분 에러)으로 정상 여부를 판단하고, 이상하면 아래로 내려가 좁힌 뒤 오른쪽 아래 로그 패널에서 끝낸다.
+
+한 요청을 따라갈 때는 응답 헤더의 `X-Request-Id`를 쓴다.
+
+```
+{app="kcalog"} | json | requestId = "a1b2c3d4e5f6"
+```
+
+⚠️ **스택 트레이스가 담긴 줄에는 요청 식별자가 없다.** Tomcat이 필터 바깥에서 찍기 때문이다. 그때는 같은 스레드로 잇는다.
+
+```
+{app="kcalog"} | json | process_thread_name = "http-nio-8080-exec-3"
+```
+
+### 구성을 고칠 때
+
+- 구성 파일은 **레포가 원본이다.** 급해서 서버에서 직접 고쳤다면 반드시 레포에 반영한다. `release` 역머지 누락과 같은 종류의 위험이고, 빼먹으면 서버를 다시 세울 때 사라진다.
+- 대시보드(`deploy/monitoring/dashboards/*.json`)는 **화면에서 저장할 수 없다.** 파일을 고치면 새로고침으로 반영된다. 자유롭게 실험하려면 Grafana에서 새 대시보드를 만들어 쓰고, 쓸 만해지면 내보내 이 폴더에 넣는다.
+- 로컬에서 그대로 띄워 확인할 수 있다. 환경마다 다른 값은 전부 `.env`로 빠져 있어 파일은 같다.
+
+```bash
+cd deploy/monitoring && docker compose --profile local up -d
+```
+
+- 🔴 `loki.yml`의 `compactor.retention_enabled`를 끄지 말 것. 끄면 로그가 영원히 쌓이고, 디스크가 차면 **Loki는 죽는 대신 로그를 못 받는 상태로 조용히 버틴다.**
+
+자세한 결정 근거는 `openspec/changes/add-observability/design.md` 참고.
