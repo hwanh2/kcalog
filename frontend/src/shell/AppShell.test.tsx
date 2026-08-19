@@ -42,7 +42,7 @@ describe('AppShell', () => {
   it('헤더는 서비스명 한 줄 — 부제는 모든 화면 맨 위를 상시로 차지했다', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
 
-    expect(screen.getByText('kcalog')).toBeInTheDocument()
+    expect(screen.getByText('칼로그')).toBeInTheDocument()
     expect(screen.queryByText('AI 식단 · 탄단지 코칭')).not.toBeInTheDocument()
     expect(screen.queryByText(/\.ai/)).not.toBeInTheDocument()
   })
@@ -60,13 +60,13 @@ describe('AppShell', () => {
     expect(screen.getByText('프로필 화면')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '프로필' })).not.toBeInTheDocument()
     // 헤더 자체는 남는다 — 서비스명과 하단 탭으로 나갈 길이 있어야 한다
-    expect(screen.getByText('kcalog')).toBeInTheDocument()
+    expect(screen.getByText('칼로그')).toBeInTheDocument()
   })
 
   it('음식기록 탭에서는 헤더도 숨긴다 — 그 화면은 끼니 탭이 첫 줄이다', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app/records' })
 
-    expect(screen.queryByText('kcalog')).not.toBeInTheDocument()
+    expect(screen.queryByText('칼로그')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /프로필/ })).not.toBeInTheDocument()
     // 하단 탭은 그대로 — 다른 화면으로 나갈 길은 남아 있어야 한다
     expect(screen.getByRole('link', { name: '홈' })).toBeInTheDocument()
@@ -93,6 +93,29 @@ describe('AppShell', () => {
 
     await user.click(screen.getByRole('link', { name: '체중' }))
     expect(screen.getByText('체중 화면')).toBeInTheDocument()
+  })
+
+  it('탭을 누르면 진동을 시도한다 — 화면이 바뀌기 전에 닿았다는 답이 와야 한다', async () => {
+    const vibrate = vi.fn(() => true)
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
+    try {
+      const user = userEvent.setup()
+      renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
+
+      await user.click(screen.getByRole('link', { name: '음식기록' }))
+
+      expect(vibrate).toHaveBeenCalled()
+    } finally {
+      delete (navigator as { vibrate?: unknown }).vibrate
+    }
+  })
+
+  it('탭에 누름 반응이 붙어 있다 — 아이폰에서는 진동이 안 오므로 이것만 남는다', () => {
+    renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
+
+    for (const name of ['홈', '음식기록', '체중', '리포트', 'AI PT']) {
+      expect(screen.getByRole('link', { name })).toHaveClass('press')
+    }
   })
 
   it('카메라 FAB을 누르면 음식기록 탭으로 이동한다(촬영 자동 열기 신호와 함께)', async () => {

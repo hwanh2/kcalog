@@ -21,8 +21,11 @@ export function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 text-center">
-      <AppMark className="h-16 w-16" />
-      <h1 className="mt-4 text-3xl font-bold text-brand-ink">kcalog</h1>
+      {/* 상자를 가운데 두면 로고 몸통이 오른쪽에 앉는다 — 왼쪽 잔상이 상자 폭을 늘리지만
+          옅고 흩어져 있어 시각적 무게는 그만큼 되지 않는다. 잉크 무게중심만큼 되민다.
+          4.6%는 마크에서 실측한 값이다 — 잔상을 고치면 다시 재야 한다 */}
+      <AppMark className="h-16 w-auto -translate-x-[4.6%]" />
+      <h1 className="mt-4 text-3xl font-bold text-brand-ink">칼로그</h1>
       <p className="mt-2 text-muted">사진 한 장으로 10초 안에 기록하는 체중 관리</p>
       {error && (
         <p role="alert" className="mt-4 text-sm text-danger">

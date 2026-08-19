@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Routes } from 'react-router'
@@ -25,20 +26,26 @@ export function makeMember(overrides: Partial<MemberResponse> = {}): MemberRespo
   }
 }
 
-/** AuthContext + MemoryRouter + Routes 공통 셸 — routes에는 <Route> 목록을 넘긴다.
- *  반환된 reloadMember/signOut 목으로 호출 여부를 검증할 수 있다 */
+/** QueryClient + AuthContext + MemoryRouter + Routes 공통 셸 — routes에는 <Route> 목록을 넘긴다.
+ *  반환된 reloadMember/signOut 목으로 호출 여부를 검증할 수 있다.
+ *
+ *  QueryClientProvider가 여기 있는 이유: 실제 App.tsx도 셸 전체를 감싸고 있고, 셸이
+ *  당겨서 새로고침으로 클라이언트를 쓴다. 감싸지 않으면 셸을 그리는 것만으로 터진다. */
 export function renderWithAuth(
   routes: ReactNode,
   { state, path }: { state: AuthState; path: string },
 ) {
   const reloadMember = vi.fn().mockResolvedValue(undefined)
   const signOut = vi.fn().mockResolvedValue(undefined)
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
-    <AuthContext value={{ state, reloadMember, signOut }}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>{routes}</Routes>
-      </MemoryRouter>
-    </AuthContext>,
+    <QueryClientProvider client={client}>
+      <AuthContext value={{ state, reloadMember, signOut }}>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>{routes}</Routes>
+        </MemoryRouter>
+      </AuthContext>
+    </QueryClientProvider>,
   )
   return { reloadMember, signOut }
 }

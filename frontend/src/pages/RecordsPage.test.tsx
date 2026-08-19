@@ -140,6 +140,7 @@ describe('RecordsPage — 담기', () => {
     renderPage()
 
     await user().click(await screen.findByRole('button', { name: /저녁/ }))
+    await openCatalog()
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(await screen.findByRole('button', { name: '기록하기' }))
 
@@ -158,6 +159,7 @@ describe('RecordsPage — 담기', () => {
     getMealsMock.mockResolvedValue([])
     renderPage()
 
+    await openCatalog()
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(screen.getByRole('button', { name: '수량 늘리기' }))
     await user().click(screen.getByRole('button', { name: '수량 늘리기' })) // 1 → 2 (0.5씩)
@@ -175,6 +177,7 @@ describe('RecordsPage — 담기', () => {
     getMealsMock.mockResolvedValue([])
     renderPage()
 
+    await openCatalog()
     await user().type(await screen.findByLabelText('음식 이름 검색'), '짜장라면')
 
     expect(await screen.findByRole('button', { name: "'짜장라면' 직접 추가하기" })).toBeInTheDocument()
@@ -184,6 +187,7 @@ describe('RecordsPage — 담기', () => {
     getMealsMock.mockResolvedValue([])
     renderPage()
 
+    await openCatalog()
     await user().type(await screen.findByLabelText('음식 이름 검색'), '계란')
 
     expect(await screen.findByRole('button', { name: '삶은달걀 담기' })).toBeInTheDocument()
@@ -197,6 +201,7 @@ describe('RecordsPage — 저장 실패 복구', () => {
     renderPage()
 
     await user().click(await screen.findByRole('button', { name: /저녁/ }))
+    await openCatalog()
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(await screen.findByRole('button', { name: '기록하기' }))
 
@@ -210,6 +215,7 @@ describe('RecordsPage — 저장 실패 복구', () => {
     renderPage()
 
     await user().click(await screen.findByRole('button', { name: /저녁/ }))
+    await openCatalog()
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(await screen.findByRole('button', { name: '기록하기' }))
     await user().click(await screen.findByRole('button', { name: '다시 시도' }))
@@ -390,6 +396,7 @@ describe('RecordsPage — 날짜', () => {
       // 화면을 그대로 둔 채 경계를 넘긴다 — visibilitychange는 일어나지 않는다
       vi.setSystemTime(new Date('2026-08-15T20:01:00Z')) // KST 8/16 05:01 → 서비스일 8/16
 
+      await openCatalog(typer)
       await typer.click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
       await typer.click(screen.getByRole('button', { name: '기록하기' }))
 
@@ -408,6 +415,7 @@ describe('RecordsPage — 날짜', () => {
     getMealsMock.mockResolvedValue([])
     renderPage('/records?date=2026-08-06')
 
+    await openCatalog()
     await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(screen.getByRole('button', { name: '기록하기' }))
 
@@ -447,7 +455,8 @@ describe('RecordsPage — 방금 담긴 줄', () => {
 
     // 저장 뒤 다시 조회하면 목록에 한 줄이 늘어 있다
     getMealsMock.mockResolvedValue([lunch, egged])
-    await user().click(screen.getByRole('button', { name: '삶은달걀 담기' }))
+    await openCatalog()
+    await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(screen.getByRole('button', { name: '기록하기' }))
 
     await waitFor(() => expect(marked()).toHaveLength(1))
@@ -464,7 +473,8 @@ describe('RecordsPage — 방금 담긴 줄', () => {
     await screen.findByText(/김치찌개/)
 
     getMealsMock.mockResolvedValue([lunch, egged])
-    await user().click(screen.getByRole('button', { name: '삶은달걀 담기' }))
+    await openCatalog()
+    await user().click(await screen.findByRole('button', { name: '삶은달걀 담기' }))
     await user().click(screen.getByRole('button', { name: '기록하기' }))
     await waitFor(() => expect(marked()).toHaveLength(1))
 
@@ -500,4 +510,9 @@ describe('RecordsPage — 방금 담긴 줄', () => {
 
 function user() {
   return userEvent.setup()
+}
+
+/** 열려 있는 탭은 AI라, 목록에서 담는 흐름은 "자주 먹는"으로 옮겨야 시작된다 */
+async function openCatalog(typer = user()) {
+  await typer.click(await screen.findByRole('button', { name: '자주 먹는' }))
 }

@@ -29,7 +29,8 @@ class ConfigurationSanityCheckTest {
                 new AppProperties.Storage("kcalog-photos", "https://r2.example.com", "auto",
                         "access", storageSecret, true, 24),
                 new AppProperties.Analysis(50),
-                new AppProperties.Cors(origins));
+                new AppProperties.Cors(origins),
+                new AppProperties.Feedback(null, null));
     }
 
     private AppProperties healthy() {

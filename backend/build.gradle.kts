@@ -24,6 +24,8 @@ dependencies {
 	// 지표를 Prometheus 형식으로 내놓는다. 레지스트리만 있으면 되고 코드에서 참조하지 않는다
 	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	// 의견 도착 알림 — SMTP 설정이 없으면 JavaMailSender 빈이 만들어지지 않고, 발송만 건너뛴다
+	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")

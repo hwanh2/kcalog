@@ -1,6 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { tapHaptic } from '../lib/haptics'
+import { usePullToRefresh } from '../lib/usePullToRefresh'
 import { AppMark } from '../ui/AppMark'
+import { PullIndicator } from '../ui/PullIndicator'
 import { UserIcon } from '../ui/icons'
 
 const TABS = [
@@ -26,6 +30,17 @@ export function AppShell() {
     window.scrollTo(0, 0)
   }, [pathname])
 
+  /*
+    당겨서 새로고침 — 홈 화면에서 띄운 앱에는 주소창도, 브라우저가 주는 당겨서 새로고침도 없다.
+    지금까지 다시 불러올 방법은 탭을 옮겼다 돌아오는 것뿐이었다.
+
+    셸에 한 번만 둔다. 화면마다 붙이면 새로 만드는 탭에서 빠뜨리고, 무엇을 다시 부를지도
+    화면마다 달리 적게 된다. **지금 화면이 쓰고 있는 조회를 전부** 다시 부르면 그 판단이 필요 없다.
+  */
+  const mainRef = useRef<HTMLElement>(null)
+  const queryClient = useQueryClient()
+  const pull = usePullToRefresh(mainRef, () => queryClient.refetchQueries({ type: 'active' }))
+
   return (
     /* overflow-x-clip — 가로로 끌려가지 않게 하는 안전망. `html`에도 같은 선언이 있지만
        루트의 overflow는 뷰포트로 전파되는 규칙을 타고, WebKit은 `clip` 전파를 지키지 않는다.
@@ -41,9 +56,9 @@ export function AppShell() {
       {!isRecords && (
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <AppMark className="h-8 w-8" />
+            <AppMark className="h-8 w-auto" />
             {/* 서비스명 한 줄만 — 부제는 모든 화면 맨 위를 상시로 차지해 본문을 밀어냈다(app-shell 스펙) */}
-            <p className="text-base font-extrabold leading-none tracking-tight">kcalog</p>
+            <p className="text-base font-extrabold leading-none tracking-tight">칼로그</p>
           </div>
           {/*
             아이콘만 — 음식기록 날짜 머리의 프로필과 같은 크기·자리라 탭을 옮겨도 손이 같은 곳으로 간다.
@@ -65,7 +80,15 @@ export function AppShell() {
         아래 여백은 하단 내비 높이 + 안전 영역이다. 고정값(pb-24)만 두면 내비가
         `env(safe-area-inset-bottom)`만큼 더 두꺼워지는 기기(노치 계열)에서 마지막 카드가 가려진다.
       */}
-      <main className="flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+      {/*
+        relative — 당김 표시가 본문 위에 겹쳐 뜬다. 자리를 차지하면 당길 때마다 내용이 밀린다.
+
+        ⚠️ 본문 자체는 **옮기지 않는다.** 손끝을 따라 내려오면 더 붙어 보이겠지만, `transform`이
+        걸린 요소는 `position: fixed` 자식의 기준이 되어 **바텀시트가 화면이 아니라 본문 기준으로
+        떠버린다.** 표시 하나만 움직여도 당기고 있다는 건 충분히 읽힌다.
+      */}
+      <main ref={mainRef} className="relative flex-1 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+        <PullIndicator {...pull} />
         <Outlet />
       </main>
 
@@ -95,9 +118,11 @@ export function AppShell() {
               key={tab.to}
               to={tab.to}
               end={tab.end}
+              // 누른 순간 답한다 — 진동(되는 기기에서)과 눌림, 둘 다 화면이 바뀌기 전에 온다
+              onClick={tapHaptic}
               className={({ isActive }) =>
                 // min-h-11 — 탭 대상 44px (아이콘·라벨 크기는 그대로)
-                `flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] touch-manipulation focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-ink ${
+                `press flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] touch-manipulation focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-ink ${
                   isActive ? 'font-extrabold text-brand-ink' : 'font-bold text-muted'
                 }`
               }

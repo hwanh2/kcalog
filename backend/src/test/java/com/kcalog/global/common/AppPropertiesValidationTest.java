@@ -29,7 +29,7 @@ class AppPropertiesValidationTest {
     private AppProperties withSecret(String secret) {
         return new AppProperties("https://kcalog.site",
                 new AppProperties.Jwt(secret, Duration.ofMinutes(30)),
-                null, null, null, null, null);
+                null, null, null, null, null, null);
     }
 
     @Test

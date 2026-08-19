@@ -42,7 +42,7 @@ export function WizardShell({
         ) : (
           // 첫 단계에는 뒤로 갈 곳이 없다 — 빈 자리로 두는 대신 마크를 세운다.
           // 가입 직후 처음 만나는 화면이라, 어느 앱의 질문인지 여기서 한 번 더 말해준다
-          <AppMark className="h-9 w-9" alt="kcalog" />
+          <AppMark className="h-9 w-auto" alt="칼로그" />
         )}
         <span className="text-sm text-muted">
           {step} / {total}

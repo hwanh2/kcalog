@@ -90,6 +90,10 @@ jobs:
           BACKUP_ENDPOINT: ${{ secrets.BACKUP_ENDPOINT }}
           BACKUP_ACCESS_KEY: ${{ secrets.BACKUP_ACCESS_KEY }}
           BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          FEEDBACK_TO: ${{ secrets.FEEDBACK_TO }}
           # 로그를 보낼 모니터링 VM의 Loki 주소. 없으면 Alloy가 뜨자마자 죽는다
           LOKI_URL: ${{ secrets.LOKI_URL }}
         run: |
@@ -114,6 +118,11 @@ jobs:
             printf 'BACKUP_ENDPOINT=%s\n' "$BACKUP_ENDPOINT"
             printf 'BACKUP_ACCESS_KEY=%s\n' "$BACKUP_ACCESS_KEY"
             printf 'BACKUP_SECRET_KEY=%s\n' "$BACKUP_SECRET_KEY"
+            # 의견 알림 — 비워두면 발송만 건너뛴다(의견 저장은 그대로)
+            printf 'MAIL_HOST=%s\n' "$MAIL_HOST"
+            printf 'MAIL_USERNAME=%s\n' "$MAIL_USERNAME"
+            printf 'MAIL_PASSWORD=%s\n' "$MAIL_PASSWORD"
+            printf 'FEEDBACK_TO=%s\n' "$FEEDBACK_TO"
             printf 'LOKI_URL=%s\n' "$LOKI_URL"
           } > env.prod
 

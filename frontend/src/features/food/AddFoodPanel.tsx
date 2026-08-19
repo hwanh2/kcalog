@@ -22,14 +22,18 @@ import { normalizeName, searchFoods } from './search'
 
 type Tab = 'catalog' | 'favorite' | 'ai'
 
+/*
+  사진 한 장으로 기록하는 것이 이 앱의 주된 길이라 AI 입력을 맨 앞에 둔다.
+  뒤의 둘은 AI가 못 잡거나 굳이 찍을 것 없는 끼니를 위한 보조 경로다.
+*/
 const TABS = [
+  { id: 'ai' as const, label: 'AI 입력', icon: <SparklesIcon /> },
   { id: 'catalog' as const, label: '자주 먹는', icon: <ClockIcon /> },
   { id: 'favorite' as const, label: '즐겨찾기', icon: <StarIcon /> },
-  { id: 'ai' as const, label: 'AI 입력', icon: <SparklesIcon /> },
 ]
 
 /**
- * "지금 추가하기" — 자주먹는·즐겨찾기·AI로 기록 3탭(design D17).
+ * "지금 추가하기" 3탭: AI 입력, 자주 먹는, 즐겨찾기 (design D17).
  * 담기는 모두 선택된 끼니로 들어가고(design D1), 저장은 부모가 수행한다.
  */
 export function AddFoodPanel({
@@ -47,7 +51,8 @@ export function AddFoodPanel({
   onRecordItems: (items: EditableItem[], analysisJobId?: number) => void
 }) {
   const queryClient = useQueryClient()
-  const [tab, setTab] = useState<Tab>(autoCamera ? 'ai' : 'catalog')
+  // 첫 탭이 곧 열려 있는 탭이다. FAB 촬영 진입(autoCamera)도 같은 자리로 떨어진다
+  const [tab, setTab] = useState<Tab>('ai')
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Food | null>(null)
   const [draft, setDraft] = useState<{ mode: 'record' | 'favorite'; name: string } | null>(null)

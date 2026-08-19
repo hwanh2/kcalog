@@ -21,7 +21,7 @@ class SecurityConfigCorsTest {
 
     private CorsConfiguration configFor(List<String> allowedOrigins) {
         AppProperties props = new AppProperties(FRONT, null, null, null, null, null,
-                new AppProperties.Cors(allowedOrigins));
+                new AppProperties.Cors(allowedOrigins), null);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/members/me");
         return new SecurityConfig().corsConfigurationSource(props).getCorsConfiguration(request);
     }
