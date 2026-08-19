@@ -5,3 +5,5 @@ node_modules/
 !.env.example
 .claude/settings.local.json
 docs/
+.superpowers/
+
