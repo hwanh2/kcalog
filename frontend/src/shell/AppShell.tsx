@@ -58,7 +58,7 @@ export function AppShell() {
           <div className="flex items-center gap-2">
             <AppMark className="h-8 w-8" />
             {/* 서비스명 한 줄만 — 부제는 모든 화면 맨 위를 상시로 차지해 본문을 밀어냈다(app-shell 스펙) */}
-            <p className="text-base font-extrabold leading-none tracking-tight">kcalog</p>
+            <p className="text-base font-extrabold leading-none tracking-tight">칼로그</p>
           </div>
           {/*
             아이콘만 — 음식기록 날짜 머리의 프로필과 같은 크기·자리라 탭을 옮겨도 손이 같은 곳으로 간다.

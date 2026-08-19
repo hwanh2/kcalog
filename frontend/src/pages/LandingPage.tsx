@@ -125,7 +125,7 @@ export function LandingPage() {
                 scrolled ? 'text-ink' : 'text-on-brand'
               }`}
             >
-              kcalog
+              칼로그
             </span>
           </span>
           {state === 'installed' ? (
@@ -366,7 +366,7 @@ export function LandingPage() {
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
               <AppMark className="h-9 w-9" />
-              <span className="text-xl font-extrabold tracking-tight text-on-brand">kcalog</span>
+              <span className="text-xl font-extrabold tracking-tight text-on-brand">칼로그</span>
             </span>
             <span className="text-canvas/60">
               사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리

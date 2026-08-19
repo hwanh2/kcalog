@@ -85,7 +85,7 @@ function Profile({
         로그아웃
       </Button>
 
-      <p className="pt-1 text-center text-[11px] text-muted">kcalog v{APP_VERSION}</p>
+      <p className="pt-1 text-center text-[11px] text-muted">칼로그 v{APP_VERSION}</p>
 
       {editing && (
         <ProfileEditSheet member={member} reloadMember={reloadMember} onClose={() => setEditing(false)} />
