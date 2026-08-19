@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.mock.web.MockMultipartFile;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -95,6 +97,15 @@ class AnalysisIntegrationTest {
         String body = mockMvc.perform(multipart("/api/analyses").file(image()).header("Authorization", bearer))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.id").exists())
+                .andReturn().getResponse().getContentAsString();
+        return com.jayway.jsonpath.JsonPath.parse(body).read("$.id", Long.class);
+    }
+
+    /** 최초 설명을 붙여 작업을 만든다. 재분석이 그 설명을 계속 들고 가는지 보려면 필요하다 */
+    private Long createJobWithNote(String note) throws Exception {
+        String body = mockMvc.perform(multipart("/api/analyses").file(image())
+                        .param("note", note).header("Authorization", bearer))
+                .andExpect(status().isAccepted())
                 .andReturn().getResponse().getContentAsString();
         return com.jayway.jsonpath.JsonPath.parse(body).read("$.id", Long.class);
     }
@@ -255,6 +266,43 @@ class AnalysisIntegrationTest {
                         .andExpect(jsonPath("$.result.items[0].name").value("된장찌개")));
 
         assertThat(jobRepository.findById(id).orElseThrow().getImageKey()).isEqualTo(imageKey);
+    }
+
+    @Test
+    @DisplayName("재분석 요청에 직전 추정과 지금까지의 설명이 함께 실린다")
+    void reanalyzeCarriesContext() throws Exception {
+        when(openAiClient.complete(any())).thenReturn(FOUND_JSON);
+        Long id = createJobWithNote("처음 설명");
+        awaitStatus(id, "COMPLETED");
+
+        reanalyze(id, "고기는 뺐어", 202);
+        awaitStatus(id, "COMPLETED");
+        reanalyze(id, "밥도 적어", 202);
+        awaitStatus(id, "COMPLETED");
+
+        // 마지막 호출 본문. 직전 추정 항목과 설명 셋이 모두 들어 있어야 한다
+        String sent = lastRequestText();
+        assertThat(sent).contains("직전 추정");
+        assertThat(sent).contains("김치찌개");          // 직전 결과의 항목 이름
+        assertThat(sent).contains("처음 설명");
+        assertThat(sent).contains("고기는 뺐어");
+        assertThat(sent).contains("밥도 적어");
+    }
+
+    /** 마지막으로 OpenAI에 보낸 user 메시지의 텍스트 조각을 모아 붙인다 */
+    @SuppressWarnings("unchecked")
+    private String lastRequestText() {
+        ArgumentCaptor<java.util.Map<String, Object>> captor = ArgumentCaptor.forClass(java.util.Map.class);
+        verify(openAiClient, org.mockito.Mockito.atLeastOnce()).complete(captor.capture());
+        java.util.Map<String, Object> body = captor.getValue();
+        var messages = (java.util.List<java.util.Map<String, Object>>) body.get("messages");
+        StringBuilder sb = new StringBuilder();
+        for (var part : (java.util.List<java.util.Map<String, Object>>) messages.get(1).get("content")) {
+            if ("text".equals(part.get("type"))) {
+                sb.append(part.get("text")).append('\n');
+            }
+        }
+        return sb.toString();
     }
 
     @Test

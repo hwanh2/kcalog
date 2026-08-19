@@ -7,3 +7,5 @@ node_modules/
 # 다른 워크트리의 git 저장소. 담기면 커밋에 남의 저장소가 들어간다
 .claude/worktrees/
 docs/
+# 브레인스토밍 목업 산출물
+.superpowers/

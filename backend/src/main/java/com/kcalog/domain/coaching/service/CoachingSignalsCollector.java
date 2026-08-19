@@ -33,8 +33,9 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class CoachingSignalsCollector {
 
-    private static final int TREND_WINDOW_DAYS = 7;
-    private static final int SEED_BUFFER_DAYS = 30;  // EMA 워밍업(TdeeService와 동일 취지)
+    // 칭찬 판정도 같은 창과 계산을 쓴다(PraiseSignalsCollector). 두 벌 두면 한쪽만 고쳐지는 날이 온다
+    static final int TREND_WINDOW_DAYS = 7;
+    static final int SEED_BUFFER_DAYS = 30;  // EMA 워밍업(TdeeService와 동일 취지)
     private static final int STREAK_LOOKBACK_DAYS = 60;
 
     private final ReportService reportService;
@@ -66,8 +67,7 @@ public class CoachingSignalsCollector {
 
         WeightLog latest = weightLogRepository.findTopByMemberIdOrderByLogDateDesc(memberId).orElse(null);
         Double latestWeight = latest == null ? null : latest.getWeightKg().doubleValue();
-        boolean cut = member.getTargetWeightKg() != null && latest != null
-                && member.getTargetWeightKg().doubleValue() < latest.getWeightKg().doubleValue();
+        boolean cut = isCut(member, latest);
 
         return new CoachingSignals(
                 today, member.getDailyKcalTarget(), cut,
@@ -79,11 +79,25 @@ public class CoachingSignalsCollector {
                 week.insights().stream().map(ReportResponse.Insight::message).toList());
     }
 
+    /**
+     * 감량이 목표인가. 목표 체중이 최근 체중보다 낮으면 감량으로 본다.
+     * 칭찬 판정(PraiseSignalsCollector)도 이 기준을 쓴다. 허용오차라도 더하는 날 한쪽만 고쳐지면
+     * 리포트와 칭찬이 서로 다른 사람을 감량 중이라고 부른다.
+     */
+    static boolean isCut(Member member, WeightLog latest) {
+        return member.getTargetWeightKg() != null && latest != null
+                && member.getTargetWeightKg().doubleValue() < latest.getWeightKg().doubleValue();
+    }
+
     /** 최근 7일 추세(EMA) 체중 변화 — 창 안 기록이 2개 미만이면 null */
     private Double weightLoss7d(Long memberId, LocalDate today) {
         LocalDate windowStart = today.minusDays(TREND_WINDOW_DAYS - 1L);
-        List<WeightLog> logs = weightLogRepository.findByMemberIdAndLogDateBetweenOrderByLogDateAsc(
-                memberId, windowStart.minusDays(SEED_BUFFER_DAYS), today);
+        return trendChange(weightLogRepository.findByMemberIdAndLogDateBetweenOrderByLogDateAsc(
+                memberId, windowStart.minusDays(SEED_BUFFER_DAYS), today), windowStart);
+    }
+
+    /** 조회한 기록에서 창 구간의 추세 변화를 낸다. 칭찬 판정이 같은 계산을 쓴다 */
+    static Double trendChange(List<WeightLog> logs, LocalDate windowStart) {
         if (logs.size() < 2) {
             return null;
         }

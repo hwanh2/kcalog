@@ -8,19 +8,29 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** 기간 리포트 순수 계산 — 달성 판정·칼로리 비율·연속 초과·기간별 인사이트 랭킹. Spring 비의존, TDD. */
-final class ReportCalc {
+/**
+ * 기간 리포트 순수 계산. 달성 판정, 칼로리 비율, 연속 초과, 기간별 인사이트 랭킹. Spring 비의존, TDD.
+ * <p>
+ * 달성 판정({@link #onTarget})만 공개한다. 칭찬(coaching)이 같은 기준을 써야 하기 때문이다.
+ * 판정을 두 벌 두면 리포트에서는 달성인데 칭찬은 오지 않는 날이 온다.
+ */
+public final class ReportCalc {
 
     /** 목표 근접 밴드(유지·증량) */
     static final double ON_TARGET_BAND = 0.10;
     /** 연속 초과·미달을 신호로 볼 최소 일수(스케일 무관) */
     static final int STREAK_THRESHOLD = 3;
 
-    /** 달성일 수 — 감량 목표면 섭취 ≤ 목표, 그 외엔 목표 ±10% 밴드 안 */
+    /** 하루가 목표를 지켰나. 감량 목표면 섭취가 목표 이하, 그 외엔 목표 ±10% 밴드 안 */
+    public static boolean onTarget(int kcal, int target, boolean cut) {
+        return cut ? kcal <= target : Math.abs(kcal - target) <= target * ON_TARGET_BAND;
+    }
+
+    /** 달성일 수 */
     static int onTargetDays(List<Integer> dailyKcal, int target, boolean cut) {
         int count = 0;
         for (int k : dailyKcal) {
-            if (cut ? k <= target : Math.abs(k - target) <= target * ON_TARGET_BAND) {
+            if (onTarget(k, target, cut)) {
                 count++;
             }
         }
