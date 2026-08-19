@@ -1,0 +1,15 @@
+# 대시보드를 파일에서 읽어온다. 화면에서 손으로 만들면 그 설정이 이 VM의 DB에만 남아
+# 서버를 다시 세울 때 사라진다 (D11).
+#
+# ⚠️ 여기로 읽어온 대시보드는 화면에서 저장할 수 없다. 고치려면 JSON 파일을 고친다.
+# 자유롭게 실험하려면 Grafana에서 새 대시보드를 만들어 쓰고(프로비저닝 대상이 아니다),
+# 쓸 만해지면 내보내서 이 폴더에 넣는다.
+apiVersion: 1
+
+providers:
+  - name: kcalog
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards/files
+      foldersFromFilesStructure: false

@@ -1,0 +1,69 @@
+// 도커 컨테이너 로그를 읽어 Loki로 보낸다. 앱 서버에서 돌며, 로컬 확인 때는
+// deploy/monitoring/compose.yml의 local 프로파일이 같은 파일을 쓴다 (D12).
+//
+// 보낼 곳은 환경마다 다르므로 환경변수로 받는다.
+//   로컬: http://loki:3100/...        운영: http://<모니터링 VM 사설 IP>:3100/...
+
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	// kcalog 컨테이너만 읽는다. 운영 VM에는 이것들뿐이지만, 로컬에는 다른 프로젝트 컨테이너가
+	// 함께 떠 있어서 걸러내지 않으면 남의 로그에 app="kcalog" 라벨이 붙는다.
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/kcalog-.*"
+		action        = "keep"
+	}
+
+	// 도커가 주는 이름은 "/kcalog-backend" 꼴이라 앞의 슬래시를 떼어낸다
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+
+	// 라벨은 app, container, level까지만 둔다. 라벨 조합 하나가 스트림 하나이고,
+	// 요청 ID 같은 것을 넣으면 스트림이 요청 수만큼 늘어 메모리가 터진다 (D6).
+	rule {
+		target_label = "app"
+		replacement  = "kcalog"
+	}
+}
+
+loki.source.docker "containers" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.containers.output
+	forward_to = [loki.process.parse.receiver]
+}
+
+loki.process "parse" {
+	// 백엔드 로그만 파싱한다. Traefik이나 Postgres는 JSON이 아니라서,
+	// 전체에 걸면 level이 빈 값인 스트림이 따로 생긴다.
+	stage.match {
+		selector = "{container=\"kcalog-backend\"}"
+
+		// ⚠️ ECS 포맷은 레벨을 중첩으로 낸다: {"log":{"level":"ERROR"}, "requestId":"...", ...}
+		// 평평한 "log.level" 키를 기대하면 조용히 비어 있게 된다 (실측 확인, design 구현 이탈)
+		stage.json {
+			expressions = {level = "log.level"}
+		}
+
+		// 뽑아낸 값을 라벨로 올린다. 이 단계가 없으면 level이 본문 안에만 남아
+		// {level="ERROR"} 쿼리가 아무것도 못 찾는다 (D6).
+		stage.labels {
+			values = {level = ""}
+		}
+	}
+
+	forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+	endpoint {
+		url = sys.env("LOKI_URL")
+	}
+}

@@ -37,8 +37,17 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        // 배포 파이프라인·프록시가 인증 없이 기동 여부를 판정해야 한다
-                        .requestMatchers("/actuator/health").permitAll()
+                        // actuator 전체를 연다. 배포 파이프라인이 인증 없이 기동을 판정해야 하고,
+                        // Prometheus도 인증 없이 지표를 긁어가야 하기 때문이다.
+                        //
+                        // 안전한 이유는 경로가 아니라 **포트**다. actuator는 관리 포트(8081)에만
+                        // 매핑되고, Traefik은 그중 health만 공개 라우팅한다. 나머지는 보안 그룹으로
+                        // 감시 서버만 닿는다. 이 필터 체인은 관리 포트에도 적용되므로(실측 확인),
+                        // 여기서 인증을 요구하면 지표 수집이 통째로 401이 된다.
+                        //
+                        // 🔴 포트 분리가 전제다. management.server.port를 지우면 이 규칙이 그대로
+                        // 지표를 인터넷에 공개하므로, ConfigurationSanityCheck가 기동을 막는다.
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo.userService(oAuth2UserService))

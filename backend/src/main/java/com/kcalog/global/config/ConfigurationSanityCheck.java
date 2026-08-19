@@ -51,6 +51,28 @@ public class ConfigurationSanityCheck {
                     "설정이 비어 있거나 주입되지 않았다: " + String.join(", ", problems)
                             + " — 운영 배포라면 GitHub Secrets 등록과 .env 생성 단계를 확인할 것");
         }
+
+        if (requireValues && !managementPortSeparated(resolve("server.port"), resolve("management.server.port"))) {
+            throw new IllegalStateException(
+                    "management.server.port가 애플리케이션 포트와 분리되지 않았다. "
+                            + "SecurityConfig가 /actuator/**를 인증 없이 열어두므로, 분리되지 않으면 "
+                            + "힙, 커넥션 풀, 엔드포인트별 호출량이 공개 도메인으로 노출된다");
+        }
+    }
+
+    /**
+     * actuator가 애플리케이션과 다른 포트에 있는지.
+     *
+     * <p>지표를 감추는 근거가 경로가 아니라 포트이기 때문에 기동 시점에 확인한다. 누군가
+     * {@code management.server.port}를 지우거나 애플리케이션 포트와 같게 두면, 인증 없이 열어둔
+     * {@code /actuator/**}가 Traefik의 공개 라우팅에 그대로 걸린다. 조용히 노출되느니 뜨지 않는 편이 낫다.
+     */
+    static boolean managementPortSeparated(String serverPort, String managementPort) {
+        if (managementPort == null || managementPort.isBlank()) {
+            return false;
+        }
+        String applicationPort = (serverPort == null || serverPort.isBlank()) ? "8080" : serverPort.trim();
+        return !managementPort.trim().equals(applicationPort);
     }
 
     /** 해석되지 않는 플레이스홀더는 예외를 던진다 — 여기서는 '없음'으로 넘겨 아래 검사에서 함께 보고한다. */

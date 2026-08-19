@@ -55,6 +55,11 @@ services:
       # DB는 같은 compose 네트워크 안에 있다 — .env로 덮지 않는다
       DB_URL: jdbc:postgresql://db:5432/kcalog
       DB_USERNAME: kcalog
+    ports:
+      # actuator(관리 포트). 감시 서버의 Prometheus가 다른 VM에서 긁어가야 해서 호스트에 연다.
+      # DB(127.0.0.1 제한)와 달리 루프백으로 묶을 수 없으므로 **보안 그룹이 유일한 통제 지점**이다.
+      # 이 포트는 감시 서버의 보안 그룹에서 오는 요청만 허용할 것.
+      - '8081:8081'
     labels:
       - traefik.enable=true
       - traefik.http.routers.api.rule=Host(`api.kcalog.site`)
@@ -62,9 +67,68 @@ services:
       - traefik.http.routers.api.tls.certresolver=le
       # 컨테이너 내부 포트. 호스트에 열지 않으므로 Traefik만 이 포트로 접근한다.
       - traefik.http.services.api.loadbalancer.server.port=8080
+      # 헬스체크만 관리 포트로 공개 라우팅한다. actuator 전체가 8081로 옮겨갔는데
+      # 배포 워크플로가 공개 주소의 /actuator/health로 기동을 확인하기 때문이다. 그 경로가
+      # 앱 기동뿐 아니라 Traefik 라우팅과 인증서까지 함께 검증한다.
+      # /actuator/prometheus는 어느 규칙에도 걸리지 않아 인터넷에서 닿지 않는다.
+      - traefik.http.routers.health.rule=Host(`api.kcalog.site`) && Path(`/actuator/health`)
+      - traefik.http.routers.health.entrypoints=websecure
+      - traefik.http.routers.health.tls.certresolver=le
+      - traefik.http.routers.health.service=health
+      - traefik.http.services.health.loadbalancer.server.port=8081
     depends_on:
       db:
         condition: service_healthy
+    logging: *default-logging
+
+  # 이 서버 자체의 디스크, 메모리, CPU. JVM 지표는 힙만 보여주므로 서버가 메모리 부족으로
+  # 넘어가는 과정을 못 본다. 지금 컨테이너 메모리 제한이 없어 JVM 최대 힙이 VM 전체의 70퍼센트로
+  # 잡히는데, 그 값을 다음 change에서 정할 근거가 여기서 나온다.
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: kcalog-node-exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      # 도커의 overlay 마운트를 빼지 않으면 시계열이 수백 개 늘어난다
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+)($$|/)
+      - --no-collector.mdadm
+      - --no-collector.nfs
+      - --no-collector.nfsd
+      - --no-collector.zfs
+      - --no-collector.infiniband
+    pid: host
+    volumes:
+      # rslave(마운트 전파)를 쓰지 않는다. 표준 예제에는 있지만 macOS Docker Desktop이
+      # 지원하지 않아 로컬에서 뜨지 않고, 그러면 로컬에서 확인한 파일과 운영 파일이 달라진다(D12).
+      # 대가는 컨테이너가 뜬 뒤에 새로 생긴 마운트를 못 본다는 것뿐이라 감수한다.
+      - /:/host:ro
+    ports:
+      # 감시 서버가 다른 VM에서 긁어가므로 호스트에 연다. 8081과 마찬가지로
+      # 루프백으로 묶을 수 없어 보안 그룹이 유일한 통제 지점이다.
+      - '9100:9100'
+    logging: *default-logging
+
+  # 컨테이너 로그를 읽어 모니터링 VM의 Loki로 보낸다. 앱 서버에 두는 이유는 도커 소켓이
+  # 이 서버에 있기 때문이다. 설정은 deploy/alloy.alloy 하나를 로컬 확인과 함께 쓴다 (D12).
+  #
+  # 🔴 LOKI_URL이 가리키는 Loki가 없으면 계속 재시도하며 에러 로그를 쌓는다.
+  # 모니터링 VM을 먼저 띄운 뒤 배포할 것 (tasks.md 배포 순서 제약).
+  alloy:
+    image: grafana/alloy:v1.10.0
+    container_name: kcalog-alloy
+    restart: unless-stopped
+    command:
+      - run
+      # 자기 진단 화면은 루프백에만 연다. 밖에서 볼 일이 없다.
+      - --server.http.listen-addr=127.0.0.1:12345
+      - /etc/alloy/config.alloy
+    environment:
+      LOKI_URL: ${LOKI_URL}
+    volumes:
+      - ./alloy.alloy:/etc/alloy/config.alloy:ro
+      # 읽기 전용. 도커 소켓은 사실상 호스트 root 권한이라 쓰기까지 주지 않는다.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     logging: *default-logging
 
   db:

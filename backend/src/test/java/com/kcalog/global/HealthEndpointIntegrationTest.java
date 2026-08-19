@@ -36,11 +36,20 @@ class HealthEndpointIntegrationTest {
     }
 
     @Test
-    @DisplayName("health 외의 actuator 엔드포인트는 노출하지 않는다")
+    @DisplayName("health와 prometheus 외의 actuator 엔드포인트는 노출하지 않는다")
     void otherEndpointsAreNotExposed() throws Exception {
         // env가 열리면 JWT 시크릿·API 키가 그대로 새어나간다
         mockMvc.perform(get("/actuator/env"))
                 .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("지표 엔드포인트가 인증 없이 열려 있다 (감시 서버가 긁어가야 한다)")
+    void metricsAreScrapable() throws Exception {
+        // 운영에서는 이 엔드포인트가 관리 포트(8081)에만 있고 Traefik이 라우팅하지 않아
+        // 인터넷에서 닿지 않는다. 노출을 막는 것은 인증이 아니라 포트다.
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isOk());
     }
 
     @Test
