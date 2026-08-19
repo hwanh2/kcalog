@@ -65,7 +65,8 @@
 
       .copy { flex: 1; }
       .brandline { display: flex; align-items: center; gap: 14px; margin-bottom: 40px; }
-      .brandline img { width: 60px; height: 60px; }
+      /* 마크는 잔상 때문에 가로가 긴 그림이다 — 정사각으로 묶으면 찌그러진다 */
+      .brandline img { height: 60px; width: auto; }
       .brandline span { font-size: 38px; font-weight: 800; letter-spacing: -.02em; }
 
       h1 {

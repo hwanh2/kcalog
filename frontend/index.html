@@ -24,6 +24,12 @@
     />
     <!-- 페이지 배경(--color-canvas)과 같은 값 — 어긋나면 PWA 상태 표시줄에 다른 색 띠가 생긴다 -->
     <meta name="theme-color" content="#f8fafc" />
+    <!--
+      밝은 화면 전용임을 알린다. 이 선언이 없으면 안드로이드 크롬과 삼성 인터넷의 자동 다크 테마가
+      배경과 글자를 제멋대로 뒤집는다. 그때 PNG 마크는 뒤집히지 않아 남색 `k`만 어두운 배경에 묻힌다.
+      앱에는 다크 팔레트가 없으므로(index.css에 prefers-color-scheme 분기 없음) 여기서 잠근다.
+    -->
+    <meta name="color-scheme" content="light" />
     <meta name="description" content="사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱" />
     <title>칼로그 — 사진 한 장으로 10초 만에 식사 기록</title>
     <!-- 링크 미리보기(카카오톡·검색) — 절대 URL이어야 한다. 상대 경로는 크롤러가 받아가지 못한다 -->

@@ -202,6 +202,9 @@ html {
 
 body {
   margin: 0;
+  /* index.html의 color-scheme meta와 짝 — 브라우저 자동 다크 테마가 이 팔레트를 뒤집지 않게 한다.
+     meta는 첫 페인트를, 여기 선언은 그 뒤를 맡는다 */
+  color-scheme: light;
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);

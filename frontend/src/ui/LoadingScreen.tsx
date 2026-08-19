@@ -16,7 +16,7 @@ export function LoadingScreen({ message }: { message: string }) {
           aria-hidden
           className="absolute inset-0 animate-spin rounded-full border-4 border-border border-t-brand"
         />
-        <AppMark className="h-10 w-10" />
+        <AppMark className="h-10 w-auto" />
       </div>
       <p role="status" className="text-sm font-medium text-muted">
         {message}

@@ -119,7 +119,8 @@ export function LandingPage() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="flex items-center gap-2">
-            <AppMark className="h-8 w-8" />
+            {/* 스크롤 전에는 어두운 히어로 위에 얹힌다 — 글자색과 같은 기준으로 마크도 바꾼다 */}
+            <AppMark className="h-8 w-auto" onDark={!scrolled} />
             <span
               className={`text-lg font-extrabold tracking-tight transition-colors ${
                 scrolled ? 'text-ink' : 'text-on-brand'
@@ -365,7 +366,7 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-14 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
-              <AppMark className="h-9 w-9" />
+              <AppMark className="h-9 w-auto" onDark />
               <span className="text-xl font-extrabold tracking-tight text-on-brand">칼로그</span>
             </span>
             <span className="text-canvas/60">

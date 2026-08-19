@@ -21,7 +21,7 @@ export function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 text-center">
-      <AppMark className="h-16 w-16" />
+      <AppMark className="h-16 w-auto" />
       <h1 className="mt-4 text-3xl font-bold text-brand-ink">칼로그</h1>
       <p className="mt-2 text-muted">사진 한 장으로 10초 안에 기록하는 체중 관리</p>
       {error && (
