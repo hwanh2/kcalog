@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MacroGuideSheet } from './MacroGuideSheet'
+import { TUTORIAL_IDS } from '../tutorial/steps'
 import { InfoIcon } from '../../ui/icons'
 import { ProgressBar } from '../../ui/ProgressBar'
 
@@ -39,6 +40,7 @@ export function MacroProgress({
         */}
         <button
           type="button"
+          id={TUTORIAL_IDS.macroInfo}
           aria-label="탄단지 목표 안내 열기"
           onClick={() => setGuideOpen(true)}
           className="-my-2 -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"

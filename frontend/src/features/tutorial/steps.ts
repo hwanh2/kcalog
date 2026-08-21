@@ -4,7 +4,9 @@
  */
 export const TUTORIAL_IDS = {
   calorie: 'tutorial-calorie',
+  calorieInfo: 'tutorial-calorie-info',
   macro: 'tutorial-macro',
+  macroInfo: 'tutorial-macro-info',
   weight: 'tutorial-weight',
   coach: 'tutorial-coach',
   photo: 'tutorial-photo',
@@ -36,9 +38,21 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     path: HOME_PATH,
+    targetId: TUTORIAL_IDS.calorieInfo,
+    title: '이 숫자가 어디서 나왔는지',
+    body: '유지칼로리가 기준선이고 목표는 거기서 빼거나 더한 값이에요. 여기를 누르면 얼마나 조정했는지 볼 수 있어요.',
+  },
+  {
+    path: HOME_PATH,
     targetId: TUTORIAL_IDS.macro,
     title: '탄단지는 기준선이에요',
     body: '세 숫자를 정확히 맞출 필요는 없습니다. 단백질만 챙기면 나머지 둘은 취향껏 나눠도 결과가 크게 다르지 않아요.',
+  },
+  {
+    path: HOME_PATH,
+    targetId: TUTORIAL_IDS.macroInfo,
+    title: '탄수가 많게 느껴지면',
+    body: '지방으로 옮겨도 됩니다. 단백질도 고기만 세는 게 아니라 밥과 채소에 든 것까지 합한 값이에요. 여기에 적어뒀어요.',
   },
   {
     path: HOME_PATH,

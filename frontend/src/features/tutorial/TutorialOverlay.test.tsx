@@ -29,8 +29,18 @@ function shellRoutes() {
         path="/app"
         element={
           <div>
-            <div id={TUTORIAL_IDS.calorie}>칼로리 카드</div>
-            <div id={TUTORIAL_IDS.macro}>탄단지 카드</div>
+            <div id={TUTORIAL_IDS.calorie}>
+              칼로리 카드
+              <button type="button" id={TUTORIAL_IDS.calorieInfo}>
+                유지칼로리 안내 열기
+              </button>
+            </div>
+            <div id={TUTORIAL_IDS.macro}>
+              탄단지 카드
+              <button type="button" id={TUTORIAL_IDS.macroInfo}>
+                탄단지 목표 안내 열기
+              </button>
+            </div>
             <div id={TUTORIAL_IDS.weight}>체중 카드</div>
           </div>
         }

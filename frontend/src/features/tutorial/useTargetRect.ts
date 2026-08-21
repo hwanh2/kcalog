@@ -34,6 +34,11 @@ function measure(el: HTMLElement): TargetBox {
  * 붙이면 네 가지를 각각 막게 된다. 루프 하나가 전부 덮는다(design D3).
  *
  * 값이 같으면 setState를 건너뛰므로 실제 리렌더는 움직일 때만 일어난다.
+ *
+ * **찾지 못하면 직전 사각형을 그대로 둔다.** 라우트가 바뀌는 순간 새 화면의 앵커는 아직 없는데,
+ * 그때 null로 떨어뜨리면 스팟라이트가 사라지고 화면 전체가 어두워졌다가 말풍선이 가운데로
+ * 튀었다가 다시 제자리로 온다. 한두 프레임짜리 깜빡임이지만 눈에 그대로 보인다.
+ * 스팟라이트를 옛 자리에 두면 다음 프레임에 새 자리로 **미끄러져** 간다.
  */
 export function useTargetRect(targetId: string | undefined): TargetBox | null {
   const [box, setBox] = useState<TargetBox | null>(null)
@@ -46,8 +51,10 @@ export function useTargetRect(targetId: string | undefined): TargetBox | null {
     let frame = 0
     const tick = () => {
       const el = document.getElementById(targetId)
-      const next = el ? measure(el) : null
-      setBox((prev) => (same(prev, next) ? prev : next))
+      if (el) {
+        const next = measure(el)
+        setBox((prev) => (same(prev, next) ? prev : next))
+      }
       frame = requestAnimationFrame(tick)
     }
     tick()

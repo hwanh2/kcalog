@@ -11,12 +11,18 @@ const PAD = 8
  *
  * 그 결과 비춰진 요소도 눌리지 않는다. 이건 결함이 아니라 원하는 동작이다. 회원이 카드를 눌러
  * 다른 화면으로 새면 안내가 끊긴다.
+ *
+ * glide는 **스크롤이 멈춰 있을 때만** 켠다. 자리는 프레임마다 다시 재는데(design D3) 거기에
+ * transition까지 걸면 매 프레임 새 목표가 잡혀 전환이 다시 시작된다. 스팟라이트가 대상을
+ * 뒤늦게 따라다니며 고무줄처럼 늘어진다(design D15).
  */
-export function Spotlight({ box }: { box: TargetBox }) {
+export function Spotlight({ box, glide }: { box: TargetBox; glide: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="tutorial-spotlight pointer-events-none absolute ring-2 ring-white/60"
+      className={`tutorial-spotlight pointer-events-none absolute ring-2 ring-white/60 ${
+        glide ? 'tutorial-spotlight-glide' : ''
+      }`}
       style={{
         top: box.top - PAD,
         left: box.left - PAD,

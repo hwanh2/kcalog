@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { CoachFab } from '../features/coach/CoachFab'
 import { TutorialOverlay } from '../features/tutorial/TutorialOverlay'
+import { useTutorialActive } from '../features/tutorial/useTutorialActive'
 import { tapHaptic } from '../lib/haptics'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import { AppMark } from '../ui/AppMark'
@@ -29,9 +30,16 @@ export function AppShell() {
     긴 홈을 내려보다 "전체보기"를 누르면 도착한 화면이 **중간에서 시작한다** —
     새 화면인데 이미 지나간 것처럼 보인다. SPA에서는 이걸 직접 해줘야 한다.
   */
+  /*
+    ⚠️ 앱 둘러보기가 열려 있는 동안은 쉰다. 안내는 비출 대상으로 스크롤하는데 여기까지 돌면
+    둘이 스크롤을 빼앗아, 음식기록으로 넘어가는 스텝에서 대상이 화면 밖에 남는다.
+    자식 이펙트가 먼저 도는 React 순서라 안내가 늘 진다(add-app-tutorial design D15).
+  */
+  const tutorialActive = useTutorialActive()
   useEffect(() => {
+    if (tutorialActive) return
     window.scrollTo(0, 0)
-  }, [pathname])
+  }, [pathname, tutorialActive])
 
   /*
     당겨서 새로고침 — 홈 화면에서 띄운 앱에는 주소창도, 브라우저가 주는 당겨서 새로고침도 없다.

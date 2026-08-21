@@ -205,6 +205,7 @@ function CoachHeader({ withCoaching }: { withCoaching: boolean }) {
       */}
       <button
         type="button"
+        id={TUTORIAL_IDS.calorieInfo}
         aria-label="유지칼로리 안내 열기"
         onClick={() => setGuideOpen(true)}
         className="relative z-10 -my-2 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
