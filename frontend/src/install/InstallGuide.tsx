@@ -75,7 +75,7 @@ export function InstallGuide({ state, onInstall }: Props) {
                 아이콘 줄 맨 오른쪽입니다. ‘홈 화면에 추가’가 바로 보이면 건너뛰세요.
               </Step>
               <Step n="3" title="‘홈 화면에 추가’ 선택">목록을 아래로 내리면 나옵니다.</Step>
-              <Step n="4" title="오른쪽 위 ‘추가’">홈 화면에 칼로그 아이콘이 생깁니다.</Step>
+              <Step n="4" title="오른쪽 위 ‘추가’">홈 화면에 오늘식단 아이콘이 생깁니다.</Step>
             </ol>
           </div>
         )}
@@ -88,7 +88,7 @@ export function InstallGuide({ state, onInstall }: Props) {
             <ol className="space-y-4">
               <Step n="1" title="브라우저 메뉴 열기">오른쪽 위 점 세 개 아이콘입니다.</Step>
               <Step n="2" title="‘앱 설치’ 선택">‘홈 화면에 추가’로 표시되기도 합니다.</Step>
-              <Step n="3" title="설치 확인">홈 화면에 칼로그 아이콘이 생깁니다.</Step>
+              <Step n="3" title="설치 확인">홈 화면에 오늘식단 아이콘이 생깁니다.</Step>
             </ol>
           </div>
         )}
@@ -97,7 +97,7 @@ export function InstallGuide({ state, onInstall }: Props) {
           <div className="flex flex-col items-center text-center">
             <img
               src="/qr-install.png"
-              alt="칼로그 설치 안내 페이지 QR 코드"
+              alt="오늘식단 설치 안내 페이지 QR 코드"
               width={176}
               height={176}
               loading="lazy"

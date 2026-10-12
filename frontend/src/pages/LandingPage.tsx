@@ -63,7 +63,7 @@ const MISREADS: Misread[] = [
     body: '공식으로 낸 값은 개인차가 10에서 15% 납니다. 2,500이라고 나와도 실제는 2,200일 수도 2,800일 수도 있습니다. 활동량을 한 칸 다르게 고르면 400kcal가 움직입니다. "계산대로 먹었는데 안 빠져요"가 여기서 나옵니다. 공식이 틀린 게 아니라 내 몸이 평균이 아닌 것뿐입니다.',
     contrast: '대부분의 칼로리 앱은 처음 계산한 추정값을 끝까지 씁니다.',
     answer:
-      '칼로그는 2주만 기록하면 실제로 먹은 양과 체중 변화로 역산해 진짜 유지 칼로리를 알려줍니다. 공식이 아니라 내 몸에서 나온 값입니다.',
+      '오늘식단은 2주만 기록하면 실제로 먹은 양과 체중 변화로 역산해 진짜 유지 칼로리를 알려줍니다. 공식이 아니라 내 몸에서 나온 값입니다.',
   },
   {
     title: '자기 유지 칼로리를 모른다',
@@ -110,7 +110,7 @@ const TILT = [-4, 2.5, -2, 3.5] as const
 const FAQ = [
   {
     q: '다른 칼로리 앱과 뭐가 다른가요?',
-    a: '대부분은 처음 공식으로 계산한 추정값을 끝까지 씁니다. 칼로그는 2주치 식사와 체중이 쌓이면 실제로 먹은 양과 체중 변화로 유지 칼로리를 다시 계산해 목표를 고쳐 잡습니다. 단백질을 칼로리 비율이 아니라 체중에서 정하는 것도 다릅니다.',
+    a: '대부분은 처음 공식으로 계산한 추정값을 끝까지 씁니다. 오늘식단은 2주치 식사와 체중이 쌓이면 실제로 먹은 양과 체중 변화로 유지 칼로리를 다시 계산해 목표를 고쳐 잡습니다. 단백질을 칼로리 비율이 아니라 체중에서 정하는 것도 다릅니다.',
   },
   {
     q: '무료인가요?',
@@ -177,7 +177,7 @@ export function LandingPage() {
                 scrolled ? 'text-ink' : 'text-on-brand'
               }`}
             >
-              칼로그
+              오늘식단
             </span>
           </span>
           {state === 'installed' ? (
@@ -481,7 +481,7 @@ export function LandingPage() {
           <div className="flex flex-col gap-2">
             <span className="flex items-center gap-2">
               <AppMark className="h-9 w-auto" onDark />
-              <span className="text-xl font-extrabold tracking-tight text-on-brand">칼로그</span>
+              <span className="text-xl font-extrabold tracking-tight text-on-brand">오늘식단</span>
             </span>
             <span className="text-canvas/60">
               내 몸에 맞는 하루 섭취량부터 잡는 AI 식단 관리

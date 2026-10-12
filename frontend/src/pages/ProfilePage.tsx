@@ -106,7 +106,7 @@ function Profile({
         </Button>
       )}
 
-      <p className="pt-1 text-center text-[11px] text-muted">칼로그 v{APP_VERSION}</p>
+      <p className="pt-1 text-center text-[11px] text-muted">오늘식단 v{APP_VERSION}</p>
 
       <WithdrawButton />
 

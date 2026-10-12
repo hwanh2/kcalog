@@ -38,7 +38,7 @@ describe('AppShell (토스 빌드)', () => {
     renderWithAuth(shellRoutes(), { state: completed, path: '/app' })
 
     expect(screen.queryByRole('banner')).not.toBeInTheDocument()
-    expect(screen.queryByText('칼로그')).not.toBeInTheDocument()
+    expect(screen.queryByText('오늘식단')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '프로필' })).not.toBeInTheDocument()
   })
 

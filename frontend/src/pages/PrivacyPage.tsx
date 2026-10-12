@@ -15,7 +15,7 @@ export function PrivacyPage() {
       <h1 className="text-2xl font-bold">개인정보 처리방침</h1>
       <p className="mt-2 text-sm text-muted">시행일 2026년 10월 10일</p>
       <p className="mt-4 text-sm leading-relaxed">
-        칼로그(이하 "서비스")는 이용자의 개인정보를 소중히 다루고, 「개인정보 보호법」에 따라 아래와 같이 처리해요.
+        오늘식단(이하 "서비스")는 이용자의 개인정보를 소중히 다루고, 「개인정보 보호법」에 따라 아래와 같이 처리해요.
       </p>
 
       <Section title="1. 처리하는 개인정보">
@@ -101,7 +101,7 @@ export function PrivacyPage() {
 
       <Section title="8. 개인정보 보호책임자">
         <p className="text-sm leading-relaxed">
-          칼로그 운영자
+          오늘식단 운영자
           <br />
           이메일:{' '}
           <a

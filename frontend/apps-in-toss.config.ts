@@ -1,8 +1,9 @@
 import { defineConfig } from '@apps-in-toss/web-framework/config'
 
 export default defineConfig({
-  // 콘솔에 등록한 뒤에는 바꿀 수 없다. 딥링크 intoss://kcalog 와 CORS origin(kcalog.apps.tossmini.com)이 여기서 정해진다
-  appName: 'kcalog',
+  // 콘솔에 등록한 뒤에는 바꿀 수 없다. 딥링크 intoss://oneulsikdan 와 CORS origin(oneulsikdan.apps.tossmini.com)이 여기서 정해진다.
+  // 토스에 보이는 앱 이름("식단관리하기")은 콘솔에서 따로 정하고 나중에 바꿀 수 있다
+  appName: 'oneulsikdan',
   brand: {
     primaryColor: '#FF6B00',
   },

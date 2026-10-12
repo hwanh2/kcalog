@@ -417,7 +417,7 @@ export function OnboardingPage() {
             {/* 2번 차별점. 이 대비가 없으면 "다들 하는 그 계산"으로 읽히고 넘어간다 */}
             <p className="mt-2 text-sm leading-[1.75] text-ink/75">
               <span className="font-semibold text-ink">대부분의 칼로리 앱은 이 추정값을 끝까지 써요.</span>{' '}
-              칼로그는 식사와 체중을 매일 남기면 2주 뒤부터{' '}
+              오늘식단은 식사와 체중을 매일 남기면 2주 뒤부터{' '}
               <span className="font-semibold text-ink">실제로 먹은 양과 체중 변화</span>로 유지 칼로리를
               다시 계산해요. 공식이 아니라 내 몸에서 나온 값이 되는 거예요.
             </p>

@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => {
       !toss && VitePWA({
         registerType: 'autoUpdate',
         manifest: {
-          name: '칼로그',
-          short_name: '칼로그',
+          name: '오늘식단',
+          short_name: '오늘식단',
           description: '사진 한 장으로 10초 안에 식사가 기록되는 AI 식단·체중 관리 앱',
           lang: 'ko',
           // 앱은 /app 아래에 있다 — 홈 화면 아이콘은 랜딩(/)을 거치지 않고 곧장 앱으로 들어간다.
@@ -28,14 +28,14 @@ export default defineConfig(({ mode }) => {
           theme_color: '#f8fafc',
           background_color: '#f8fafc',
           icons: [
-            { src: '/icon-192-v2.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: '/icon-512-v2.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: '/icon-192-v3.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: '/icon-512-v3.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
             /*
               안드로이드 적응형 아이콘은 **따로 만든 파일**을 쓴다. 마스크는 중앙 80%만 남기고 잘라내는데,
               같은 파일을 쓰면 원형 마스크에서 링과 잔상이 잘린다.
               icon-512-maskable은 같은 그림을 안전영역 안으로 줄여 흰 여백을 두른 것이다.
             */
-            { src: '/icon-512-maskable-v2.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+            { src: '/icon-512-maskable-v3.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
         },
       }),

@@ -27,3 +27,4 @@ coverage
 # 토스 미니앱 빌드 산출물(npm run build:toss)
 dist-toss
 *.ait
+tools/icons/out

@@ -84,9 +84,17 @@ PR은 그룹 단위로 나눈다. 1~4는 사업자 등록이나 콘솔 가입 �
 - [x] 4b.6 콘솔 로고 600×600 파일 생성
 - [ ] 4b.7 코치 캐릭터, 그라데이션, 튜토리얼 오버레이는 심사 결과에 따라
 
+## 4c. 서비스 이름과 로고 (2026-10-12 사용자 결정, D16)
+
+- [x] 4c.1 화면 표기 "칼로그" → "오늘식단", README와 AGENTS.md 규칙
+- [x] 4c.2 앱인토스 `appName`을 `oneulsikdan`으로
+- [x] 4c.3 로고 가운데를 숟가락과 젓가락으로(시안 C), `tools/icons/make-icons.mjs`로 v3 아이콘 일체와 콘솔 로고 생성
+- [x] 4c.4 링크 카드 `og.png` 재생성
+- [ ] 4c.5 콘솔에 토스 앱 이름 "식단관리하기", 영문명 "Oneul Sikdan", 로고 600×600 입력
+
 ## 5. 출시 준비 (사용자 직접)
 
-- [ ] 5.1 앱인토스 콘솔 가입, 워크스페이스 생성, 앱 등록(`appName` 확정)
+- [ ] 5.1 앱인토스 콘솔 가입, 워크스페이스 생성, 앱 등록(`appName`은 `oneulsikdan`, 토스 앱 이름은 "식단관리하기")
 - [ ] 5.2 mTLS 인증서 발급 가능 여부 확인. 불가하면 사업자 등록 후 진행 (Risks)
 - [ ] 5.3 운영 `.env`에 `APPS_IN_TOSS_CERTIFICATE`, `APPS_IN_TOSS_PRIVATE_KEY`(PEM 내용이나 `file:` 위치), `CORS_ALLOWED_ORIGINS`에 토스 origin 두 개 추가 후 재배포
 - [ ] 5.4 `npm run build:toss` 후 번들 업로드, QR로 iOS와 Android 실기기 테스트(로그인, 재진입 데이터 유지, 뒤로가기, 카메라)

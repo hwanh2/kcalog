@@ -37,7 +37,7 @@ export function ProfileSummaryCard({
           <PersonIcon />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-xl font-black text-on-brand">{member.nickname ?? '칼로그 회원'}</p>
+          <p className="truncate text-xl font-black text-on-brand">{member.nickname ?? '오늘식단 회원'}</p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {member.goal && (
               <span className="rounded-full bg-on-brand/25 px-2 py-0.5 text-[11px] font-bold text-on-brand">
