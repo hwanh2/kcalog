@@ -1,4 +1,4 @@
-import { API_BASE, ApiError, api, getAccessToken, refreshAccessToken } from './client'
+import { API_BASE, ApiError, api, getAccessToken, handleSessionLost, refreshAccessToken } from './client'
 import type { MealAnalysis } from './meal'
 
 export type AnalysisStatus = 'ANALYZING' | 'COMPLETED' | 'NO_FOOD' | 'FAILED'
@@ -35,7 +35,7 @@ export async function createAnalysis(input: { image?: Blob; note?: string }): Pr
   if (res.status === 401) {
     const token = await refreshAccessToken()
     if (!token) {
-      window.location.assign('/login')
+      handleSessionLost()
       throw new ApiError(401, null)
     }
     res = await send()

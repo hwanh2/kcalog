@@ -173,7 +173,7 @@ describe('OnboardingPage 위저드', () => {
     await user.click(next())
 
     // 값이 보이는 화면에서 바로 알려주고, 단계는 그대로 머문다
-    expect(screen.getByText('키는 100~230cm 범위여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('키는 100~230cm 사이로 입력해주세요')).toBeInTheDocument()
     expect(screen.getByText('키와 몸무게, 나이')).toBeInTheDocument()
     expect(getKcalSuggestionMock).not.toHaveBeenCalled()
 

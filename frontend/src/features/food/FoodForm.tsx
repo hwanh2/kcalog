@@ -105,11 +105,11 @@ export function validateDraft(draft: FoodDraft): FoodDraftErrors {
 
   const kcal = toNumber(draft.kcal)
   if (kcal === null || kcal < 0 || kcal > KCAL_MAX || !Number.isInteger(kcal))
-    errors.kcal = `0~${KCAL_MAX} 정수여야 합니다`
+    errors.kcal = `0~${KCAL_MAX} 사이 정수로 입력해주세요`
 
   const macro = (value: string): string | undefined => {
     const n = toNumber(value)
-    if (n === null || n < 0 || n > MACRO_MAX) return `0~${MACRO_MAX} 범위여야 합니다`
+    if (n === null || n < 0 || n > MACRO_MAX) return `0~${MACRO_MAX} 사이로 입력해주세요`
     if (Math.abs(n * 10 - Math.round(n * 10)) > 1e-9) return '소수 첫째 자리까지만 입력해주세요'
     return undefined
   }

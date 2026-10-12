@@ -56,6 +56,7 @@ function renderPage(memberOverrides: Partial<MemberResponse> = {}) {
         state: { status: 'authed', member: makeMember({ nickname: '김지훈', ...memberOverrides }) },
         reloadMember: vi.fn(),
         signOut: vi.fn(),
+        retrySession: vi.fn(),
       }}
     >
       <QueryClientProvider client={client}>
@@ -291,6 +292,13 @@ describe('HomePage 대시보드', () => {
     const heading = await screen.findByRole('heading', { level: 1 })
     expect(heading).toHaveTextContent(/지훈님$/)
     expect(heading.textContent).not.toContain('김지훈')
+  })
+
+  it('이름이 없는 회원(토스)은 이름 없이 인사만 한다', async () => {
+    renderPage({ nickname: null })
+
+    const heading = await screen.findByRole('heading', { level: 1 })
+    expect(heading.textContent).not.toMatch(/님|null/)
   })
 
   it('오늘의 AI 코칭 카드 — 본문을 보여주고 AI PT로 이동', async () => {

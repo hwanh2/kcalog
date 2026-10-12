@@ -6,6 +6,7 @@ import { TutorialOverlay } from '../features/tutorial/TutorialOverlay'
 import { useTutorialActive } from '../features/tutorial/useTutorialActive'
 import { tapHaptic } from '../lib/haptics'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
+import { IS_TOSS } from '../platform'
 import { AppMark } from '../ui/AppMark'
 import { PullIndicator } from '../ui/PullIndicator'
 import { UserIcon } from '../ui/icons'
@@ -24,6 +25,8 @@ export function AppShell() {
   const { pathname } = useLocation()
   const isRecords = pathname === '/app/records'
   const isCoachTab = pathname === '/app/ai-pt'
+  // 토스 빌드에는 앱 헤더가 없다. 로고와 앱 이름은 토스 내비바가 보여 주고, 프로필 진입은 내비바 기능 버튼이 맡는다 (add-apps-in-toss D7)
+  const showHeader = !isRecords && !IS_TOSS
 
   /*
     화면을 옮기면 맨 위에서 시작한다. 브라우저는 전체 문서 스크롤을 그대로 두므로,
@@ -64,7 +67,7 @@ export function AppShell() {
         그 위에 서비스명 줄까지 얹으면 기록 목록과 "지금 추가하기"가 그만큼 아래로 밀린다.
         프로필 진입은 다른 네 탭에 그대로 있다.
       */}
-      {!isRecords && (
+      {showHeader && (
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2">
             <AppMark className="h-8 w-auto" />
@@ -106,10 +109,14 @@ export function AppShell() {
       {/* 이 자리는 코치의 것이다. 촬영은 홈의 촬영 카드와 음식기록 탭이 맡는다 */}
       {!isRecords && !isCoachTab && <CoachFab />}
 
-      {/* 위쪽 모서리만 둥글게 — 아래는 화면 끝에 붙으므로 라운드가 필요 없다. 경계는 선 대신 그림자로 */}
+      {/*
+        화면 끝에서 띄운 알약. 앱인토스 UX 가이드가 탭바는 플로팅 형태만 허용한다.
+        토스 앱의 하단 탭과 모양이 겹치면 지금 어느 앱에 있는지 헷갈리기 때문이다.
+        웹도 같은 모양으로 맞췄다 (add-apps-in-toss D7)
+      */}
       <nav
         aria-label="주요 메뉴"
-        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md items-stretch rounded-t-card bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(15,23,42,0.08)]"
+        className="fixed inset-x-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] mx-auto flex max-w-[26rem] items-stretch rounded-full bg-surface px-2 shadow-lg"
       >
         {TABS.map((tab) => {
           const Icon = tab.icon

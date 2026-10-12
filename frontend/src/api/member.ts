@@ -7,7 +7,8 @@ export type Goal = 'CUT' | 'MAINTAIN' | 'BULK'
 
 export interface MemberResponse {
   id: number
-  nickname: string
+  /** 토스 회원은 이름을 받지 않아 늘 null이다. 카카오도 닉네임 동의를 안 하면 null일 수 있다 */
+  nickname: string | null
   email: string | null
   gender: Gender | null
   birthYear: number | null
@@ -51,6 +52,7 @@ export interface KcalSuggestion {
 
 /** 부분 수정 — 담긴 필드만 변경된다. 성별·출생연도도 고칠 수 있다(유지칼로리 공식에 들어가는 값) */
 export interface UpdateMemberRequest {
+  nickname?: string
   gender?: Gender
   birthYear?: number
   heightCm?: number
@@ -58,6 +60,11 @@ export interface UpdateMemberRequest {
   activityLevel?: ActivityLevel
   goal?: Goal
   dailyKcalTarget?: number
+}
+
+/** 회원 탈퇴. credentials: 웹은 응답이 만료시키는 refresh 쿠키가 브라우저에 반영돼야 한다 */
+export function withdraw(): Promise<void> {
+  return api('/api/members/me', { method: 'DELETE', credentials: 'include' })
 }
 
 export function getMe(): Promise<MemberResponse> {

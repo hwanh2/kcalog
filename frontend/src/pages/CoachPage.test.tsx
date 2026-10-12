@@ -121,6 +121,16 @@ describe('CoachPage', () => {
     await waitFor(() => expect(screen.getByText('닭가슴살 샐러드 추천해요.')).toBeInTheDocument())
   })
 
+  it('코치 답에는 AI 생성 표시가 붙고 내 질문에는 붙지 않는다', async () => {
+    getMessagesMock.mockResolvedValue([msg(1, 'USER', '점심 뭐 먹지?'), msg(2, 'ASSISTANT', '단백질을 챙겨보세요.')])
+    renderPage()
+
+    expect(await screen.findByText('단백질을 챙겨보세요.')).toBeInTheDocument()
+    // 브리핑 카드에 하나, 코치 답에 하나
+    expect(screen.getAllByText('AI 생성').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('점심 뭐 먹지?').parentElement?.textContent).not.toContain('AI 생성')
+  })
+
   it('퀵칩을 누르면 그 문구로 질문을 보낸다', async () => {
     const user = userEvent.setup()
     renderPage()

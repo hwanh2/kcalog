@@ -4,6 +4,8 @@ import type { Analysis } from '../../api/analysis'
 import { ApiError } from '../../api/client'
 import { saveFavorite } from '../../api/food'
 import type { MealType } from '../../api/meal'
+import { AiLabel } from '../../ui/AiNotice'
+import { ConfirmSheet } from '../../ui/ConfirmSheet'
 import { Button } from '../../ui/form'
 import { ErrorNotice } from '../../ui/ErrorNotice'
 import { Sheet } from '../../ui/Sheet'
@@ -60,6 +62,7 @@ export function AnalysisResultSheet({
   const [savingSet, setSavingSet] = useState(false)
   const [note, setNote] = useState('')
   const [reanalyzing, setReanalyzing] = useState(false)
+  const [confirmingReanalysis, setConfirmingReanalysis] = useState(false)
   /**
    * 실패 안내 전용. 성공은 알리지 않는다 — 즐겨찾기는 ★로, 재분석은 목록이 바뀌는 것으로
    * 결과가 이미 드러난다(design D4). 문구를 띄우면 자동으로 사라지지 않아 다음 동작의
@@ -110,10 +113,17 @@ export function AnalysisResultSheet({
     if (validateAndReveal()) onSave(items)
   }
 
-  async function requestReanalysis() {
+  function requestReanalysis() {
     if (note.trim() === '') return
-    if (dirty && !window.confirm('수정한 값이 사라집니다. 계속할까요?')) return
+    // 브라우저 기본 confirm을 쓰지 않는다. 토스 WebView와 설치한 PWA에서 출처 주소가 찍힌 시스템 창이 뜬다 (add-apps-in-toss D15)
+    if (dirty) {
+      setConfirmingReanalysis(true)
+      return
+    }
+    void runReanalysis()
+  }
 
+  async function runReanalysis() {
     const previous = items
     setReanalyzing(true)
     setError(null)
@@ -160,7 +170,10 @@ export function AnalysisResultSheet({
   return (
     <Sheet label="분석 결과 확인" onClose={onClose} full>
       {/* 닫기는 Sheet가 오른쪽 위에 제공한다 — 여기서 또 두면 같은 동작이 두 개가 된다 */}
-      <p className="mb-3 pr-12 text-lg font-bold text-ink">분석 결과 확인</p>
+      <p className="mb-3 flex items-center gap-2 pr-12 text-lg font-bold text-ink">
+        분석 결과 확인
+        <AiLabel />
+      </p>
 
       <ErrorNotice message={error} className="mb-3" />
       {needsReview && (
@@ -249,7 +262,7 @@ export function AnalysisResultSheet({
           <Button
             type="button"
             variant="secondary"
-            onClick={() => void requestReanalysis()}
+            onClick={requestReanalysis}
             disabled={reanalyzing || note.trim() === ''}
             className="shrink-0"
           >
@@ -295,6 +308,19 @@ export function AnalysisResultSheet({
           }}
           onSubmit={(values, remember) => void storeFavorite(values, remember)}
           onClose={() => setFavoriteIndex(null)}
+        />
+      )}
+
+      {confirmingReanalysis && (
+        <ConfirmSheet
+          title="다시 분석할까요?"
+          description="수정한 값이 사라지고 새 분석 결과로 바뀌어요."
+          confirmLabel="다시 분석"
+          onConfirm={() => {
+            setConfirmingReanalysis(false)
+            void runReanalysis()
+          }}
+          onCancel={() => setConfirmingReanalysis(false)}
         />
       )}
 

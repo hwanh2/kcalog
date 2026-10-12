@@ -14,6 +14,7 @@ import { WeightMiniCard } from '../features/dashboard/WeightMiniCard'
 import { MEAL_TYPE_LABELS, defaultMealType, sortByMealOrder } from '../features/meal/mealDefaults'
 import { TUTORIAL_IDS } from '../features/tutorial/steps'
 import { addDays, todayServiceDate } from '../lib/date'
+import { AiLabel } from '../ui/AiNotice'
 import { AuthImage } from '../ui/AuthImage'
 import { Card } from '../ui/form'
 import { InfoIcon, UtensilsIcon } from '../ui/icons'
@@ -103,13 +104,14 @@ function Greeting({
   onChange: (d: string) => void
 }) {
   const { state } = useAuth()
-  const nickname = state.status === 'authed' ? state.member.nickname : ''
+  const nickname = state.status === 'authed' ? state.member.nickname : null
   return (
     <div className="-mt-1 flex items-start justify-between">
       <div className="min-w-0 leading-tight">
         <p className="text-xs text-muted">{formatDateLabel(date, today)}</p>
         <h1 className="text-[15px] font-medium text-ink">
-          {timeGreeting()}, {givenName(nickname)}님
+          {/* 이름이 없으면(토스 회원) 인사만 한다. "좋은 저녁이에요, 님"이 되지 않게 */}
+          {nickname ? `${timeGreeting()}, ${givenName(nickname)}님` : timeGreeting()}
         </h1>
       </div>
       {/*
@@ -171,7 +173,10 @@ function CoachCard() {
         ✨
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-ink">오늘의 AI 코칭</p>
+        <p className="flex items-center gap-1.5 text-sm font-bold text-ink">
+          오늘의 AI 코칭
+          <AiLabel text="AI 생성" />
+        </p>
         <p className="mt-0.5 text-sm text-ink/80">{briefing.message}</p>
       </div>
       <span className="shrink-0 text-muted" aria-hidden>›</span>

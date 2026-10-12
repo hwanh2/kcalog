@@ -1,4 +1,4 @@
-import { api, API_BASE, ApiError, getAccessToken, refreshAccessToken } from './client'
+import { api, API_BASE, ApiError, getAccessToken, handleSessionLost, refreshAccessToken } from './client'
 
 /** 브리핑 요약 지표 — 감량 변화(kg)·목표 달성률(%)·연속일. 산출 불가 시 각 null */
 export interface CoachingStats {
@@ -100,7 +100,7 @@ export async function streamMessage(
   if (res.status === 401) {
     const token = await refreshAccessToken()
     if (!token) {
-      window.location.assign('/login')
+      handleSessionLost()
       throw new ApiError(401, null)
     }
     res = await postChat(content, signal)

@@ -152,11 +152,11 @@ export function validateItem(item: EditableItem): ItemErrors {
 
   const kcal = toNumber(item.kcal)
   if (kcal === null || kcal < 0 || kcal > KCAL_MAX || !Number.isInteger(kcal))
-    errors.kcal = `0~${KCAL_MAX} 정수여야 합니다`
+    errors.kcal = `0~${KCAL_MAX} 사이 정수로 입력해주세요`
 
   const macro = (v: string): string | undefined => {
     const n = toNumber(v)
-    if (n === null || n < 0 || n > MACRO_MAX) return `0~${MACRO_MAX} 범위여야 합니다`
+    if (n === null || n < 0 || n > MACRO_MAX) return `0~${MACRO_MAX} 사이로 입력해주세요`
     // 백엔드 @Digits(fraction=1)·NUMERIC(5,1) 거울 — 소수 둘째자리는 저장 시 400이므로 미리 막는다
     if (Math.abs(n * 10 - Math.round(n * 10)) > 1e-9) return '소수 첫째 자리까지만 입력해주세요'
     return undefined

@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:toss": "tsc -b && vite build --mode toss && ait build",
+    "deploy:toss": "ait deploy",
     "lint": "oxlint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apps-in-toss/web-framework": "^3.8.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.101.4",
     "lenis": "^1.3.26",

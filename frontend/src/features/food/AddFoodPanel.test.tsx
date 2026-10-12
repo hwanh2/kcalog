@@ -200,7 +200,7 @@ describe('직접 입력', () => {
     await user.click(await screen.findByRole('button', { name: "'짜장라면' 직접 추가하기" }))
     await user.click(screen.getByRole('button', { name: '기록하기' }))
 
-    expect(screen.getByText('0~10000 정수여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('0~10000 사이 정수로 입력해주세요')).toBeInTheDocument()
     expect(onRecordItems).not.toHaveBeenCalled()
   })
 })

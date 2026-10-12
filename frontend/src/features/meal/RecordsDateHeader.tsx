@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { koreanWeekday, weekDates } from '../../lib/date'
+import { IS_TOSS } from '../../platform'
 import { UserIcon } from '../../ui/icons'
 
 /**
@@ -48,13 +49,16 @@ export function RecordsDateHeader({
           />
         </div>
 
-        <Link
-          to="/app/profile"
-          aria-label="프로필"
-          className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full text-on-brand touch-manipulation focus-visible:ring-2 focus-visible:ring-on-brand"
-        >
-          <UserIcon />
-        </Link>
+        {/* 토스 빌드는 내비바 기능 버튼이 프로필 진입을 맡는다. 같은 버튼이 두 곳에 있지 않게 한다 */}
+        {!IS_TOSS && (
+          <Link
+            to="/app/profile"
+            aria-label="프로필"
+            className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full text-on-brand touch-manipulation focus-visible:ring-2 focus-visible:ring-on-brand"
+          >
+            <UserIcon />
+          </Link>
+        )}
       </div>
 
       {/* 주간 띠 — 그 날짜가 속한 주(월~일). 오늘 이후는 누를 수 없다 */}

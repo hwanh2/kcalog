@@ -489,6 +489,9 @@ export function LandingPage() {
             <span className="text-sm text-canvas/40">
               1인 개발 사이드 프로젝트입니다. 기능과 화면은 계속 바뀝니다.
             </span>
+            <Link to="/privacy" className="w-fit text-sm text-canvas/60 underline underline-offset-2">
+              개인정보 처리방침
+            </Link>
           </div>
           {state !== 'installed' && (
             <a

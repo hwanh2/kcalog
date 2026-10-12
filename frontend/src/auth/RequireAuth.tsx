@@ -1,9 +1,11 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
+import { IS_TOSS } from '../platform'
 import { LoadingScreen } from '../ui/LoadingScreen'
 import { landingPathFor, ONBOARDING_PATH } from './landingPath'
+import { SessionRetryScreen } from './SessionRetryScreen'
 import { useAuth } from './useAuth'
 
-/** 인증 가드: 미로그인 → /login, 온보딩 미완료 → /app/onboarding 강제 (완료자는 온보딩 접근 시 홈으로) */
+/** 인증 가드: 미로그인 → /login(토스 빌드는 다시 시도 화면), 온보딩 미완료 → /app/onboarding 강제 (완료자는 온보딩 접근 시 홈으로) */
 export function RequireAuth() {
   const { state } = useAuth()
   const location = useLocation()
@@ -12,7 +14,7 @@ export function RequireAuth() {
     return <LoadingScreen message="불러오는 중…" />
   }
   if (state.status === 'guest') {
-    return <Navigate to="/login" replace />
+    return IS_TOSS ? <SessionRetryScreen /> : <Navigate to="/login" replace />
   }
 
   // 미완료자는 /onboarding에만, 완료자는 /onboarding 밖에만 있을 수 있다 — 어긋나면 착지 경로로

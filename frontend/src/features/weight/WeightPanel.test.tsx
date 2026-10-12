@@ -96,7 +96,7 @@ describe('WeightPanel', () => {
     await user.type(screen.getByLabelText('체중 (kg)'), '300')
     await user.click(screen.getByRole('button', { name: '체중 저장' }))
 
-    expect(screen.getByText(/30~250kg 범위/)).toBeInTheDocument()
+    expect(screen.getByText(/30~250kg 사이로 입력/)).toBeInTheDocument()
     expect(recordWeightMock).not.toHaveBeenCalled()
   })
 

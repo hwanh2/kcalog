@@ -6,6 +6,8 @@ export const WEIGHT_KG_MAX = 250
 export const BIRTH_YEAR_MIN = 1920
 export const DAILY_KCAL_MIN = 800
 export const DAILY_KCAL_MAX = 10_000
+/** 백엔드 MemberValidation.NICKNAME_MAX의 거울 */
+export const NICKNAME_MAX = 20
 
 export type FieldErrors = Record<string, string>
 
@@ -33,27 +35,27 @@ export function validateProfileFields(fields: {
 
   if ('birthYear' in fields) {
     const message = range(fields.birthYear ?? null, BIRTH_YEAR_MIN, currentYear,
-      `출생연도는 ${BIRTH_YEAR_MIN}~${currentYear} 범위여야 합니다`)
+      `출생연도는 ${BIRTH_YEAR_MIN}~${currentYear} 사이로 입력해주세요`)
     if (message) errors.birthYear = message
   }
   if ('heightCm' in fields) {
     const message = range(fields.heightCm ?? null, HEIGHT_CM_MIN, HEIGHT_CM_MAX,
-      `키는 ${HEIGHT_CM_MIN}~${HEIGHT_CM_MAX}cm 범위여야 합니다`)
+      `키는 ${HEIGHT_CM_MIN}~${HEIGHT_CM_MAX}cm 사이로 입력해주세요`)
     if (message) errors.heightCm = message
   }
   if ('weightKg' in fields) {
     const message = range(fields.weightKg ?? null, WEIGHT_KG_MIN, WEIGHT_KG_MAX,
-      `체중은 ${WEIGHT_KG_MIN}~${WEIGHT_KG_MAX}kg 범위여야 합니다`)
+      `체중은 ${WEIGHT_KG_MIN}~${WEIGHT_KG_MAX}kg 사이로 입력해주세요`)
     if (message) errors.weightKg = message
   }
   if ('targetWeightKg' in fields) {
     const message = range(fields.targetWeightKg ?? null, WEIGHT_KG_MIN, WEIGHT_KG_MAX,
-      `목표 체중은 ${WEIGHT_KG_MIN}~${WEIGHT_KG_MAX}kg 범위여야 합니다`)
+      `목표 체중은 ${WEIGHT_KG_MIN}~${WEIGHT_KG_MAX}kg 사이로 입력해주세요`)
     if (message) errors.targetWeightKg = message
   }
   if ('dailyKcalTarget' in fields) {
     const message = range(fields.dailyKcalTarget ?? null, DAILY_KCAL_MIN, DAILY_KCAL_MAX,
-      `일일 칼로리 목표는 ${DAILY_KCAL_MIN}~${DAILY_KCAL_MAX} 범위여야 합니다`)
+      `일일 칼로리 목표는 ${DAILY_KCAL_MIN}~${DAILY_KCAL_MAX} 사이로 입력해주세요`)
     if (message) errors.dailyKcalTarget = message
   }
   return errors
