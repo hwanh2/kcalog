@@ -7,6 +7,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
@@ -15,6 +16,7 @@ import static com.kcalog.domain.member.dto.MemberValidation.DAILY_KCAL_MAX;
 import static com.kcalog.domain.member.dto.MemberValidation.DAILY_KCAL_MIN;
 import static com.kcalog.domain.member.dto.MemberValidation.HEIGHT_CM_MAX;
 import static com.kcalog.domain.member.dto.MemberValidation.HEIGHT_CM_MIN;
+import static com.kcalog.domain.member.dto.MemberValidation.NICKNAME_MAX;
 import static com.kcalog.domain.member.dto.MemberValidation.WEIGHT_KG_MAX;
 import static com.kcalog.domain.member.dto.MemberValidation.WEIGHT_KG_MIN;
 
@@ -26,6 +28,7 @@ import static com.kcalog.domain.member.dto.MemberValidation.WEIGHT_KG_MIN;
  * 상한(미래 연도) 검증은 어노테이션으로 낼 수 없어 MemberService가 맡는다.
  */
 public record UpdateMemberRequest(
+        @Size(max = NICKNAME_MAX) String nickname,
         Gender gender,
         @Min(BIRTH_YEAR_MIN) Integer birthYear,
         @DecimalMin(HEIGHT_CM_MIN) @DecimalMax(HEIGHT_CM_MAX) BigDecimal heightCm,

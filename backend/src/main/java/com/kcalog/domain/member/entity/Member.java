@@ -100,6 +100,11 @@ public class Member extends BaseEntity {
         this.muscleGoal = muscleGoal;
     }
 
+    /** 화면에서 부르는 이름. 온보딩 때 기본 이름이 붙고 프로필에서 바꿀 수 있다 */
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     /** 프로필 수정: null이 아닌 필드만 반영한다 */
     public void updateProfile(Gender gender, Integer birthYear, BigDecimal heightCm, ActivityLevel activityLevel,
                               Goal goal, BigDecimal targetWeightKg, Integer dailyKcalTarget) {

@@ -2,6 +2,8 @@ package com.kcalog.domain.meal.repository;
 
 import com.kcalog.domain.meal.entity.Meal;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -18,4 +20,8 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
 
     /** 첫 기록 — TOTAL 리포트의 기간 시작 계산용(전체 로드 없이 첫 건만) */
     Optional<Meal> findFirstByMemberIdOrderByEatenAtAsc(Long memberId);
+
+    /** 회원 탈퇴 때 스토리지에서 지울 사진. DB는 CASCADE로 지워지지만 스토리지 파일은 따로 지워야 한다 */
+    @Query("select m.imageKey from Meal m where m.memberId = :memberId and m.imageKey is not null")
+    List<String> findImageKeysByMemberId(@Param("memberId") Long memberId);
 }

@@ -3,6 +3,8 @@ package com.kcalog.domain.analysis.repository;
 import com.kcalog.domain.analysis.entity.AnalysisJob;
 import com.kcalog.domain.analysis.entity.AnalysisStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,4 +16,8 @@ public interface AnalysisJobRepository extends JpaRepository<AnalysisJob, Long> 
 
     /** 미확인 작업 정리 — 생성 시각이 기준 이전인 작업 */
     List<AnalysisJob> findByCreatedAtBefore(Instant cutoff);
+
+    /** 회원 탈퇴 때 스토리지에서 지울 사진. 아직 식사로 확정하지 않은 분석 사진도 지워야 한다 */
+    @Query("select j.imageKey from AnalysisJob j where j.memberId = :memberId and j.imageKey is not null")
+    List<String> findImageKeysByMemberId(@Param("memberId") Long memberId);
 }

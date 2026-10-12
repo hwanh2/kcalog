@@ -208,6 +208,47 @@ class MemberIntegrationTest {
     }
 
     @Test
+    @DisplayName("온보딩을 마치면 목표에 맞는 기본 닉네임이 붙는다. 카카오 닉네임도 덮어쓴다")
+    void onboardingAssignsDefaultNickname() throws Exception {
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_ONBOARDING))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value(org.hamcrest.Matchers.matchesPattern("익명의 다이어터\\d{4}")));
+    }
+
+    @Test
+    @DisplayName("유지를 고르면 익명의 유지어터")
+    void onboardingMaintainNickname() throws Exception {
+        mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_ONBOARDING.replace("\"CUT\"", "\"MAINTAIN\"")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value(org.hamcrest.Matchers.startsWith("익명의 유지어터")));
+    }
+
+    @Test
+    @DisplayName("닉네임 수정: 앞뒤 공백을 지워 저장한다")
+    void updateNickname() throws Exception {
+        mockMvc.perform(patch("/api/members/me").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nickname\": \"  새벽러너 \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("새벽러너"));
+    }
+
+    @Test
+    @DisplayName("닉네임 수정 검증: 비었거나 20자를 넘으면 400, 기존 닉네임 유지")
+    void updateNicknameValidation() throws Exception {
+        mockMvc.perform(patch("/api/members/me").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nickname\": \"   \"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/members/me").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nickname\": \"" + "가".repeat(21) + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().getNickname()).isEqualTo("테스터");
+    }
+
+    @Test
     @DisplayName("프로필 수정 검증 — 범위 밖 값이면 400, 기존 값 유지")
     void updateProfileValidation() throws Exception {
         mockMvc.perform(post("/api/members/me/onboarding").header("Authorization", bearer)

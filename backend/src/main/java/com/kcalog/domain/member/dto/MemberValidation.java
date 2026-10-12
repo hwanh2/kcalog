@@ -8,6 +8,9 @@ public final class MemberValidation {
     public static final String WEIGHT_KG_MIN = "30";
     public static final String WEIGHT_KG_MAX = "250";
     public static final long BIRTH_YEAR_MIN = 1920;
+
+    /** 화면 한 줄(홈 인사말, 프로필 카드)에 들어가는 길이 */
+    public static final int NICKNAME_MAX = 20;
     public static final long DAILY_KCAL_MIN = 800;
     public static final long DAILY_KCAL_MAX = 10_000;
 
