@@ -50,6 +50,10 @@ services:
     container_name: kcalog-backend
     restart: unless-stopped
     env_file: .env
+    # 토스 미니앱 mTLS 인증서. 파일은 VM의 ~/kcalog/secrets/에만 두고 저장소와 GitHub에는 올리지 않는다.
+    # 컨테이너는 uid 10001(app)로 돌기 때문에 키 파일 소유자를 10001로 맞춰야 읽힌다(design D17)
+    volumes:
+      - ./secrets:/run/secrets/kcalog:ro
     environment:
       SPRING_PROFILES_ACTIVE: prod
       # DB는 같은 compose 네트워크 안에 있다 — .env로 덮지 않는다

@@ -106,3 +106,5 @@ render('kcalog-mark-on-dark-v3.png', svg({ viewBox: LOGO_BOX, bg: null, glyph: '
 // 앱인토스 콘솔: 600×600 각진 정사각형, 배경 필수
 mkdirSync(OUT, { recursive: true })
 render('oneulsikdan-logo-600.png', svg({ viewBox: FULL_CANVAS, bg: '#FFFFFF', size: [600, 600] }), [600, 600], OUT)
+// 콘솔의 다크모드 로고(선택). 어두운 배경에 가운데 그림만 흰색, 링과 잔상은 그대로
+render('oneulsikdan-logo-600-dark.png', svg({ viewBox: FULL_CANVAS, bg: '#17171C', glyph: '#FFFFFF', size: [600, 600] }), [600, 600], OUT)

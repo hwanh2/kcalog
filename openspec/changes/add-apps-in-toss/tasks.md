@@ -95,7 +95,8 @@ PR은 그룹 단위로 나눈다. 1~4는 사업자 등록이나 콘솔 가입 �
 ## 5. 출시 준비 (사용자 직접)
 
 - [ ] 5.1 앱인토스 콘솔 가입, 워크스페이스 생성, 앱 등록(`appName`은 `oneulsikdan`, 토스 앱 이름은 "식단관리하기")
-- [ ] 5.2 mTLS 인증서 발급 가능 여부 확인. 불가하면 사업자 등록 후 진행 (Risks)
+- [x] 5.2 mTLS 인증서 발급 가능 여부 확인. 사업자 없이 발급됨(PEM, CN oneulsikdan, 2027-11-06 만료), 로컬에서 교환 API 호출 확인 (D17)
+- [x] 5.2a `compose.prod.yml` 인증서 폴더 마운트, `deploy.yml` 폴더 생성과 경로 전달 (D17)
 - [ ] 5.3 운영 `.env`에 `APPS_IN_TOSS_CERTIFICATE`, `APPS_IN_TOSS_PRIVATE_KEY`(PEM 내용이나 `file:` 위치), `CORS_ALLOWED_ORIGINS`에 토스 origin 두 개 추가 후 재배포
 - [ ] 5.4 `npm run build:toss` 후 번들 업로드, QR로 iOS와 Android 실기기 테스트(로그인, 재진입 데이터 유지, 뒤로가기, 카메라)
 - [ ] 5.5 익명 키 길이 확인(Open Questions). 100자를 넘으면 마이그레이션 태스크 추가

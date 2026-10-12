@@ -96,6 +96,9 @@ jobs:
           FEEDBACK_TO: ${{ secrets.FEEDBACK_TO }}
           # 로그를 보낼 모니터링 VM의 Loki 주소. 없으면 Alloy가 뜨자마자 죽는다
           LOKI_URL: ${{ secrets.LOKI_URL }}
+          # 토스 미니앱 mTLS 인증서 위치(file:/run/secrets/kcalog/...). 비어 있으면 토스 로그인만 503이고 나머지는 그대로다
+          APPS_IN_TOSS_CERTIFICATE: ${{ secrets.APPS_IN_TOSS_CERTIFICATE }}
+          APPS_IN_TOSS_PRIVATE_KEY: ${{ secrets.APPS_IN_TOSS_PRIVATE_KEY }}
         run: |
           umask 077
           {
@@ -124,6 +127,8 @@ jobs:
             printf 'MAIL_PASSWORD=%s\n' "$MAIL_PASSWORD"
             printf 'FEEDBACK_TO=%s\n' "$FEEDBACK_TO"
             printf 'LOKI_URL=%s\n' "$LOKI_URL"
+            printf 'APPS_IN_TOSS_CERTIFICATE=%s\n' "$APPS_IN_TOSS_CERTIFICATE"
+            printf 'APPS_IN_TOSS_PRIVATE_KEY=%s\n' "$APPS_IN_TOSS_PRIVATE_KEY"
           } > env.prod
 
       - name: 구성·시크릿 전송
@@ -131,7 +136,8 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'mkdir -p ~/kcalog'
+          # secrets/는 인증서 파일을 직접 두는 곳이다. 비어 있어도 만들어 둔다. 없으면 compose가 마운트할 때 root 소유로 만들어 버린다
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'mkdir -p ~/kcalog/secrets'
           scp -i ~/.ssh/deploy_key deploy/compose.prod.yml deploy/backup.sh deploy/alloy.alloy "$SSH_USER@$SSH_HOST:~/kcalog/"
           scp -i ~/.ssh/deploy_key env.prod "$SSH_USER@$SSH_HOST:~/kcalog/.env"
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" 'chmod 600 ~/kcalog/.env && chmod +x ~/kcalog/backup.sh'
