@@ -51,6 +51,7 @@ public class CoachingService {
     private final CoachingChatUsageRepository chatUsageRepository;
     private final CoachingSignalsCollector signalsCollector;
     private final OpenAiClient openAiClient;
+    private final ModerationClient moderationClient;
     private final AppProperties props;
     private final Clock clock;
     // SSE 스트림을 요청 스레드에서 분리(프로덕션은 비동기). 필드명이 빈 이름과 일치해 by-name으로 주입된다.
@@ -196,20 +197,38 @@ public class CoachingService {
         return emitter;
     }
 
-    /** 스트림 실행(별도 스레드) — 토큰 방출 후 성공/폴백 메시지를 저장하고 done 이벤트로 마무리 */
+    /**
+     * 스트림 실행(별도 스레드) — 토큰 방출 후 성공/폴백 메시지를 저장하고 done 이벤트로 마무리.
+     *
+     * <p>질문과 답을 각각 안전 검사한다(add-apps-in-toss D11). 질문이 걸리면 모델을 부르지 않고 고정 안전 응답을 보낸다.
+     * 답은 스트리밍이 끝난 뒤에야 전체를 검사할 수 있어서, 걸리면 저장할 내용을 바꾼다. 프론트는 done 뒤에 저장된
+     * 대화를 다시 불러오므로 화면의 답도 바뀐다. 그 사이 원래 답이 잠깐 보이는 것은 스트리밍을 유지하는 대가다.
+     */
     private void runStream(Long memberId, LocalDate day, String signalsJson, List<ChatTurn> priorTurns,
                            String question, SseEmitter emitter, AtomicBoolean cancelled) {
         try {
+            SafetyVerdict questionVerdict = CoachSafety.judge(question, moderationClient.check(question));
+            if (questionVerdict != SafetyVerdict.ALLOW) {
+                logSafety(memberId, "question", questionVerdict);
+                chatUsageRepository.release(memberId, day);  // 모델을 부르지 않았으니 하루 대화 수에서 빼지 않는다
+                String reply = CoachSafety.reply(questionVerdict);
+                emitToken(emitter, reply, cancelled);
+                finishWith(memberId, emitter, reply);
+                return;
+            }
+
             String answer = openAiClient.stream(
                     CoachingPrompt.chatBody(props.openai().model(), signalsJson, priorTurns, question),
                     token -> emitToken(emitter, token, cancelled));
             if (answer == null || answer.isBlank()) {
                 throw new IllegalStateException("빈 코치 응답");
             }
-            CoachingChatMessage saved = chatRepository.save(
-                    CoachingChatMessage.of(memberId, ChatRole.ASSISTANT, answer.trim()));
-            emitter.send(SseEmitter.event().name("done").data(CoachingChatMessageResponse.from(saved)));
-            emitter.complete();
+            SafetyVerdict answerVerdict = CoachSafety.judgeAnswer(moderationClient.check(answer));
+            if (answerVerdict != SafetyVerdict.ALLOW) {
+                logSafety(memberId, "answer", answerVerdict);
+            }
+            finishWith(memberId, emitter,
+                    answerVerdict == SafetyVerdict.ALLOW ? answer.trim() : CoachSafety.reply(answerVerdict));
         } catch (StreamCancelledException cancel) {
             // 타임아웃·클라이언트 이탈 — emitter는 이미 종료됐다. 생성 중이던 답을 폴백으로 덮어쓰지 않는다
             log.debug("코치 스트림 취소됨: memberId={}", memberId);
@@ -226,6 +245,17 @@ public class CoachingService {
                 emitter.completeWithError(io);
             }
         }
+    }
+
+    private void finishWith(Long memberId, SseEmitter emitter, String content) throws IOException {
+        CoachingChatMessage saved = chatRepository.save(CoachingChatMessage.of(memberId, ChatRole.ASSISTANT, content));
+        emitter.send(SseEmitter.event().name("done").data(CoachingChatMessageResponse.from(saved)));
+        emitter.complete();
+    }
+
+    /** 안전 응답이 나간 기록. 대화 내용은 남기지 않는다(개인적인 고민일 수 있다). 무엇이 걸렸는지는 DB 대화 기록으로 본다 */
+    private void logSafety(Long memberId, String stage, SafetyVerdict verdict) {
+        log.warn("코치 안전 응답: memberId={}, stage={}, verdict={}", memberId, stage, verdict);
     }
 
     private void emitToken(SseEmitter emitter, String token, AtomicBoolean cancelled) {

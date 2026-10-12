@@ -5,6 +5,8 @@ import com.kcalog.domain.auth.service.JwtService;
 import com.kcalog.domain.coaching.entity.CoachingMessage;
 import com.kcalog.domain.coaching.repository.CoachingChatUsageRepository;
 import com.kcalog.domain.coaching.repository.CoachingMessageRepository;
+import com.kcalog.domain.coaching.service.ModerationClient;
+import com.kcalog.domain.coaching.service.ModerationResult;
 import com.kcalog.domain.meal.entity.Meal;
 import com.kcalog.domain.meal.entity.MealItem;
 import com.kcalog.domain.meal.entity.MealSource;
@@ -35,6 +37,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,6 +46,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.function.Consumer;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -82,6 +86,9 @@ class CoachingIntegrationTest {
     @MockitoBean
     OpenAiClient openAiClient;
 
+    @MockitoBean
+    ModerationClient moderationClient;
+
     // 스트림 실행기를 동기로 대체 — 백그라운드 스레드 없이 요청 스레드(=테스트 트랜잭션)에서 완료
     @MockitoBean(name = "coachStreamExecutor")
     TaskExecutor coachStreamExecutor;
@@ -102,6 +109,9 @@ class CoachingIntegrationTest {
             inv.getArgument(0, Runnable.class).run();
             return null;
         }).when(coachStreamExecutor).execute(org.mockito.ArgumentMatchers.any());
+
+        // 기본은 검사 통과. 안전장치 시나리오만 덮어쓴다
+        when(moderationClient.check(any())).thenReturn(new ModerationResult(false, Set.of()));
     }
 
     /** stream(body, onToken) 스텁 — 토큰 하나로 흘리고 전체 텍스트 반환 */
@@ -234,6 +244,54 @@ class CoachingIntegrationTest {
         assertThat(body).contains("done").contains("ASSISTANT");
 
         // 실패 호출은 사용량으로 세지 않는다
+        assertThat(chatUsageRepository.count(member.getId(), LocalDate.now(KST))).isZero();
+    }
+
+    @Test
+    @DisplayName("채팅 안전장치: 자해 신호가 있는 질문은 모델을 부르지 않고 위기 상담 안내를 저장, 사용량 미증가")
+    void chatSelfHarmQuestion() throws Exception {
+        String body = streamChat("{\"content\":\"요즘 죽고 싶어\"}");
+
+        assertThat(body).contains("token").contains("done").contains("109");
+        verify(openAiClient, never()).stream(any(), any());
+        mockMvc.perform(get("/api/coach/messages").header("Authorization", bearer))
+                .andExpect(jsonPath("$[1].role").value("ASSISTANT"))
+                .andExpect(jsonPath("$[1].content").value(org.hamcrest.Matchers.containsString("109")));
+        assertThat(chatUsageRepository.count(member.getId(), LocalDate.now(KST))).isZero();
+    }
+
+    @Test
+    @DisplayName("채팅 안전장치: 검사에 걸린 질문(자해 외)은 모델 없이 거절")
+    void chatFlaggedQuestionRefused() throws Exception {
+        when(moderationClient.check("위험한 질문")).thenReturn(new ModerationResult(true, Set.of("illicit")));
+
+        String body = streamChat("{\"content\":\"위험한 질문\"}");
+
+        assertThat(body).contains("도와드리기 어려워요");
+        verify(openAiClient, never()).stream(any(), any());
+    }
+
+    @Test
+    @DisplayName("채팅 안전장치: 코치 답이 검사에 걸리면 저장되는 답을 거절 문구로 바꾼다")
+    void chatFlaggedAnswerReplaced() throws Exception {
+        stubStream("문제가 되는 답");
+        when(moderationClient.check("문제가 되는 답")).thenReturn(new ModerationResult(true, Set.of("violence")));
+
+        streamChat("{\"content\":\"평범한 질문\"}");
+
+        mockMvc.perform(get("/api/coach/messages").header("Authorization", bearer))
+                .andExpect(jsonPath("$[1].content").value(org.hamcrest.Matchers.containsString("도와드리기 어려워요")));
+    }
+
+    @Test
+    @DisplayName("채팅 안전장치: 검사 호출이 실패하면 모델을 부르지 않고 폴백 안내, 사용량 미증가")
+    void chatModerationFailureFallsBack() throws Exception {
+        when(moderationClient.check(any())).thenThrow(new RuntimeException("moderation down"));
+
+        String body = streamChat("{\"content\":\"질문\"}");
+
+        assertThat(body).contains("done").contains("잠시 후 다시 시도해 주세요");
+        verify(openAiClient, never()).stream(any(), any());
         assertThat(chatUsageRepository.count(member.getId(), LocalDate.now(KST))).isZero();
     }
 
