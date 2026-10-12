@@ -1,5 +1,7 @@
 package com.kcalog.global.exception;
 
+import com.kcalog.domain.auth.exception.AppsInTossUnavailableException;
+import com.kcalog.domain.auth.exception.InvalidTossAuthCodeException;
 import com.kcalog.domain.meal.exception.MealAnalysisException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -48,6 +50,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RateLimitException.class)
     public ProblemDetail handleRateLimit(RateLimitException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTossAuthCodeException.class)
+    public ProblemDetail handleInvalidTossAuthCode(InvalidTossAuthCodeException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, e.getMessage());
+    }
+
+    @ExceptionHandler(AppsInTossUnavailableException.class)
+    public ProblemDetail handleAppsInTossUnavailable(AppsInTossUnavailableException e) {
+        log.warn("앱인토스 로그인 실패: {}", e.getMessage(), e.getCause());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, "잠시 후 다시 시도해주세요.");
     }
 
     @ExceptionHandler(MealAnalysisException.class)

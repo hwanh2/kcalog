@@ -42,7 +42,7 @@ class FeedbackMailNotifierTest {
 
     static AppProperties props(String mailTo, String mailFrom) {
         return new AppProperties(null, null, null, null, null, null, null,
-                new AppProperties.Feedback(mailTo, mailFrom));
+                new AppProperties.Feedback(mailTo, mailFrom), null);
     }
 
     @Test

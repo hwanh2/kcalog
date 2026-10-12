@@ -106,6 +106,13 @@ app:
   analysis:
     # 개인 보정치를 분석 프롬프트에 주입할 최근 개수 상한 — 토큰·지연 방어(초과분 제외). 0이면 주입 없음.
     correction-inject-limit: ${ANALYSIS_CORRECTION_INJECT_LIMIT:50}
+  apps-in-toss:
+    # 토스 미니앱 익명 키 교환(mTLS). 인증서는 앱인토스 콘솔에서 발급받는다.
+    # PEM 내용이나 file: 위치를 받는다. 비어 있으면 토스 로그인만 503이고 나머지는 그대로 동작한다.
+    base-url: ${APPS_IN_TOSS_BASE_URL:https://apps-in-toss-api.toss.im}
+    certificate: ${APPS_IN_TOSS_CERTIFICATE:}
+    private-key: ${APPS_IN_TOSS_PRIVATE_KEY:}
+    timeout: 5s
   feedback:
     # 의견이 도착하면 이 주소로 알린다. 비어 있으면 발송을 건너뛴다 — 저장은 그대로다.
     # 로컬·테스트는 비워두는 것이 기본이다(SMTP 없이도 의견 보내기가 동작해야 한다).
