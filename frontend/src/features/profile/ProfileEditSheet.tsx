@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { fieldErrorsFrom } from '../../api/client'
 import { getKcalSuggestion, updateMember } from '../../api/member'
 import type { ActivityLevel, Gender, Goal, MemberResponse, UpdateMemberRequest } from '../../api/member'
-import { toNumber, validateProfileFields } from '../../api/memberValidation'
+import { NICKNAME_MAX, toNumber, validateProfileFields } from '../../api/memberValidation'
 import type { FieldErrors } from '../../api/memberValidation'
 import { ageFromBirthYear } from '../../lib/age'
 import { Sheet } from '../../ui/Sheet'
@@ -35,7 +35,7 @@ function ageSuffix(birthYear: string): string {
 }
 
 /**
- * 프로필 편집 시트 — 성별·출생연도·키·목표 체중·목표 방향·활동량·일일 칼로리.
+ * 프로필 편집 시트. 닉네임, 성별, 출생연도, 키, 목표 체중, 목표 방향, 활동량, 일일 칼로리를 고친다.
  * 저장값과 달라진 필드만 PATCH하고, 계산에 영향을 주는 값이 바뀌면 새 제안 칼로리를 보여준다(확정은 사용자 몫).
  *
  * 성별·출생연도까지 여는 이유: 프로필 카드가 보여주는 넉 줄(성별·키·나이·활동) 중 둘을 고칠 수 없었고,
@@ -50,6 +50,7 @@ export function ProfileEditSheet({
   reloadMember: () => Promise<void>
   onClose: () => void
 }) {
+  const [nickname, setNickname] = useState(member.nickname ?? '')
   const [gender, setGender] = useState<string>(member.gender ?? '')
   const [birthYear, setBirthYear] = useState(String(member.birthYear ?? ''))
   const [heightCm, setHeightCm] = useState(String(member.heightCm ?? ''))
@@ -117,11 +118,15 @@ export function ProfileEditSheet({
       dailyKcalTarget: toNumber(kcalInput),
     }
     const fieldErrors = validateProfileFields(parsed)
+    const trimmedNickname = nickname.trim()
+    if (trimmedNickname === '') fieldErrors.nickname = '닉네임을 입력해주세요.'
+    else if (trimmedNickname.length > NICKNAME_MAX) fieldErrors.nickname = `닉네임은 ${NICKNAME_MAX}자까지 쓸 수 있어요.`
     setErrors(fieldErrors)
     if (Object.keys(fieldErrors).length > 0) return
 
     // 저장값과 달라진 필드만 PATCH
     const request: UpdateMemberRequest = {}
+    if (trimmedNickname !== (member.nickname ?? '')) request.nickname = trimmedNickname
     if (gender !== (member.gender ?? '') && gender !== '') request.gender = gender as Gender
     if (parsed.birthYear !== member.birthYear) request.birthYear = parsed.birthYear!
     if (parsed.heightCm !== member.heightCm) request.heightCm = parsed.heightCm!
@@ -130,7 +135,7 @@ export function ProfileEditSheet({
     if (goal !== (member.goal ?? '') && goal !== '') request.goal = goal as Goal
     if (parsed.dailyKcalTarget !== member.dailyKcalTarget) request.dailyKcalTarget = parsed.dailyKcalTarget!
     if (Object.keys(request).length === 0) {
-      setMessage({ text: '변경된 내용이 없습니다.', kind: 'info' })
+      setMessage({ text: '바꾼 내용이 없어요.', kind: 'info' })
       return
     }
 
@@ -160,6 +165,15 @@ export function ProfileEditSheet({
           {message.text}
         </p>
       )}
+
+      <Field id="nickname" label="닉네임" error={errors.nickname}>
+        <TextInput
+          id="nickname"
+          value={nickname}
+          maxLength={NICKNAME_MAX}
+          onChange={(e) => setNickname(e.target.value)}
+        />
+      </Field>
 
       <Field id="gender" label="성별">
         <Select id="gender" value={gender} onChange={(e) => setGender(e.target.value)}>

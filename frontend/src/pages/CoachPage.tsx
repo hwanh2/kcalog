@@ -16,6 +16,7 @@ import type {
 import { CoachMarkdown } from '../features/coach/CoachMarkdown'
 import { SproutIcon } from '../features/coach/SproutIcon'
 import { useMutationWithError } from '../lib/useMutationWithError'
+import { AiLabel, AiNotice } from '../ui/AiNotice'
 import { ErrorNotice } from '../ui/ErrorNotice'
 import { Card } from '../ui/form'
 
@@ -43,6 +44,10 @@ export function CoachPage() {
       <p className="mb-1.5 inline-block rounded-full bg-track px-2 py-0.5 text-[10px] font-bold text-muted">
         베타 기능
       </p>
+      {/* 의료 관련 서비스 제한(앱인토스 정책)이 있어 진단이나 처방이 아니라는 점도 함께 밝힌다 */}
+      <AiNotice className="mb-2">
+        AI가 기록을 바탕으로 만든 답변이에요. 의학적 진단이나 처방을 대신하지 않아요.
+      </AiNotice>
 
       {briefing && <Briefing briefing={briefing} />}
       <Chat />
@@ -62,7 +67,10 @@ function Briefing({ briefing }: { briefing: CoachingBriefing }) {
         className="rounded-2xl p-3.5 text-white shadow-sm"
         style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}
       >
-        <p className="text-xs font-semibold text-white/80">오늘의 브리핑</p>
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-white/80">
+          오늘의 브리핑
+          <AiLabel text="AI 생성" onDark />
+        </p>
         <p className="mt-1 text-lg font-bold">{briefing.headline}</p>
         <p className="mt-2 text-sm leading-relaxed text-white/90">{briefing.message}</p>
       </div>
@@ -266,6 +274,7 @@ function Chat() {
               <span className="inline-block max-w-[85%] rounded-2xl rounded-tl-none bg-canvas px-3 py-2 text-left text-sm text-ink">
                 {pending.answer === '' ? '…' : <CoachMarkdown text={pending.answer} />}
               </span>
+              <AiLabel text="AI 생성" className="mt-1 block w-fit" />
             </div>
           </>
         )}
@@ -325,6 +334,7 @@ function Bubble({ message }: { message: CoachingChatMessage }) {
       >
         {mine ? message.content : <CoachMarkdown text={message.content} />}
       </span>
+      {!mine && <AiLabel text="AI 생성" className="mt-1 block w-fit" />}
     </div>
   )
 }

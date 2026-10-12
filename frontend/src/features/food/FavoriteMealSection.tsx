@@ -109,7 +109,7 @@ export function FavoriteMealSection({
       {deleting && (
         <ConfirmSheet
           title="이 세트를 지울까요?"
-          description="되돌릴 수 없어요. 이미 기록한 식사는 그대로 남습니다."
+          description="되돌릴 수 없어요. 이미 기록한 식사는 그대로 남아요."
           detail={`${deleting.name} · 음식 ${deleting.itemCount}개`}
           confirmLabel="삭제"
           busy={removeMutation.isPending}

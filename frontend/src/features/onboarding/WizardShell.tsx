@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { IS_TOSS } from '../../platform'
+import { useBackHandler } from '../../shell/backNavigation'
 import { AppMark } from '../../ui/AppMark'
 
 /**
@@ -30,10 +32,23 @@ export function WizardShell({
   showSteps?: boolean
   children: ReactNode
 }) {
+  // 토스 빌드는 내비바의 뒤로가기가 단계를 되돌린다. 자체 버튼과 함께 보이면 안 된다(출시 체크리스트)
+  useBackHandler(
+    IS_TOSS && onBack
+      ? () => {
+          onBack()
+          return true
+        }
+      : null,
+  )
+
   return (
     <div className="flex min-h-dvh flex-col px-5 pt-6 pb-6">
       <div className="flex items-center justify-between">
-        {onBack ? (
+        {IS_TOSS ? (
+          // 토스 내비바가 등록된 로고와 앱 이름을 이미 보여 준다. 자체 로고를 더하지 않는다
+          <span aria-hidden className="h-9" />
+        ) : onBack ? (
           <button
             type="button"
             onClick={onBack}

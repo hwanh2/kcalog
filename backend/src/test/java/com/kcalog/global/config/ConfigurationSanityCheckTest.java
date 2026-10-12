@@ -30,7 +30,8 @@ class ConfigurationSanityCheckTest {
                         "access", storageSecret, true, 24),
                 new AppProperties.Analysis(50),
                 new AppProperties.Cors(origins),
-                new AppProperties.Feedback(null, null));
+                new AppProperties.Feedback(null, null),
+                null);
     }
 
     private AppProperties healthy() {

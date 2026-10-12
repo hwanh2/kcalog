@@ -43,7 +43,7 @@ describe('확인 시트', () => {
     const user = userEvent.setup()
     const { onConfirm, onCancel } = renderConfirm()
 
-    await user.click(screen.getByRole('button', { name: '취소' }))
+    await user.click(screen.getByRole('button', { name: '닫기' }))
 
     expect(onCancel).toHaveBeenCalled()
     expect(onConfirm).not.toHaveBeenCalled()

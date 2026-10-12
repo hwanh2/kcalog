@@ -126,8 +126,6 @@ describe('재분석', () => {
 
   it('값을 고친 뒤 재분석하면 덮어쓰기 경고로 확인을 받는다', async () => {
     const user = userEvent.setup()
-    const confirm = vi.fn().mockReturnValue(false)
-    vi.stubGlobal('confirm', confirm)
     renderSheet()
 
     // 항목을 열어 값을 고친다(= dirty)
@@ -139,8 +137,9 @@ describe('재분석', () => {
 
     await requestReanalysis(user, '다시 봐주세요')
 
-    expect(confirm).toHaveBeenCalledWith('수정한 값이 사라집니다. 계속할까요?')
-    expect(reanalyzeMock).not.toHaveBeenCalled() // 취소했으므로 호출하지 않는다
+    const dialog = screen.getByRole('dialog', { name: '다시 분석할까요?' })
+    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    expect(reanalyzeMock).not.toHaveBeenCalled() // 닫았으므로 호출하지 않는다
   })
 
   it('상한을 넘기면(400) 안내하고 직전 결과를 유지한다', async () => {

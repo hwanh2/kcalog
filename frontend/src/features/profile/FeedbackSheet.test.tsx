@@ -75,7 +75,7 @@ describe('FeedbackSheet', () => {
     await user.type(screen.getByLabelText('의견 내용'), '좋아요')
     await user.click(sendButton())
 
-    expect(await screen.findByText('고맙습니다')).toBeInTheDocument()
+    expect(await screen.findByText('고마워요')).toBeInTheDocument()
     // 다시 보내는 칸이 남아 있으면 두 번 보낸 것으로 오해한다
     expect(screen.queryByLabelText('의견 내용')).not.toBeInTheDocument()
   })

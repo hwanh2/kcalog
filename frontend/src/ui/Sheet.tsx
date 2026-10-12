@@ -11,11 +11,14 @@ export function Sheet({
   label,
   onClose,
   full = false,
+  closeButton = true,
   children,
 }: {
   label: string
   onClose: () => void
   full?: boolean
+  /** 시트 안에 이미 "닫기" 버튼이 있으면(ConfirmSheet) 끈다. 같은 이름의 버튼이 둘 생기지 않게 */
+  closeButton?: boolean
   children: ReactNode
 }) {
   const panelRef = useDialog(onClose)
@@ -45,14 +48,16 @@ export function Sheet({
           호출측에 맡기면 빠뜨린 시트가 생기고, 그러면 키보드로 닫을 길이 Esc뿐이 된다.
           44px 히트 영역 — 아이콘은 작게 두고 패딩으로 넓힌다.
         */}
-        <button
-          type="button"
-          aria-label="닫기"
-          onClick={onClose}
-          className="absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
-        >
-          <CloseIcon />
-        </button>
+        {closeButton && (
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={onClose}
+            className="absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full text-muted touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-ink"
+          >
+            <CloseIcon />
+          </button>
+        )}
         {children}
       </div>
     </div>

@@ -32,7 +32,7 @@ export function FeedbackSheet({ appVersion, onClose }: { appVersion: string; onC
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success">
             <CheckIcon size={24} />
           </span>
-          <p className="mt-3 text-lg font-bold text-ink">고맙습니다</p>
+          <p className="mt-3 text-lg font-bold text-ink">고마워요</p>
           {/* 답장을 약속하지 않는다 — 알림 경로가 없으므로 지킬 수 없는 말이다 */}
           <p className="mt-1 text-sm text-muted">보내주신 의견은 잘 도착했어요.</p>
           <Button type="button" onClick={onClose} className="mt-5 w-full py-3">

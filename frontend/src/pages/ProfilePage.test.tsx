@@ -48,7 +48,7 @@ function renderProfile(member: MemberResponse = savedMember) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <AuthContext value={{ state: { status: 'authed', member }, reloadMember, signOut }}>
+      <AuthContext value={{ state: { status: 'authed', member }, reloadMember, signOut, retrySession: vi.fn() }}>
         <MemoryRouter initialEntries={['/profile']}>
           <ProfilePage />
         </MemoryRouter>
@@ -223,7 +223,7 @@ describe('ProfilePage — 편집', () => {
     await user.type(kcalField, '100')
     await user.click(screen.getByRole('button', { name: '저장' }))
 
-    expect(screen.getByText('일일 칼로리 목표는 800~10000 범위여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('일일 칼로리 목표는 800~10000 사이로 입력해주세요')).toBeInTheDocument()
     expect(updateMemberMock).not.toHaveBeenCalled()
   })
 })
@@ -253,6 +253,32 @@ describe('ProfilePage — 나이·성별 편집', () => {
     await user.click(screen.getByRole('button', { name: '저장' }))
 
     expect(updateMemberMock).toHaveBeenCalledWith({ gender: 'FEMALE', birthYear: 1994 })
+  })
+
+  it('닉네임을 바꾸면 앞뒤 공백을 지워 그것만 저장한다', async () => {
+    const user = userEvent.setup()
+    updateMemberMock.mockResolvedValue(savedMember)
+    renderProfile()
+    await openEditSheet(user)
+
+    const field = screen.getByLabelText('닉네임')
+    await user.clear(field)
+    await user.type(field, '  새벽러너 ')
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(updateMemberMock).toHaveBeenCalledWith({ nickname: '새벽러너' })
+  })
+
+  it('빈 닉네임은 저장하지 않고 오류를 표시한다', async () => {
+    const user = userEvent.setup()
+    renderProfile()
+    await openEditSheet(user)
+
+    await user.clear(screen.getByLabelText('닉네임'))
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(screen.getByText('닉네임을 입력해주세요.')).toBeInTheDocument()
+    expect(updateMemberMock).not.toHaveBeenCalled()
   })
 
   it('제안 칼로리는 저장값이 아니라 **편집 중인** 성별·출생연도로 조회한다', async () => {

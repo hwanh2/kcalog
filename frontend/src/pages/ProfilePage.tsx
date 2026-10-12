@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router'
 import { getDashboard } from '../api/dashboard'
 import { getReport } from '../api/report'
 import { restartTutorial } from '../api/member'
@@ -14,7 +15,9 @@ import { ProfileSummaryCard } from '../features/profile/ProfileSummaryCard'
 import { TdeeRecalcSheet } from '../features/profile/TdeeRecalcSheet'
 import { WeeklySummaryCard } from '../features/profile/WeeklySummaryCard'
 import { WeightProgressCard } from '../features/profile/WeightProgressCard'
+import { WithdrawButton } from '../features/profile/WithdrawButton'
 import { addDays, todayLocalDate, todayServiceDate } from '../lib/date'
+import { IS_TOSS } from '../platform'
 import { Button } from '../ui/form'
 
 export function ProfilePage() {
@@ -92,14 +95,20 @@ function Profile({
             })()
           }}
         />
+        <MenuItem label="개인정보 처리방침" to="/privacy" />
         <MenuItem label="앱 정보" value={`v${APP_VERSION}`} />
       </nav>
 
-      <Button type="button" variant="secondary" onClick={() => void signOut()} className="w-full">
-        로그아웃
-      </Button>
+      {/* 토스 빌드는 익명 키로 들어와 로그아웃해도 다음 요청에서 같은 회원으로 다시 들어온다. 누를 이유가 없는 버튼이다 */}
+      {!IS_TOSS && (
+        <Button type="button" variant="secondary" onClick={() => void signOut()} className="w-full">
+          로그아웃
+        </Button>
+      )}
 
       <p className="pt-1 text-center text-[11px] text-muted">칼로그 v{APP_VERSION}</p>
+
+      <WithdrawButton />
 
       {editing && (
         <ProfileEditSheet member={member} reloadMember={reloadMember} onClose={() => setEditing(false)} />
@@ -126,19 +135,22 @@ function MenuItem({
   value,
   onClick,
   href,
+  to,
   external,
 }: {
   label: string
   value?: string
   onClick?: () => void
   href?: string
+  /** 앱 안의 화면. href와 달리 페이지를 새로 읽지 않는다 */
+  to?: string
   external?: boolean
 }) {
   const body = (
     <>
       <span className="flex-1 text-left text-sm font-semibold text-ink">{label}</span>
       {value && <span className="text-xs font-medium text-muted">{value}</span>}
-      {(onClick || href) && (
+      {(onClick || href || to) && (
         <span aria-hidden className="text-muted">
           ›
         </span>
@@ -147,6 +159,13 @@ function MenuItem({
   )
   const className = 'flex w-full items-center gap-2 border-b border-border px-4 py-3.5 last:border-b-0'
 
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {body}
+      </Link>
+    )
+  }
   if (href) {
     return (
       <a

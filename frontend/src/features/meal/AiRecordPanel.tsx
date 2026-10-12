@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createAnalysis } from '../../api/analysis'
 import type { Analysis } from '../../api/analysis'
 import { ApiError } from '../../api/client'
 import type { MealType } from '../../api/meal'
 import { TUTORIAL_IDS } from '../tutorial/steps'
+import { AiNotice } from '../../ui/AiNotice'
 import { Button } from '../../ui/form'
-import { CameraIcon, CloseIcon, NoteIcon } from '../../ui/icons'
+import { NoteIcon } from '../../ui/icons'
 import { AnalysisResultSheet } from './AnalysisResultSheet'
 import { AnalyzingView } from './AnalyzingView'
 import { resizeImage } from './imageResize'
 import { pollAnalysis } from './pollAnalysis'
-import { PHOTO_PREVIEW_CLASS } from './photoPreview'
+import { PhotoPicker } from './PhotoPicker'
 import type { EditableItem } from './mealItems'
 
 type Step = 'input' | 'analyzing'
@@ -41,23 +42,12 @@ export function AiRecordPanel({
   const [note, setNote] = useState('')
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  // FAB(카메라 아이콘)으로 들어온 경우에만 쓰는 입력 — 이쪽만 capture를 걸어 촬영이 바로 열린다
-  const cameraInputRef = useRef<HTMLInputElement>(null)
-  const openedRef = useRef(false)
 
   // 미리보기 blob URL은 메모리에만 두고(사진 미저장), 교체·언마운트 시 해제한다
   useEffect(() => {
     if (!photoUrl) return
     return () => URL.revokeObjectURL(photoUrl)
   }, [photoUrl])
-
-  // FAB으로 들어왔으면 한 번만 촬영을 연다
-  useEffect(() => {
-    if (autoCamera && !openedRef.current) {
-      openedRef.current = true
-      cameraInputRef.current?.click()
-    }
-  }, [autoCamera])
 
   function pickFile(next: File) {
     setFile(next)
@@ -104,80 +94,15 @@ export function AiRecordPanel({
 
   return (
     <>
-      {/* 사진은 선택 입력이지만 이 앱의 주된 길이라 넓게 편다. id는 앱 둘러보기가 비출 자리다 */}
-      <label
-        id={TUTORIAL_IDS.photo}
-        className="relative block cursor-pointer rounded-2xl bg-track px-4 py-8 text-center"
-      >
-        {photoUrl ? (
-          <>
-            {/* 고정 높이(PHOTO_PREVIEW_CLASS) — max-h로 두면 사진 비율에 따라 높이가 달라져
-                분석 버튼이 움직인다. 크기는 분석 대기 화면과 한 곳에서 공유한다 */}
-            <img src={photoUrl} alt="선택한 사진" className={`mx-auto ${PHOTO_PREVIEW_CLASS}`} />
-            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-bold text-on-brand">
-              <CameraIcon />
-              사진 변경
-            </span>
-          </>
-        ) : (
-          <>
-            <span
-              aria-hidden
-              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-border text-muted"
-            >
-              <CameraIcon size={26} />
-            </span>
-            <span className="mt-3 block font-bold text-ink">사진으로 기록하기</span>
-            <span className="mt-0.5 block text-sm text-muted">AI가 음식을 자동으로 인식해요</span>
-            <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-on-brand">
-              <CameraIcon />
-              촬영
-            </span>
-          </>
-        )}
-        {/*
-          capture를 주지 않는다 — 주면 모바일에서 카메라가 곧장 열려 **사진첩을 고를 수 없다.**
-          없으면 OS가 "사진 보관함 / 사진 찍기" 선택지를 띄운다.
-          FAB으로 들어온 경로는 아래 별도 입력(capture 있음)이 맡아 바로 촬영이 열린다(design D13).
-        */}
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const next = e.target.files?.[0]
-            if (next) pickFile(next)
-          }}
-        />
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const next = e.target.files?.[0]
-            if (next) pickFile(next)
-          }}
-        />
-
-        {/* 사진 위 오른쪽 위 X — label 안이지만 파일 선택이 열리지 않게 이벤트를 막는다 */}
-        {photoUrl && (
-          <button
-            type="button"
-            aria-label="사진 지우기"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setFile(null)
-              setPhotoUrl(null)
-            }}
-            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-ink/60 text-on-brand"
-          >
-            <CloseIcon />
-          </button>
-        )}
-      </label>
+      <PhotoPicker
+        photoUrl={photoUrl}
+        autoCamera={autoCamera}
+        onPick={pickFile}
+        onClear={() => {
+          setFile(null)
+          setPhotoUrl(null)
+        }}
+      />
 
       {/* 라벨과 입력을 함께 감싼다. 앱 둘러보기가 둘을 한 덩어리로 비춘다 */}
       <div id={TUTORIAL_IDS.note} className="mt-4">
@@ -203,6 +128,10 @@ export function AiRecordPanel({
           {notice}
         </p>
       )}
+
+      <AiNotice className="mt-3">
+        AI가 사진과 설명을 보고 음식과 영양 정보를 추정해요. 실제와 다를 수 있으니 확인한 뒤 저장해주세요.
+      </AiNotice>
 
       <Button
         type="button"

@@ -78,6 +78,17 @@ export function CameraIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+/** 앨범에서 고르기. 액자 속 산과 해 */
+export function AlbumIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="m21 16-5-5-9 9" />
+    </svg>
+  )
+}
+
 /** 닫기·지우기 */
 export function CloseIcon() {
   return (

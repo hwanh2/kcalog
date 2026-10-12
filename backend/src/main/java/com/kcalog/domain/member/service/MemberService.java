@@ -42,6 +42,8 @@ public class MemberService {
         member.completeOnboarding(request.gender(), request.birthYear(), request.heightCm(),
                 request.activityLevel(), request.goal(), request.targetWeightKg(), request.dailyKcalTarget(),
                 request.muscleGoalOrDefault());
+        // 카카오 닉네임도 덮어쓴다. 실명인 경우가 많고, 토스 회원과 같은 규칙으로 시작하게 한다 (add-apps-in-toss D14)
+        member.changeNickname(DefaultNickname.random(request.goal()));
 
         // 현재 체중은 member가 아니라 weight_log가 소유 (design D5).
         // 동시 제출 경합에서도 안전하도록 DB의 ON CONFLICT 원자 upsert를 쓴다 (read-then-write 금지)
@@ -74,6 +76,13 @@ public class MemberService {
             validateBirthYear(request.birthYear());
         }
         Member member = findMember(memberId);
+        if (request.nickname() != null) {
+            String nickname = request.nickname().strip();
+            if (nickname.isEmpty()) {
+                throw new IllegalArgumentException("닉네임을 입력해주세요");
+            }
+            member.changeNickname(nickname);
+        }
         member.updateProfile(request.gender(), request.birthYear(), request.heightCm(), request.activityLevel(),
                 request.goal(), request.targetWeightKg(), request.dailyKcalTarget());
         return MemberResponse.of(member, latestWeight(memberId));

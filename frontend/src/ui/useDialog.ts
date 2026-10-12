@@ -25,6 +25,8 @@ function focusableIn(root: HTMLElement): HTMLElement[] {
  * 그래서 "맨 위 것만 처리한다"를 여기서 강제한다.
  */
 const stack: symbol[] = []
+/** 다이얼로그별 닫기. 토스 내비바의 뒤로가기가 Esc와 같은 일을 하도록 바깥에서 맨 위 것을 닫을 때 쓴다 */
+const closers = new Map<symbol, () => void>()
 /** 첫 다이얼로그가 열리기 전 body의 overflow — 마지막이 닫힐 때 이 값으로 되돌린다 */
 let savedOverflow = ''
 /**
@@ -60,6 +62,7 @@ export function useDialog(onClose: () => void, { lockScroll = true }: { lockScro
 
     const id = Symbol('dialog')
     stack.push(id)
+    closers.set(id, () => closeRef.current())
 
     const restoreTo = document.activeElement as HTMLElement | null
     const first = focusableIn(panel)[0]
@@ -116,6 +119,7 @@ export function useDialog(onClose: () => void, { lockScroll = true }: { lockScro
       document.removeEventListener('keydown', onKeyDown)
       const at = stack.lastIndexOf(id)
       if (at !== -1) stack.splice(at, 1)
+      closers.delete(id)
       if (lockScroll) {
         lockCount -= 1
         if (lockCount === 0) document.body.style.overflow = savedOverflow
@@ -126,4 +130,12 @@ export function useDialog(onClose: () => void, { lockScroll = true }: { lockScro
   }, [lockScroll])
 
   return ref
+}
+
+/** 맨 위 다이얼로그를 닫는다. 닫은 것이 있으면 true (add-apps-in-toss D6) */
+export function closeTopDialog(): boolean {
+  const top = stack[stack.length - 1]
+  if (!top) return false
+  closers.get(top)?.()
+  return true
 }

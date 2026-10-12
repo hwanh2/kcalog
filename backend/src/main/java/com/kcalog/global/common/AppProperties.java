@@ -12,13 +12,26 @@ import java.util.List;
 @Validated
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(String frontendBaseUrl, @Valid Jwt jwt, RefreshToken refreshToken, Openai openai,
-                            Storage storage, Analysis analysis, Cors cors, Feedback feedback) {
+                            Storage storage, Analysis analysis, Cors cors, Feedback feedback,
+                            AppsInToss appsInToss) {
 
     /**
      * 의견 알림 — 받을 주소가 비어 있으면 발송하지 않는다(저장은 그대로).
      * 로컬·테스트에서 SMTP를 갖추지 않아도 의견 보내기가 막히지 않게 하기 위한 기본값이다.
      */
     public record Feedback(String mailTo, String mailFrom) {
+    }
+
+    /**
+     * 앱인토스 파트너 API(mTLS). certificate와 privateKey는 PEM 내용이나 위치({@code file:...}) 둘 다 받는다.
+     * 둘 중 하나라도 비면 클라이언트를 끈다. 인증서는 콘솔에서 발급받아야 해서 로컬과 테스트에는 없다.
+     * 이때 토스 로그인은 503으로 답하고 웹(카카오)은 영향받지 않는다 (add-apps-in-toss D5).
+     */
+    public record AppsInToss(String baseUrl, String certificate, String privateKey, Duration timeout) {
+
+        public boolean configured() {
+            return certificate != null && !certificate.isBlank() && privateKey != null && !privateKey.isBlank();
+        }
     }
 
     /** 교차 출처 허용 설정 — 운영은 프론트 도메인 하나. 로컬은 Vite 프록시로 동일 출처라 비어 있어도 된다.

@@ -165,7 +165,7 @@ export function MealCard({ meal }: { meal: Meal }) {
       {confirmingDelete && (
         <ConfirmSheet
           title="이 기록을 지울까요?"
-          description="되돌릴 수 없어요. 사진이 있다면 함께 지워집니다."
+          description="되돌릴 수 없어요. 사진이 있다면 함께 지워져요."
           detail={`${summarize(meal)} · ${meal.totalKcal.toLocaleString()} kcal`}
           confirmLabel="삭제"
           busy={removeMutation.isPending}

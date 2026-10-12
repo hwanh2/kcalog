@@ -1,4 +1,4 @@
-import { Navigate, useSearchParams } from 'react-router'
+import { Link, Navigate, useSearchParams } from 'react-router'
 import { kakaoLoginUrl } from '../api/auth'
 import { APP_ROOT } from '../auth/landingPath'
 import { useAuth } from '../auth/useAuth'
@@ -38,6 +38,9 @@ export function LoginPage() {
       >
         카카오로 시작하기
       </a>
+      <Link to="/privacy" className="mt-6 text-xs text-muted underline underline-offset-2">
+        개인정보 처리방침
+      </Link>
     </main>
   )
 }

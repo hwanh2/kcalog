@@ -248,7 +248,7 @@ describe('RecordsPage — 기록 수정·삭제', () => {
 
     await user().click(await screen.findByRole('button', { name: /점심/ }))
     await user().click(screen.getByRole('button', { name: /삭제$/ }))
-    await user().click(await screen.findByRole('button', { name: '취소' }))
+    await user().click(await screen.findByRole('button', { name: '닫기' }))
 
     expect(deleteMealMock).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -299,7 +299,7 @@ describe('RecordsPage — 기록 수정·삭제', () => {
     await user().type(kcalField, '99999')
     await user().click(screen.getByRole('button', { name: '저장' }))
 
-    expect(screen.getByText('0~10000 정수여야 합니다')).toBeInTheDocument()
+    expect(screen.getByText('0~10000 사이 정수로 입력해주세요')).toBeInTheDocument()
     expect(updateMealMock).not.toHaveBeenCalled()
   })
 })
